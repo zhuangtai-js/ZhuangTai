@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "plugins": [
+    "typescript",
+    "oxc",
+    "unicorn",
+    "react",
+    "vitest",
+    "vue",
+    "import",
+    "jsx-a11y",
+    "eslint"
+  ],
+  "rules": {
+    "no-console": "warn",
+    "import/no-cycle": "error",
+    "func-names": "error",
+    "func-style": "error",
+    "import/no-default-export": "allow"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "arrowParens": "always",
+  "bracketSameLine": true,
+  "bracketSpacing": true,
+  "embeddedLanguageFormatting": "auto",
+  "endOfLine": "lf",
+  "htmlWhitespaceSensitivity": "ignore",
+  "ignorePatterns": [
+    "**/dist/**",
+  ],
+  "insertFinalNewline": true,
+  "jsdoc": {
+    "capitalize": false,
+    "commentLine": "keep",
+    "bracket": true
+  },
+  "jsxSingleQuote": false,
+  "objectWrap": "preserve",
+  "overrides": [],
+  "semi": true,
+  "singleAttributePerLine": true,
+  "singleQuote": false,
+  "sortImports": {
+    "newlinesBetween": false,
+    "order": "asc"
+  },
+  "sortPackageJson": {
+    "sortScripts": true
+  },
+  "sortTailwindcss": {
+    "attributes": [
+      "style"
+    ],
+    "functions": [
+      "tw"
+    ]
+  },
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "useTabs": false,
+  "vueIndentScriptAndStyle": false
+}
