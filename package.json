@@ -14,7 +14,10 @@
     "lint": "turbo run lint",
     "format": "turbo run format",
     "format:check": "turbo run format:check",
-    "check": "turbo run format:check lint typecheck test build"
+    "check": "turbo run format:check lint typecheck test build",
+    "release:test": "node --test scripts/publish-workspaces.test.mjs",
+    "release:dry-run": "node scripts/publish-workspaces.mjs --dry-run",
+    "release:publish": "node scripts/publish-workspaces.mjs --publish"
   },
   "devDependencies": {
     "@typescript/native-preview": "7.0.0-dev.20260626.1",
