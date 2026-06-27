@@ -17,9 +17,12 @@
   ],
   "rules": {
     "no-console": "warn",
-    "import/no-cycle": "error",
     "func-names": "error",
-    "func-style": "error",
+    "func-style": [
+      "error",
+      "declaration"
+    ],
+    "import/no-cycle": "error",
     "import/no-default-export": "allow"
   }
 }
