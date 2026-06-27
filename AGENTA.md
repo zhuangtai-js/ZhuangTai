@@ -1,0 +1,86 @@
+# AI Agent Guidelines
+
+This file is for AI agents and maintainers working on this repository. Do not put internal maintenance or release instructions in `README.md`; the README should contain only externally useful project information.
+
+## Project Identity
+
+- Display name: `ZhuàngTài`
+- Chinese name: `状态`
+- Slogan: `Simple, direct state primitives for JavaScript.`
+- Chinese slogan for images: `简单、直接的 JavaScript 状态原语。`
+
+## Package Rules
+
+- The npm scope is `@zhuangtai-js`.
+- Publishable packages must live under `packages/*`.
+- Publishable package names must use `@zhuangtai-js/*`.
+- The root package must stay `private: true` and must never be published.
+- `@zhuangtai-js/core` must have no third-party runtime dependencies.
+- Future adapters should use scoped package names, for example `@zhuangtai-js/react`.
+
+Do not use these package names:
+
+- `@zhuangtai/*`
+- `zhuangtai`
+- `@zhuangtai/core`
+
+## Core Semantics
+
+Keep the core API simple and direct:
+
+- `set` applies immediately.
+- `watch` callbacks run synchronously.
+- Equality uses `Object.is`.
+- Object and array updates are reference-based; callers should use immutable updates.
+- Do not add hidden scheduling to core.
+- Do not add batching, deferring, debouncing, or transactions to core unless explicitly requested.
+
+## Release Channels
+
+Publishable workspace packages are released through npm dist-tags:
+
+- `dev`: debugging builds. Versions must look like `0.2.0-dev.0`; npm tag is `dev`; GitHub Release is a prerelease.
+- `beta`: usable preview builds. Versions must look like `0.2.0-beta.0`; npm tag is `beta`; GitHub Release is a prerelease.
+- `stable`: stable builds. Versions must look like `0.2.0`; npm tag is `latest`; GitHub Release is a normal release.
+
+The release script must reject channel/version mismatches. Dev and beta releases must never publish to the default `latest` install path.
+
+## Maintainer Release Flow
+
+1. Update the target workspace package version.
+2. Run local verification.
+3. Merge through CI.
+4. Open GitHub Actions > Release.
+5. Select the release `channel`.
+6. Run with `dry_run: true` first.
+7. If the dry run is correct, rerun with `dry_run: false`.
+8. Confirm npm shows the new `@zhuangtai-js/*` package version and GitHub has the expected release or prerelease.
+
+## Verification
+
+Run these before considering release automation or package changes complete:
+
+```sh
+pnpm check
+pnpm release:test
+pnpm release:dry-run -- --channel stable
+```
+
+For prerelease validation, use package versions matching the selected channel before running a `dev` or `beta` dry run.
+
+## GitHub Actions
+
+- Use `actions/checkout@v7`.
+- Use `actions/setup-node@v6`.
+- Use `pnpm/action-setup@v6`.
+- Release workflow uses the `NPM_TOKEN` secret.
+- Keep the release workflow protected by the `npm-production` environment.
+- Release workflow needs `contents: write` for GitHub Release creation and `id-token: write` for npm provenance.
+
+## Repository References
+
+- GitHub repository: `zhuangtai-js/ZhuangTai`
+- SSH remote: `git@github.com:zhuangtai-js/ZhuangTai.git`
+- npm registry: `https://registry.npmjs.org/`
+
+Avoid stale references to old repository or package names.
