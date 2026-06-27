@@ -1,7 +1,7 @@
 {
   "name": "@zhuangtai/core",
   "version": "0.0.0",
-  "description": "A tiny zero-runtime-dependency TypeScript store library.",
+  "description": "Simple, direct state primitives for JavaScript.",
   "files": [
     "dist"
   ],

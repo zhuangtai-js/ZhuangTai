@@ -2,7 +2,7 @@
   "name": "zhuangtai",
   "version": "1.0.0",
   "private": true,
-  "description": "",
+  "description": "Simple, direct state primitives for JavaScript.",
   "keywords": [],
   "license": "ISC",
   "author": "",

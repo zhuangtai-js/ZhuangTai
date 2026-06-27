@@ -1,17 +1,32 @@
-# ZhuangTai
+# ZhuàngTài
 
-ZhuangTai is a tiny TypeScript store library inspired by Nano Stores and Jotai.
+状态
 
-The first package is `@zhuangtai/core`: a framework-agnostic store body with no runtime dependencies.
+Simple, direct state primitives for JavaScript.
+
+ZhuàngTài is a tiny TypeScript state library with a framework-agnostic core and no hidden scheduling.
 
 ## Packages
 
 - `@zhuangtai/core`: the zero-runtime-dependency store core.
 - `@zhuangtai/react`: planned React adapter, not implemented yet.
 
-## Status
+## Core API
 
-The repository infrastructure is in place. Store APIs will be implemented in a later step.
+```ts
+import { atom, computed } from "@zhuangtai/core";
+
+const count = atom(0);
+const double = computed(count, (value) => value * 2);
+
+count.get();
+count.set(1);
+count.set((value) => value + 1);
+count.watch((value, prevValue) => {});
+
+double.get();
+double.watch((value, prevValue) => {});
+```
 
 ## Development
 
