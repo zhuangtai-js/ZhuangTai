@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Release channel"
+        required: true
+        type: choice
+        options:
+          - dev
+          - beta
+          - stable
+        default: stable
+      dry_run:
+        description: "Run npm publish --dry-run instead of publishing"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    environment: npm-production
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+          scope: "@zhuangtai-js"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm release:test
+
+      - name: Dry-run publish
+        if: ${{ inputs.dry_run }}
+        run: pnpm release:dry-run -- --channel ${{ inputs.channel }}
+
+      - name: Publish
+        if: ${{ !inputs.dry_run }}
+        run: pnpm release:publish -- --channel ${{ inputs.channel }}
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="v$(node -p 'require("./packages/core/package.json").version')"
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "skip: GitHub Release $VERSION already exists"
+            exit 0
+          fi
+
+          if [ "${{ inputs.channel }}" = "stable" ]; then
+            gh release create "$VERSION" --title "$VERSION" --generate-notes
+          else
+            gh release create "$VERSION" --title "$VERSION" --generate-notes --prerelease
+          fi
