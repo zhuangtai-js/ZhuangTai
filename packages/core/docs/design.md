@@ -48,6 +48,24 @@ stop();
 
 `Object.is` decides whether a value changed. Equal values do not notify watchers.
 
+Object and array values are compared by reference. Mutating the current value in place does not notify watchers.
+
+```ts
+const user = atom({ name: "Ada" });
+
+user.get().name = "Grace";
+user.set(user.get()); // same object reference, no watcher notification
+```
+
+Use immutable updates so `set` receives a new value reference.
+
+```ts
+user.set((value) => ({
+  ...value,
+  name: "Grace",
+}));
+```
+
 ## Scheduling
 
 Core updates are synchronous and direct.
