@@ -1,7 +1,25 @@
 {
-  "name": "@zhuangtai/core",
+  "name": "@zhuangtai-js/core",
   "version": "0.1.0",
   "description": "Simple, direct state primitives for JavaScript.",
+  "keywords": [
+    "javascript",
+    "state",
+    "state-management",
+    "store",
+    "typescript"
+  ],
+  "homepage": "https://github.com/zhuangtai-js/ZhuangTai#readme",
+  "bugs": {
+    "url": "https://github.com/zhuangtai-js/ZhuangTai/issues"
+  },
+  "license": "ISC",
+  "author": "mouyase",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhuangtai-js/ZhuangTai.git",
+    "directory": "packages/core"
+  },
   "files": [
     "dist"
   ],
@@ -14,6 +32,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "build": "tsgo -p tsconfig.json",

@@ -8,13 +8,13 @@ ZhuàngTài is a tiny TypeScript state library with a framework-agnostic core an
 
 ## Packages
 
-- `@zhuangtai/core`: the zero-runtime-dependency store core.
-- `@zhuangtai/react`: planned React adapter, not implemented yet.
+- `@zhuangtai-js/core`: the zero-runtime-dependency state core.
+- `@zhuangtai-js/react`: planned React adapter, not implemented yet.
 
 ## Core API
 
 ```ts
-import { atom, computed } from "@zhuangtai/core";
+import { atom, computed } from "@zhuangtai-js/core";
 
 const count = atom(0);
 const double = computed(count, (value) => value * 2);
@@ -28,16 +28,4 @@ double.get();
 double.watch((value, prevValue) => {});
 ```
 
-## Development
-
-```sh
-pnpm install
-pnpm build
-pnpm typecheck
-pnpm test
-pnpm lint
-pnpm format:check
-pnpm check
-```
-
-`@zhuangtai/core` intentionally has no third-party runtime dependencies. Framework adapters live in separate packages.
+`@zhuangtai-js/core` intentionally has no third-party runtime dependencies. Framework adapters live in separate packages.

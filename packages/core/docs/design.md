@@ -1,4 +1,4 @@
-# @zhuangtai/core Design
+# @zhuangtai-js/core Design
 
 ZhuangTai has two kinds of state: original state and derived state.
 
