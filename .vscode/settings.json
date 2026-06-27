@@ -1,0 +1,4 @@
+{
+  "oxc.enable": true,
+  "js/ts.experimental.useTsgo": true
+}
