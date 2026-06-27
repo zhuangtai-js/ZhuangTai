@@ -73,8 +73,12 @@ function validateChannel(channel, version) {
 }
 
 function isNotFoundError(result) {
-  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+  const output = commandOutput(result);
   return result.status === 1 && output.includes("E404");
+}
+
+function commandOutput(result) {
+  return [result.stderr, result.stdout].filter((output) => typeof output === "string" && output.length > 0).join("\n");
 }
 
 function isAlreadyPublished(workspacePackage, runCommand) {
@@ -90,7 +94,7 @@ function isAlreadyPublished(workspacePackage, runCommand) {
     return false;
   }
 
-  throw new Error(`Failed to check ${packageRef(workspacePackage.manifest)} on npm:\n${result.stderr ?? result.stdout ?? ""}`);
+  throw new Error(`Failed to check ${packageRef(workspacePackage.manifest)} on npm:\n${commandOutput(result)}`);
 }
 
 function publishPackage(workspacePackage, { channel, dryRun, runCommand, env }) {
@@ -118,7 +122,7 @@ function publishPackage(workspacePackage, { channel, dryRun, runCommand, env }) 
   const result = runCommand("pnpm", args, { cwd: workspacePackage.dir });
 
   if (result.status !== 0) {
-    throw new Error(`Failed to publish ${packageRef(workspacePackage.manifest)}:\n${result.stderr ?? result.stdout ?? ""}`);
+    throw new Error(`Failed to publish ${packageRef(workspacePackage.manifest)}:\n${commandOutput(result)}`);
   }
 }
 
@@ -194,6 +198,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
 export {
   channels,
+  commandOutput,
   discoverWorkspacePackages,
   isAlreadyPublished,
   packageRef,

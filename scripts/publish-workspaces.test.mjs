@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  commandOutput,
   isAlreadyPublished,
   parseArgs,
   publishPackage,
@@ -9,6 +10,16 @@ import {
   validateChannel,
   validatePackage,
 } from "./publish-workspaces.mjs";
+
+describe("commandOutput", () => {
+  it("keeps stdout when stderr is empty", () => {
+    assert.equal(commandOutput({ stdout: "stdout failure", stderr: "" }), "stdout failure");
+  });
+
+  it("keeps stderr and stdout when both exist", () => {
+    assert.equal(commandOutput({ stdout: "stdout failure", stderr: "stderr failure" }), "stderr failure\nstdout failure");
+  });
+});
 
 function commandRecorder(results = []) {
   const calls = [];
