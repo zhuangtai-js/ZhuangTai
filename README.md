@@ -48,4 +48,4 @@ const theme = atom("light", {
 theme.set("dark");
 ```
 
-`@zhuangtai-js/persist` uses synchronous Web Storage-compatible storage. Pass a `storage` option explicitly, or it falls back to `globalThis.localStorage` when available.
+`@zhuangtai-js/persist` uses synchronous Web Storage-compatible storage. Pass a `storage` option explicitly, or it falls back to `globalThis.localStorage` when available. Its default JSON codec supports JSON-serializable values; use a custom codec for values such as `undefined`, functions, or symbols.

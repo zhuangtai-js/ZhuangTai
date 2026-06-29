@@ -55,7 +55,7 @@ If `storage` is omitted, the plugin uses `globalThis.localStorage`. If neither i
 
 ## Codec
 
-Values are encoded with `JSON.stringify` and decoded with `JSON.parse` by default. Pass a custom codec when your stored representation needs different behavior.
+Values are encoded with `JSON.stringify` and decoded with `JSON.parse` by default. The default codec only supports values that `JSON.stringify` returns as a string; `undefined`, functions, and symbols throw during encode instead of being passed to storage. Pass a custom codec when your stored representation needs different behavior.
 
 ```ts
 const count = atom(0, {

@@ -85,7 +85,15 @@ function resolveStorage(storage: PersistStorage | undefined): PersistStorage {
 
 const jsonCodec: PersistCodec = {
   encode(value) {
-    return JSON.stringify(value);
+    const encodedValue = JSON.stringify(value);
+
+    if (typeof encodedValue !== "string") {
+      throw new TypeError(
+        "The default persist JSON codec can only encode JSON-serializable values.",
+      );
+    }
+
+    return encodedValue;
   },
   decode(rawValue) {
     return JSON.parse(rawValue);
