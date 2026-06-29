@@ -1,0 +1,27 @@
+{
+  "name": "docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Documentation site for ZhuangTai.",
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "format": "oxfmt package.json astro.config.mjs tsconfig.json src",
+    "format:check": "oxfmt package.json astro.config.mjs tsconfig.json src --check",
+    "lint": "oxlint --type-aware astro.config.mjs src -f agent",
+    "preview": "astro preview",
+    "test": "astro sync && tsc -p tsconfig.json --noEmit",
+    "typecheck": "astro sync && tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.41.1",
+    "astro": "^7.0.3"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.71.0",
+    "oxlint-tsgolint": "^0.23.0",
+    "typescript": "rc"
+  }
+}
