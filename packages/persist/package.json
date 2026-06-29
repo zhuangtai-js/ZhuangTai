@@ -1,0 +1,59 @@
+{
+  "name": "@zhuangtai-js/persist",
+  "version": "0.1.0",
+  "description": "Persistence plugin for ZhuangTai atoms.",
+  "keywords": [
+    "javascript",
+    "persist",
+    "state",
+    "state-management",
+    "store",
+    "typescript"
+  ],
+  "homepage": "https://github.com/zhuangtai-js/ZhuangTai#readme",
+  "bugs": {
+    "url": "https://github.com/zhuangtai-js/ZhuangTai/issues"
+  },
+  "license": "ISC",
+  "author": "mouyase",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhuangtai-js/ZhuangTai.git",
+    "directory": "packages/persist"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "rslib",
+    "format": "oxfmt .",
+    "format:check": "oxfmt . --check",
+    "lint": "oxlint --type-aware . -f agent",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@zhuangtai-js/core": "workspace:*"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.71.0",
+    "oxlint-tsgolint": "^0.23.0",
+    "typescript": "rc",
+    "vitest": "^4.1.9"
+  }
+}
