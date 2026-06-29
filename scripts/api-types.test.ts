@@ -1,4 +1,8 @@
 import { atom, computed, createAtom, type Atom, type AtomValue, type AtomValues, type Computed } from "@zhuangtai-js/core";
+// @ts-expect-error AtomCreatorArgs is internal type plumbing, not public API.
+import type { AtomCreatorArgs } from "@zhuangtai-js/core";
+// @ts-expect-error AtomCreatorOptions is internal type plumbing, not public API.
+import type { AtomCreatorOptions } from "@zhuangtai-js/core";
 import { persist, type PersistCodec, type PersistOptions, type PersistStorage } from "@zhuangtai-js/persist";
 
 type Expect<T extends true> = T;

@@ -4,8 +4,6 @@ export { computed } from "./computed.js";
 export type {
   Atom,
   AtomCreator,
-  AtomCreatorArgs,
-  AtomCreatorOptions,
   AtomCreatorPlugin,
   AtomCreatorPluginContext,
   AtomValue,
