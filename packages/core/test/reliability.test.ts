@@ -85,7 +85,18 @@ describe("atom reliability", () => {
     expect(calls).toEqual(["a:1:0", "b:1:undefined", "a:2:1", "b:2:1"]);
   });
 
-  it("allows a watcher to synchronously re-enter set", () => {
+  it("rejects setting the same atom from its immediate watch callback", () => {
+    const state = atom(0);
+
+    expect(() => {
+      state.watch(() => {
+        state.set(1);
+      });
+    }).toThrow("Cannot call set() on an atom while it is notifying watchers");
+    expect(state.get()).toBe(0);
+  });
+
+  it("rejects setting the same atom while notifying watchers", () => {
     const state = atom(0);
     const calls: Array<readonly [number, number | undefined]> = [];
 
@@ -98,32 +109,31 @@ describe("atom reliability", () => {
     });
     calls.length = 0;
 
-    state.set(1);
+    expect(() => state.set(1)).toThrow(
+      "Cannot call set() on an atom while it is notifying watchers",
+    );
 
-    expect(state.get()).toBe(2);
-    expect(calls).toEqual([
-      [1, 0],
-      [2, 1],
-    ]);
+    expect(state.get()).toBe(1);
+    expect(calls).toEqual([[1, 0]]);
+
+    state.set(3);
+    expect(state.get()).toBe(3);
   });
 
-  it("uses nested synchronous notification order when a watcher re-enters set", () => {
-    const state = atom(0);
-    const calls: string[] = [];
+  it("allows a watcher to set a different atom", () => {
+    const source = atom(0);
+    const target = atom(0);
 
-    state.watch((value) => {
-      calls.push(`a:${value}`);
-
+    source.watch((value) => {
       if (value === 1) {
-        state.set(2);
+        target.set(2);
       }
     });
-    state.watch((value) => calls.push(`b:${value}`));
-    calls.length = 0;
 
-    state.set(1);
+    source.set(1);
 
-    expect(calls).toEqual(["a:1", "a:2", "b:2", "b:2"]);
+    expect(source.get()).toBe(1);
+    expect(target.get()).toBe(2);
   });
 
   it("propagates watcher errors after updating state and before later watchers run", () => {
@@ -141,6 +151,11 @@ describe("atom reliability", () => {
     expect(() => state.set(1)).toThrow("watch failed");
     expect(state.get()).toBe(1);
     expect(laterWatcher).not.toHaveBeenCalled();
+
+    state.set(2);
+    expect(state.get()).toBe(2);
+    expect(laterWatcher).toHaveBeenCalledOnce();
+    expect(laterWatcher).toHaveBeenCalledWith(2, 1);
   });
 
   it("deduplicates the same watcher function by Set identity", () => {
@@ -377,7 +392,7 @@ describe("computed reliability", () => {
     expect(watcher).toHaveBeenCalledWith(5, 3);
   });
 
-  it("allows computed watchers to synchronously re-enter source updates", () => {
+  it("rejects setting a source atom from its computed watcher", () => {
     const count = atom(1);
     const double = computed(count, (value) => value * 2);
     const calls: number[] = [];
@@ -391,10 +406,13 @@ describe("computed reliability", () => {
     });
     calls.length = 0;
 
-    count.set(2);
+    expect(() => count.set(2)).toThrow(
+      "Cannot call set() on an atom while it is notifying watchers",
+    );
 
-    expect(double.get()).toBe(6);
-    expect(calls).toEqual([4, 6]);
+    expect(count.get()).toBe(2);
+    expect(double.get()).toBe(4);
+    expect(calls).toEqual([4]);
   });
 
   it("compares derived references with Object.is", () => {

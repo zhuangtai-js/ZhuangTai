@@ -35,6 +35,7 @@ double.watch((value, prevValue) => {});
 - Object and array updates are reference-based; use immutable updates.
 - Function values follow the same ambiguity as React state setters: `set(fn)` treats `fn` as an updater. To store a function value, wrap it: `set(() => fn)`.
 - `computed(...)` calculates its initial value when it is created. It subscribes to sources only while it has watchers, and `get()` recalculates from the current source values.
+- Calling `set()` on an atom while that same atom is notifying watchers throws. Watchers may update other atoms, but avoid cycles between atoms.
 
 ## Creator plugins
 

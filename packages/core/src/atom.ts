@@ -13,6 +13,7 @@ function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue:
 
 export function atom<Value>(initialValue: Value): Atom<Value> {
   let currentValue = initialValue;
+  let notificationDepth = 0;
   const watchers = new Set<Watcher<Value>>();
 
   function get(): Value {
@@ -20,6 +21,12 @@ export function atom<Value>(initialValue: Value): Atom<Value> {
   }
 
   function set(nextValue: NextValue<Value>): void {
+    if (notificationDepth > 0) {
+      throw new Error(
+        "[@zhuangtai-js/core] Cannot call set() on an atom while it is notifying watchers.",
+      );
+    }
+
     const value = isUpdater(nextValue) ? nextValue(currentValue) : nextValue;
 
     if (Object.is(value, currentValue)) {
@@ -29,14 +36,26 @@ export function atom<Value>(initialValue: Value): Atom<Value> {
     const prevValue = currentValue;
     currentValue = value;
 
-    for (const watcher of Array.from(watchers)) {
-      watcher(currentValue, prevValue);
+    notificationDepth += 1;
+
+    try {
+      for (const watcher of Array.from(watchers)) {
+        watcher(currentValue, prevValue);
+      }
+    } finally {
+      notificationDepth -= 1;
     }
   }
 
   function watch(watcher: Watcher<Value>): () => void {
     watchers.add(watcher);
-    watcher(currentValue, undefined);
+    notificationDepth += 1;
+
+    try {
+      watcher(currentValue, undefined);
+    } finally {
+      notificationDepth -= 1;
+    }
 
     return () => {
       watchers.delete(watcher);

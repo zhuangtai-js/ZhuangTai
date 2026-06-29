@@ -75,4 +75,5 @@ const count = atom(0, {
 - Stored values are restored before the first `get()`.
 - Writes happen synchronously after `set` changes the value.
 - `Object.is` no-op updates do not write to storage.
+- Codec and storage errors are propagated to the caller. The plugin does not catch, wrap, log, or silence storage failures, and in-memory state is not rolled back after a persistence failure.
 - Async storage is not supported.
