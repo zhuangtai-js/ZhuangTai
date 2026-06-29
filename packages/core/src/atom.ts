@@ -1,4 +1,11 @@
-import type { Atom, NextValue, Watcher } from "./types.js";
+import type {
+  Atom,
+  AtomCreator,
+  AtomCreatorPlugin,
+  AtomCreatorOptions,
+  NextValue,
+  Watcher,
+} from "./types.js";
 
 function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue: Value) => Value {
   return typeof nextValue === "function";
@@ -37,4 +44,53 @@ export function atom<Value>(initialValue: Value): Atom<Value> {
   }
 
   return { get, set, watch };
+}
+
+export function createAtom(): AtomCreator {
+  return createAtomWithFactory(atom, new Set());
+}
+
+type AtomFactory<OptionsByPlugin extends Record<string, object>> = <Value>(
+  initialValue: Value,
+  options?: AtomCreatorOptions<OptionsByPlugin>,
+) => Atom<Value>;
+
+function createAtomWithFactory<OptionsByPlugin extends Record<string, object>>(
+  factory: AtomFactory<OptionsByPlugin>,
+  installedPluginIds: ReadonlySet<string>,
+): AtomCreator<OptionsByPlugin> {
+  function createState<Value>(
+    initialValue: Value,
+    options?: AtomCreatorOptions<OptionsByPlugin>,
+  ): Atom<Value> {
+    return factory(initialValue, options);
+  }
+
+  createState.use = function use<Name extends string, Options extends object>(
+    plugin: AtomCreatorPlugin<Name, Options>,
+  ): AtomCreator<OptionsByPlugin & { readonly [Key in Name]: Options }> {
+    if (installedPluginIds.has(plugin.id)) {
+      return createAtomWithFactory<OptionsByPlugin & { readonly [Key in Name]: Options }>(
+        factory,
+        installedPluginIds,
+      );
+    }
+
+    function nextFactory<Value>(
+      initialValue: Value,
+      options?: AtomCreatorOptions<OptionsByPlugin & { readonly [Key in Name]: Options }>,
+    ): Atom<Value> {
+      return plugin.create({
+        initialValue,
+        options: options?.[plugin.id],
+        next(nextInitialValue) {
+          return factory(nextInitialValue, options);
+        },
+      });
+    }
+
+    return createAtomWithFactory(nextFactory, new Set([...installedPluginIds, plugin.id]));
+  };
+
+  return createState;
 }
