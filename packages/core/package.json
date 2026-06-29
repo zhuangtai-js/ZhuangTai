@@ -38,18 +38,18 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "tsgo -p tsconfig.json",
-    "typecheck": "tsgo -p tsconfig.json --noEmit",
+    "build": "rslib",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
     "lint": "oxlint --type-aware . -f agent",
     "format": "oxfmt .",
     "format:check": "oxfmt . --check"
   },
   "devDependencies": {
-    "@typescript/native-preview": "7.0.0-dev.20260626.1",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
     "oxlint-tsgolint": "^0.23.0",
+    "typescript": "rc",
     "vitest": "^4.1.9"
   }
 }
