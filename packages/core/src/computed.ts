@@ -68,6 +68,7 @@ export function computed<Value>(
 
   function watch(watcher: Watcher<Value>): StopWatch {
     if (watchers.size === 0) {
+      currentValue = read();
       startWatchingSources();
     }
 

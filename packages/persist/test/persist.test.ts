@@ -155,8 +155,5 @@ function createStorage(entries: readonly (readonly [string, string])[] = []): St
     setItem(key, value) {
       values.set(key, value);
     },
-    removeItem(key) {
-      values.delete(key);
-    },
   };
 }

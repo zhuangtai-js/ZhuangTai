@@ -44,7 +44,6 @@ const storage: PersistStorage = {
     return key === "counter" ? "5" : null;
   },
   setItem() {},
-  removeItem() {},
 };
 
 const codec: PersistCodec = {

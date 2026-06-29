@@ -42,6 +42,21 @@ describe("computed", () => {
     expect(watcher).toHaveBeenCalledWith(4, undefined);
   });
 
+  it("watches a fresh derived value after an unwatched source changes", () => {
+    // Given
+    const count = atom(2);
+    const double = computed(count, (value) => value * 2);
+    const watcher = vi.fn<Watcher<number>>();
+
+    // When
+    count.set(3);
+    double.watch(watcher);
+
+    // Then
+    expect(watcher).toHaveBeenCalledOnce();
+    expect(watcher).toHaveBeenCalledWith(6, undefined);
+  });
+
   it("watches derived changes with the previous derived value", () => {
     // Given
     const count = atom(2);
