@@ -5,6 +5,20 @@ import assert from "node:assert/strict";
 
 const rootPath = new URL("..", import.meta.url).pathname;
 
+function readManifest(packagePath) {
+  return JSON.parse(readFileSync(join(rootPath, packagePath, "package.json"), "utf8"));
+}
+
+function assertPackageManifest(packagePath) {
+  const manifest = readManifest(packagePath);
+
+  assert.deepEqual(manifest.files, ["dist"]);
+  assert.equal(manifest.module, "./dist/index.js");
+  assert.equal(manifest.types, "./dist/index.d.ts");
+  assert.equal(manifest.exports["."].import, manifest.module);
+  assert.equal(manifest.exports["."].types, manifest.types);
+}
+
 describe("build artifacts", () => {
   it("emits package export targets", () => {
     // Given
@@ -70,5 +84,44 @@ describe("build artifacts", () => {
 
     // Then
     assert.deepEqual(missingTargets, []);
+    packages.forEach(assertPackageManifest);
+  });
+
+  it("smokes core and persist consumer APIs from built outputs", async () => {
+    const [{ atom, computed, createAtom }, { persist }] = await Promise.all([
+      import("../packages/core/dist/index.js"),
+      import("../packages/persist/dist/index.js"),
+    ]);
+
+    const state = atom(0);
+    const derived = computed(state, (value) => String(value));
+    const tupleDerived = computed([atom(1), atom("x")], (n, s) => `${n}${s}`);
+
+    assert.equal(state.get(), 0);
+    assert.equal(derived.get(), "0");
+    assert.equal(tupleDerived.get(), "1x");
+
+    state.set(1);
+    assert.equal(derived.get(), "1");
+
+    const data = new Map();
+    const storage = {
+      getItem(key) {
+        return data.get(key) ?? null;
+      },
+      setItem(key, value) {
+        data.set(key, value);
+      },
+      removeItem(key) {
+        data.delete(key);
+      },
+    };
+
+    const createPersistedAtom = createAtom().use(persist);
+    const persisted = createPersistedAtom(5, { persist: { key: "counter", storage } });
+
+    assert.equal(persisted.get(), 5);
+    persisted.set(6);
+    assert.equal(data.get("counter"), "6");
   });
 });

@@ -10,12 +10,13 @@
   "scripts": {
     "build": "turbo run build",
     "build:test": "node --test scripts/build-artifacts.test.mjs",
+    "api:test": "tsc -p scripts/tsconfig.api-tests.json",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "format": "turbo run format",
     "format:check": "turbo run format:check",
-    "check": "turbo run format:check lint typecheck test build && pnpm build:test",
+    "check": "turbo run format:check lint typecheck test build && pnpm build:test && pnpm api:test",
     "release:test": "node --test scripts/publish-workspaces.test.mjs",
     "release:dry-run": "node scripts/publish-workspaces.mjs --dry-run",
     "release:publish": "node scripts/publish-workspaces.mjs --publish"

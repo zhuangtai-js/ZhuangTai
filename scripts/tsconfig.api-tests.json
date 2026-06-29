@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
+    "paths": {
+      "@zhuangtai-js/core": ["../packages/core/dist/index.d.ts"],
+      "@zhuangtai-js/persist": ["../packages/persist/dist/index.d.ts"]
+    }
+  },
+  "include": ["./api-types.test.ts"]
+}
