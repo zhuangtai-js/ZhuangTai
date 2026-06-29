@@ -33,3 +33,22 @@ double.watch((value, prevValue) => {});
 - `watch` callbacks run synchronously.
 - Equality uses `Object.is`.
 - Object and array updates are reference-based; use immutable updates.
+
+## Creator plugins
+
+Use `createAtom()` when you want an atom creator that can be extended by plugins. The default `atom()` export stays unextended and takes only the initial value.
+
+```ts
+import { createAtom } from "@zhuangtai-js/core";
+import { persist } from "@zhuangtai-js/persist";
+
+const atom = createAtom().use(persist);
+
+const count = atom(0, {
+  persist: {
+    key: "count",
+  },
+});
+```
+
+Plugins are installed on creators, not atom instances. Installing the same plugin more than once returns a creator with the same behavior.
