@@ -4,6 +4,12 @@
 
 Simple, direct state primitives for JavaScript.
 
+[![Release](https://img.shields.io/github/v/release/zhuangtai-js/ZhuangTai?style=flat&colorA=000000&colorB=000000)](https://github.com/zhuangtai-js/ZhuangTai/releases)
+[![Core Version](https://img.shields.io/npm/v/@zhuangtai-js/core?label=core&style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@zhuangtai-js/core)
+[![Persist Version](https://img.shields.io/npm/v/@zhuangtai-js/persist?label=persist&style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@zhuangtai-js/persist)
+[![Core Size](https://img.shields.io/bundlephobia/minzip/@zhuangtai-js/core?label=core%20size&style=flat&colorA=000000&colorB=000000)](https://bundlephobia.com/package/@zhuangtai-js/core)
+[![Persist Size](https://img.shields.io/bundlephobia/minzip/@zhuangtai-js/persist?label=persist%20size&style=flat&colorA=000000&colorB=000000)](https://bundlephobia.com/package/@zhuangtai-js/persist)
+
 ZhuàngTài is a tiny TypeScript state library with a framework-agnostic core and no hidden scheduling.
 
 ## Packages

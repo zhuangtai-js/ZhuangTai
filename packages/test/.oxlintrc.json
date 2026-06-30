@@ -1,0 +1,6 @@
+{
+  "extends": ["../../.oxlintrc.json"],
+  "rules": {
+    "typescript/no-redundant-type-constituents": "allow"
+  }
+}
