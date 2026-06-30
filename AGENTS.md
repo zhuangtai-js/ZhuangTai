@@ -24,6 +24,14 @@ Do not use these package names:
 - `zhuangtai`
 - `@zhuangtai/core`
 
+## Documentation Rules
+
+- All public-facing documentation must have both Chinese and English versions.
+- Chinese is the primary version and should be written first.
+- English documentation should mirror the Chinese version's meaning, structure, and public API details.
+- This applies to README files, package docs, changelogs, docs site pages, release notes, and future guides/reference docs.
+- If a document cannot be translated in the same change, leave an explicit follow-up note instead of silently adding single-language documentation.
+
 ## Core Semantics
 
 Keep the core API simple and direct:
