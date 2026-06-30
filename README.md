@@ -6,9 +6,10 @@
 
 [![Release](https://img.shields.io/github/v/release/zhuangtai-js/ZhuangTai?style=flat&colorA=000000&colorB=000000)](https://github.com/zhuangtai-js/ZhuangTai/releases)
 [![Core Version](https://img.shields.io/npm/v/@zhuangtai-js/core?label=core&style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@zhuangtai-js/core)
-[![Persist Version](https://img.shields.io/npm/v/@zhuangtai-js/persist?label=persist&style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@zhuangtai-js/persist)
-[![Core Size](https://img.shields.io/npm/unpacked-size/@zhuangtai-js/core?label=core%20size&style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@zhuangtai-js/core)
-[![Persist Size](https://img.shields.io/npm/unpacked-size/@zhuangtai-js/persist?label=persist%20size&style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@zhuangtai-js/persist)
+[![Core JS](https://img.shields.io/badge/core%20js-1.17%20kB-000000?style=flat&labelColor=000000)](https://www.npmjs.com/package/@zhuangtai-js/core)
+[![Runtime Deps](https://img.shields.io/badge/runtime%20deps-0-000000?style=flat&labelColor=000000)](./packages/core/package.json)
+[![TypeScript](https://img.shields.io/badge/TypeScript-ready-000000?style=flat&labelColor=000000)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/npm/l/@zhuangtai-js/core?style=flat&colorA=000000&colorB=000000)](./LICENSE)
 
 ZhuàngTài 是一个轻量的 TypeScript 状态库，核心与框架无关，也不会隐藏调度行为。
 
@@ -55,6 +56,10 @@ theme.set("dark");
 ```
 
 `@zhuangtai-js/persist` 使用同步的 Web Storage 兼容存储。你可以显式传入 `storage` 选项；如果没有传入，它会在可用时回退到 `globalThis.localStorage`。默认 JSON codec 支持 JSON 可序列化值；如果需要处理 `undefined`、函数或 symbol 等值，请使用自定义 codec。
+
+## 许可证
+
+ZhuàngTài 使用 [ISC 许可证](./LICENSE) 发布。你可以自由使用、复制、修改和分发，但需要在副本中保留版权声明和许可证声明。
 
 ---
 
@@ -107,3 +112,7 @@ theme.set("dark");
 ```
 
 `@zhuangtai-js/persist` uses synchronous Web Storage-compatible storage. Pass a `storage` option explicitly, or it falls back to `globalThis.localStorage` when available. Its default JSON codec supports JSON-serializable values; use a custom codec for values such as `undefined`, functions, or symbols.
+
+## License
+
+ZhuàngTài is released under the [ISC License](./LICENSE). You may use, copy, modify, and distribute it freely, provided that the copyright notice and license notice are retained in copies.

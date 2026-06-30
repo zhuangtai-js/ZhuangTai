@@ -28,6 +28,15 @@ function readManifest(packagePath) {
   return JSON.parse(readFileSync(join(rootPath, packagePath, "package.json"), "utf8"));
 }
 
+function assertPackedFiles(tarballPath) {
+  const files = run("tar", ["-tzf", tarballPath]).stdout.trim().split("\n");
+
+  assert.equal(files.some((file) => file.endsWith(".js.map")), false);
+  assert.equal(files.some((file) => file.endsWith("dist/index.js")), true);
+  assert.equal(files.some((file) => file.endsWith("dist/index.d.ts")), true);
+  assert.equal(files.some((file) => file.endsWith("LICENSE")), true);
+}
+
 describe("packed package consumer", () => {
   it("installs packed core and persist tarballs in a fresh consumer", () => {
     const tempPath = mkdtempSync(join(tmpdir(), "zhuangtai-pack-consumer-"));
@@ -44,6 +53,8 @@ describe("packed package consumer", () => {
 
       assert.equal(existsSync(coreTarballPath), true);
       assert.equal(existsSync(persistTarballPath), true);
+      assertPackedFiles(coreTarballPath);
+      assertPackedFiles(persistTarballPath);
 
       writeFileSync(
         join(tempPath, "package.json"),

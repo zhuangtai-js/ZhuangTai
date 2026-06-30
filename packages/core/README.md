@@ -55,3 +55,11 @@ const count = atom(0, {
 ```
 
 Plugins are installed on creators, not atom instances. Installing the same plugin more than once returns a creator with the same behavior.
+
+## 许可证
+
+`@zhuangtai-js/core` 使用 [ISC 许可证](./LICENSE) 发布。你可以自由使用、复制、修改和分发，但需要在副本中保留版权声明和许可证声明。
+
+## License
+
+`@zhuangtai-js/core` is released under the [ISC License](./LICENSE). You may use, copy, modify, and distribute it freely, provided that the copyright notice and license notice are retained in copies.

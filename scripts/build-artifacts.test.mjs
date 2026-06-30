@@ -12,11 +12,21 @@ function readManifest(packagePath) {
 function assertPackageManifest(packagePath) {
   const manifest = readManifest(packagePath);
 
-  assert.deepEqual(manifest.files, ["dist"]);
+  assert.deepEqual(manifest.files, ["dist/index.d.ts", "dist/index.js"]);
   assert.equal(manifest.module, "./dist/index.js");
   assert.equal(manifest.types, "./dist/index.d.ts");
   assert.equal(manifest.exports["."].import, manifest.module);
   assert.equal(manifest.exports["."].types, manifest.types);
+}
+
+function formatKilobytes(bytes) {
+  return `${(bytes / 1000).toFixed(2)} kB`;
+}
+
+function coreSizeBadgeUrl(bytes) {
+  const size = encodeURIComponent(formatKilobytes(bytes));
+
+  return `https://img.shields.io/badge/core%20js-${size}-000000?style=flat&labelColor=000000`;
 }
 
 describe("build artifacts", () => {
@@ -85,6 +95,16 @@ describe("build artifacts", () => {
     // Then
     assert.deepEqual(missingTargets, []);
     packages.forEach(assertPackageManifest);
+  });
+
+  it("keeps the README core size badge tied to the built runtime size", () => {
+    // Given
+    const coreRuntime = readFileSync(join(rootPath, "packages/core/dist/index.js"));
+    const readme = readFileSync(join(rootPath, "README.md"), "utf8");
+
+    // Then
+    assert.ok(coreRuntime.byteLength < 2000, `Expected core runtime below 2 kB, got ${coreRuntime.byteLength} B`);
+    assert.ok(readme.includes(coreSizeBadgeUrl(coreRuntime.byteLength)));
   });
 
   it("smokes core and persist consumer APIs from built outputs", async () => {

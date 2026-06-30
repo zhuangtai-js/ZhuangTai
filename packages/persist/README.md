@@ -74,3 +74,11 @@ const count = atom(0, {
 - `Object.is` no-op updates do not write to storage.
 - Codec and storage errors are propagated to the caller. The plugin does not catch, wrap, log, or silence storage failures, and in-memory state is not rolled back after a persistence failure.
 - Async storage is not supported.
+
+## 许可证
+
+`@zhuangtai-js/persist` 使用 [ISC 许可证](./LICENSE) 发布。你可以自由使用、复制、修改和分发，但需要在副本中保留版权声明和许可证声明。
+
+## License
+
+`@zhuangtai-js/persist` is released under the [ISC License](./LICENSE). You may use, copy, modify, and distribute it freely, provided that the copyright notice and license notice are retained in copies.

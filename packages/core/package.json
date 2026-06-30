@@ -21,7 +21,8 @@
     "directory": "packages/core"
   },
   "files": [
-    "dist"
+    "dist/index.d.ts",
+    "dist/index.js"
   ],
   "type": "module",
   "sideEffects": false,
