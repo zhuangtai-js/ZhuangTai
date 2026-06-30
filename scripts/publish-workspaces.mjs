@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import process from "node:process";
 
@@ -58,6 +58,26 @@ function validatePackage({ manifest }) {
 
 function packageRef(manifest) {
   return `${manifest.name}@${manifest.version}`;
+}
+
+function packageShortName(manifest) {
+  return manifest.name.slice(packageScope.length);
+}
+
+function normalizePackageName(value) {
+  if (value === undefined || value === "all") {
+    return undefined;
+  }
+
+  return value.startsWith(packageScope) ? value : `${packageScope}${value}`;
+}
+
+function githubReleaseForPackage(manifest, channel) {
+  return {
+    prerelease: channels[channel].prerelease,
+    tag: `${packageShortName(manifest)}-v${manifest.version}`,
+    title: `${manifest.name} v${manifest.version}`,
+  };
 }
 
 function validateChannel(channel, version) {
@@ -126,16 +146,36 @@ function publishPackage(workspacePackage, { channel, dryRun, runCommand, env }) 
   }
 }
 
-function publishWorkspaces({ rootDir, channel, dryRun, runCommand, env = process.env, log = console.log }) {
-  const workspacePackages = discoverWorkspacePackages(rootDir);
-  const summary = { skipped: [], published: [] };
+function publishWorkspaces({
+  rootDir,
+  channel,
+  dryRun,
+  runCommand,
+  env = process.env,
+  log = console.log,
+  packageName,
+  workspacePackages,
+}) {
+  if (rootDir === undefined && workspacePackages === undefined) {
+    throw new Error("publishWorkspaces requires rootDir or workspacePackages");
+  }
 
-  for (const workspacePackage of workspacePackages) {
+  const packagesToPublish = workspacePackages ?? discoverWorkspacePackages(rootDir);
+  const summary = { releases: [], skipped: [], published: [] };
+  let foundRequestedPackage = packageName === undefined;
+
+  for (const workspacePackage of packagesToPublish) {
     validatePackage(workspacePackage);
 
     if (workspacePackage.manifest.private === true) {
       continue;
     }
+
+    if (packageName !== undefined && workspacePackage.manifest.name !== packageName) {
+      continue;
+    }
+
+    foundRequestedPackage = true;
 
     const ref = packageRef(workspacePackage.manifest);
     validateChannel(channel, workspacePackage.manifest.version);
@@ -143,12 +183,18 @@ function publishWorkspaces({ rootDir, channel, dryRun, runCommand, env = process
     if (isAlreadyPublished(workspacePackage, runCommand)) {
       log(`skip: ${ref} already published`);
       summary.skipped.push(ref);
+      summary.releases.push(githubReleaseForPackage(workspacePackage.manifest, channel));
       continue;
     }
 
     publishPackage(workspacePackage, { channel, dryRun, runCommand, env });
     log(`${dryRun ? "dry-run" : "publish"}: ${ref} tag=${channels[channel].npmTag}`);
     summary.published.push(ref);
+    summary.releases.push(githubReleaseForPackage(workspacePackage.manifest, channel));
+  }
+
+  if (!foundRequestedPackage) {
+    throw new Error(`No publishable workspace package found for ${packageName}`);
   }
 
   log(`summary: ${summary.published.length} publishable, ${summary.skipped.length} skipped`);
@@ -171,9 +217,22 @@ function parseArgs(args) {
 
   const channelIndex = args.indexOf("--channel");
   const channel = channelIndex === -1 ? "stable" : args[channelIndex + 1];
+  const packageIndex = args.indexOf("--package");
+  const packageValue = packageIndex === -1 ? undefined : args[packageIndex + 1];
+  const packageName = normalizePackageName(packageValue);
+  const summaryFileIndex = args.indexOf("--summary-file");
+  const summaryFile = summaryFileIndex === -1 ? undefined : args[summaryFileIndex + 1];
 
   if (channel === undefined) {
     throw new Error("Missing value for --channel");
+  }
+
+  if (packageIndex !== -1 && packageValue === undefined) {
+    throw new Error("Missing value for --package");
+  }
+
+  if (summaryFileIndex !== -1 && summaryFile === undefined) {
+    throw new Error("Missing value for --summary-file");
   }
 
   if (channels[channel] === undefined) {
@@ -181,27 +240,34 @@ function parseArgs(args) {
   }
 
   if (args.includes("--dry-run")) {
-    return { channel, dryRun: true };
+    return { channel, dryRun: true, packageName, summaryFile };
   }
 
   if (args.includes("--publish")) {
-    return { channel, dryRun: false };
+    return { channel, dryRun: false, packageName, summaryFile };
   }
 
   throw new Error("Usage: node scripts/publish-workspaces.mjs --channel dev|beta|stable --dry-run|--publish");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { channel, dryRun } = parseArgs(process.argv.slice(2));
-  publishWorkspaces({ rootDir: resolve(import.meta.dirname, ".."), channel, dryRun, runCommand });
+  const { channel, dryRun, packageName, summaryFile } = parseArgs(process.argv.slice(2));
+  const summary = publishWorkspaces({ rootDir: resolve(import.meta.dirname, ".."), channel, dryRun, packageName, runCommand });
+
+  if (summaryFile !== undefined) {
+    writeFileSync(summaryFile, `${JSON.stringify(summary, null, 2)}\n`);
+  }
 }
 
 export {
   channels,
   commandOutput,
   discoverWorkspacePackages,
+  githubReleaseForPackage,
   isAlreadyPublished,
+  normalizePackageName,
   packageRef,
+  packageShortName,
   parseArgs,
   publishPackage,
   publishWorkspaces,

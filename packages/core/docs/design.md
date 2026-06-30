@@ -1,5 +1,7 @@
 # @zhuangtai-js/core Design
 
+This is an internal design note for maintainers. It is not public-facing package documentation.
+
 ZhuangTai has two kinds of state: original state and derived state.
 
 ## Atom

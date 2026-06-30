@@ -1,5 +1,5 @@
 {
-  "name": "zhuangtai",
+  "name": "@zhuangtai-js/repo",
   "version": "0.1.0",
   "private": true,
   "description": "Simple, direct state primitives for JavaScript.",

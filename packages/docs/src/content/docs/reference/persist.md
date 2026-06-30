@@ -20,7 +20,7 @@ const theme = atom("light", {
 
 ## Storage
 
-默认使用 `globalThis.localStorage`。也可以显式传入同步 Web Storage 风格的 `storage`。
+默认使用 `globalThis.localStorage`。也可以显式传入同步 Web Storage 风格的 `storage`。自定义 `storage` 需要实现 `getItem`、`setItem` 和 `removeItem`，与 `localStorage` 的同步方法保持一致。
 
 ```ts
 const memory = new Map<string, string>();
@@ -44,5 +44,7 @@ const count = atom(0, {
 ## Codec
 
 默认 codec 使用 `JSON.stringify` 和 `JSON.parse`。`undefined`、函数和 symbol 需要自定义 codec。
+
+底层 atom 的 `set()` 正常返回后，会同步写入 storage。如果 watcher 在 `set()` 过程中抛错，内存状态可能已经更新，但本次不会写入 storage。
 
 codec 或 storage 抛出的错误会直接冒泡给调用方；插件不会捕获、包装、记录或吞掉这些错误。

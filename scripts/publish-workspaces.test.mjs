@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   commandOutput,
   isAlreadyPublished,
+  normalizePackageName,
   parseArgs,
   publishPackage,
   publishWorkspaces,
@@ -159,12 +160,39 @@ describe("validateChannel", () => {
 
 describe("parseArgs", () => {
   it("parses dry-run and publish modes", () => {
-    assert.deepEqual(parseArgs(["--dry-run"]), { channel: "stable", dryRun: true });
-    assert.deepEqual(parseArgs(["--channel", "stable", "--publish"]), { channel: "stable", dryRun: false });
+    assert.deepEqual(parseArgs(["--dry-run"]), {
+      channel: "stable",
+      dryRun: true,
+      packageName: undefined,
+      summaryFile: undefined,
+    });
+    assert.deepEqual(parseArgs(["--channel", "stable", "--publish"]), {
+      channel: "stable",
+      dryRun: false,
+      packageName: undefined,
+      summaryFile: undefined,
+    });
+  });
+
+  it("parses package and summary options", () => {
+    assert.deepEqual(parseArgs(["--channel", "beta", "--package", "persist", "--summary-file", "summary.json", "--dry-run"]), {
+      channel: "beta",
+      dryRun: true,
+      packageName: "@zhuangtai-js/persist",
+      summaryFile: "summary.json",
+    });
   });
 
   it("rejects ambiguous modes", () => {
     assert.throws(() => parseArgs(["--dry-run", "--publish"]), /either/);
+  });
+});
+
+describe("normalizePackageName", () => {
+  it("accepts all, short names, and scoped names", () => {
+    assert.equal(normalizePackageName("all"), undefined);
+    assert.equal(normalizePackageName("core"), "@zhuangtai-js/core");
+    assert.equal(normalizePackageName("@zhuangtai-js/persist"), "@zhuangtai-js/persist");
   });
 });
 
@@ -176,19 +204,82 @@ describe("publishWorkspaces", () => {
       { status: 0, stdout: "", stderr: "" },
     ]);
     const logs = [];
-    const rootDir = new URL("..", import.meta.url).pathname;
-    const summary = publishWorkspaces({ rootDir, channel: "stable", dryRun: true, runCommand: recorder.run, log: (line) => logs.push(line) });
+    const summary = publishWorkspaces({
+      workspacePackages: [
+        { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
+        { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" } },
+      ],
+      channel: "stable",
+      dryRun: true,
+      runCommand: recorder.run,
+      log: (line) => logs.push(line),
+    });
 
-    assert.ok(summary.skipped.includes("@zhuangtai-js/core@0.1.0") || summary.published.length >= 0);
+    assert.deepEqual(summary.skipped, ["@zhuangtai-js/core@0.1.0"]);
+    assert.deepEqual(summary.published, ["@zhuangtai-js/persist@0.1.0"]);
+    assert.deepEqual(summary.releases, [
+      {
+        prerelease: false,
+        tag: "core-v0.1.0",
+        title: "@zhuangtai-js/core v0.1.0",
+      },
+      {
+        prerelease: false,
+        tag: "persist-v0.1.0",
+        title: "@zhuangtai-js/persist v0.1.0",
+      },
+    ]);
     assert.ok(logs.some((line) => line.startsWith("summary:")));
+  });
+
+  it("publishes only the requested package", () => {
+    const recorder = commandRecorder([
+      { status: 1, stdout: "", stderr: "npm ERR! code E404" },
+      { status: 0, stdout: "", stderr: "" },
+    ]);
+    const summary = publishWorkspaces({
+      workspacePackages: [
+        { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
+        { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" } },
+      ],
+      channel: "stable",
+      dryRun: true,
+      packageName: "@zhuangtai-js/persist",
+      runCommand: recorder.run,
+      log: () => {},
+    });
+
+    assert.deepEqual(summary.published, ["@zhuangtai-js/persist@0.1.0"]);
+    assert.equal(recorder.calls[0].args[1], "@zhuangtai-js/persist@0.1.0");
+  });
+
+  it("rejects unknown requested packages", () => {
+    assert.throws(
+      () =>
+        publishWorkspaces({
+          workspacePackages: [{ dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } }],
+          channel: "stable",
+          dryRun: true,
+          packageName: "@zhuangtai-js/persist",
+          runCommand: commandRecorder().run,
+          log: () => {},
+        }),
+      /No publishable workspace package/,
+    );
   });
 
   it("validates channel versions before checking npm", () => {
     const recorder = commandRecorder([{ status: 0, stdout: "0.1.0", stderr: "" }]);
-    const rootDir = new URL("..", import.meta.url).pathname;
 
     assert.throws(
-      () => publishWorkspaces({ rootDir, channel: "beta", dryRun: true, runCommand: recorder.run, log: () => {} }),
+      () =>
+        publishWorkspaces({
+          workspacePackages: [{ dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } }],
+          channel: "beta",
+          dryRun: true,
+          runCommand: recorder.run,
+          log: () => {},
+        }),
       /beta channel/,
     );
 

@@ -20,7 +20,7 @@ const theme = atom("light", {
 
 ## Storage
 
-The plugin uses `globalThis.localStorage` by default. You can also pass explicit synchronous Web Storage-style storage.
+The plugin uses `globalThis.localStorage` by default. You can also pass explicit synchronous Web Storage-style storage. Custom `storage` objects need to implement `getItem`, `setItem`, and `removeItem`, matching the synchronous methods on `localStorage`.
 
 ```ts
 const memory = new Map<string, string>();
@@ -44,5 +44,7 @@ const count = atom(0, {
 ## Codec
 
 The default codec uses `JSON.stringify` and `JSON.parse`. Use a custom codec for `undefined`, functions, or symbols.
+
+Writes happen synchronously after the underlying atom's `set()` returns normally. If a watcher throws during `set()`, in-memory state may already be updated, but storage is not written for that update.
 
 Errors thrown by the codec or storage are propagated to the caller. The plugin does not catch, wrap, log, or silence those errors.

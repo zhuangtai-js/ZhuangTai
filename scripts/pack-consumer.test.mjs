@@ -97,6 +97,7 @@ const data = new Map();
 const storage = {
   getItem: (key) => data.get(key) ?? null,
   setItem: (key, value) => data.set(key, value),
+  removeItem: (key) => data.delete(key),
 };
 const createState = createAtom().use(persist);
 const persisted = createState(1, { persist: { key: "count", storage } });
@@ -117,6 +118,7 @@ count.set((value) => value + 1);
 const storage: PersistStorage = {
   getItem: () => null,
   setItem: () => {},
+  removeItem: () => {},
 };
 
 void persist;

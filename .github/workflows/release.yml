@@ -12,6 +12,15 @@ on:
           - beta
           - stable
         default: stable
+      package_name:
+        description: "Package to publish"
+        required: true
+        type: choice
+        options:
+          - all
+          - core
+          - persist
+        default: all
       dry_run:
         description: "Run npm publish --dry-run instead of publishing"
         required: true
@@ -52,25 +61,36 @@ jobs:
 
       - name: Dry-run publish
         if: ${{ inputs.dry_run }}
-        run: pnpm release:dry-run -- --channel ${{ inputs.channel }}
+        run: pnpm release:dry-run -- --channel ${{ inputs.channel }} --package ${{ inputs.package_name }}
 
       - name: Publish
         if: ${{ !inputs.dry_run }}
-        run: pnpm release:publish -- --channel ${{ inputs.channel }}
+        run: pnpm release:publish -- --channel ${{ inputs.channel }} --package ${{ inputs.package_name }} --summary-file release-summary.json
 
-      - name: Create GitHub Release
+      - name: Create GitHub Releases
         if: ${{ !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="v$(node -p 'require("./packages/core/package.json").version')"
-          if gh release view "$VERSION" >/dev/null 2>&1; then
-            echo "skip: GitHub Release $VERSION already exists"
-            exit 0
-          fi
+          node - <<'NODE'
+          const { execFileSync } = require("node:child_process");
+          const { readFileSync } = require("node:fs");
 
-          if [ "${{ inputs.channel }}" = "stable" ]; then
-            gh release create "$VERSION" --title "$VERSION" --generate-notes
-          else
-            gh release create "$VERSION" --title "$VERSION" --generate-notes --prerelease
-          fi
+          const summary = JSON.parse(readFileSync("release-summary.json", "utf8"));
+
+          for (const release of summary.releases) {
+            try {
+              execFileSync("gh", ["release", "view", release.tag], { stdio: "ignore" });
+              console.log(`skip: GitHub Release ${release.tag} already exists`);
+              continue;
+            } catch {}
+
+            const args = ["release", "create", release.tag, "--title", release.title, "--generate-notes"];
+
+            if (release.prerelease) {
+              args.push("--prerelease");
+            }
+
+            execFileSync("gh", args, { stdio: "inherit" });
+          }
+          NODE
