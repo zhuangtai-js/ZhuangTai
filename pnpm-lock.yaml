@@ -248,11 +248,10 @@ importers:
         version: 7.0.1-rc
 
   packages/persist:
-    dependencies:
+    devDependencies:
       '@zhuangtai-js/core':
         specifier: workspace:*
         version: link:../core
-    devDependencies:
       oxfmt:
         specifier: ^0.56.0
         version: 0.56.0
