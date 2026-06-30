@@ -1,0 +1,137 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, it } from "node:test";
+
+const rootPath = new URL("..", import.meta.url).pathname;
+
+function run(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    cwd: rootPath,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    ...options,
+  });
+
+  assert.equal(
+    result.status,
+    0,
+    `${command} ${args.join(" ")} failed\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
+  );
+
+  return result;
+}
+
+function readManifest(packagePath) {
+  return JSON.parse(readFileSync(join(rootPath, packagePath, "package.json"), "utf8"));
+}
+
+describe("packed package consumer", () => {
+  it("installs packed core and persist tarballs in a fresh consumer", () => {
+    const tempPath = mkdtempSync(join(tmpdir(), "zhuangtai-pack-consumer-"));
+
+    try {
+      const coreManifest = readManifest("packages/core");
+      const persistManifest = readManifest("packages/persist");
+
+      run("pnpm", ["--filter", coreManifest.name, "pack", "--pack-destination", tempPath]);
+      run("pnpm", ["--filter", persistManifest.name, "pack", "--pack-destination", tempPath]);
+
+      const coreTarballPath = join(tempPath, `zhuangtai-js-core-${coreManifest.version}.tgz`);
+      const persistTarballPath = join(tempPath, `zhuangtai-js-persist-${persistManifest.version}.tgz`);
+
+      assert.equal(existsSync(coreTarballPath), true);
+      assert.equal(existsSync(persistTarballPath), true);
+
+      writeFileSync(
+        join(tempPath, "package.json"),
+        `${JSON.stringify(
+          {
+            name: "zhuangtai-pack-consumer",
+            private: true,
+            type: "module",
+            dependencies: {
+              "@zhuangtai-js/core": `file:${coreTarballPath}`,
+              "@zhuangtai-js/persist": `file:${persistTarballPath}`,
+              typescript: "rc",
+            },
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      writeFileSync(
+        join(tempPath, "pnpm-workspace.yaml"),
+        `overrides:\n  "@zhuangtai-js/core": "file:${coreTarballPath}"\n`,
+      );
+
+      run("pnpm", ["install"], { cwd: tempPath });
+
+      run(
+        "node",
+        [
+          "--input-type=module",
+          "-e",
+          `import { atom, computed, createAtom } from "@zhuangtai-js/core";
+import { persist } from "@zhuangtai-js/persist";
+
+const count = atom(1);
+const double = computed(count, (value) => value * 2);
+count.set((value) => value + 1);
+if (double.get() !== 4) throw new Error("core smoke failed");
+
+const data = new Map();
+const storage = {
+  getItem: (key) => data.get(key) ?? null,
+  setItem: (key, value) => data.set(key, value),
+};
+const createState = createAtom().use(persist);
+const persisted = createState(1, { persist: { key: "count", storage } });
+persisted.set(3);
+if (data.get("count") !== "3") throw new Error("persist smoke failed");`,
+        ],
+        { cwd: tempPath },
+      );
+
+      writeFileSync(
+        join(tempPath, "smoke.ts"),
+        `import { atom, type Atom } from "@zhuangtai-js/core";
+import { persist, type PersistStorage } from "@zhuangtai-js/persist";
+
+const count: Atom<number> = atom(1);
+count.set((value) => value + 1);
+
+const storage: PersistStorage = {
+  getItem: () => null,
+  setItem: () => {},
+};
+
+void persist;
+void storage;
+`,
+      );
+
+      run(
+        "pnpm",
+        [
+          "exec",
+          "tsc",
+          "--module",
+          "NodeNext",
+          "--moduleResolution",
+          "NodeNext",
+          "--target",
+          "ES2022",
+          "--strict",
+          "--noEmit",
+          "smoke.ts",
+        ],
+        { cwd: tempPath },
+      );
+    } finally {
+      rmSync(tempPath, { force: true, recursive: true });
+    }
+  });
+});
