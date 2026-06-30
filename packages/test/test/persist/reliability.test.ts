@@ -1,7 +1,6 @@
 import { createAtom } from "@zhuangtai-js/core";
+import { persist, type PersistCodec, type PersistStorage } from "@zhuangtai-js/persist";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { persist } from "../src/index.js";
-import type { PersistCodec, PersistStorage } from "../src/index.js";
 
 describe("persist reliability", () => {
   afterEach(() => {
@@ -167,8 +166,9 @@ describe("persist reliability", () => {
       encode(value) {
         return JSON.stringify(value);
       },
-      decode(rawValue, initialValue: Value) {
-        return { ...initialValue, ...JSON.parse(rawValue) };
+      decode<DecodedValue>(rawValue: string, initialValue: DecodedValue) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- PersistCodec.decode is intentionally generic so custom codecs can restore/migrate values.
+        return { ...initialValue, ...JSON.parse(rawValue) } as DecodedValue;
       },
     };
     const createState = createAtom().use(persist);

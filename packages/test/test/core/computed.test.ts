@@ -1,7 +1,5 @@
+import { atom, computed, type Watcher } from "@zhuangtai-js/core";
 import { describe, expect, it, vi } from "vitest";
-
-import { atom, computed } from "../src/index.js";
-import type { Watcher } from "../src/index.js";
 
 describe("computed", () => {
   it("gets a value derived from one atom", () => {

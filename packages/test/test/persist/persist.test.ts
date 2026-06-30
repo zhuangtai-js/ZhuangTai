@@ -1,7 +1,6 @@
 import { createAtom } from "@zhuangtai-js/core";
+import { persist, type PersistCodec, type PersistStorage } from "@zhuangtai-js/persist";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { persist } from "../src/index.js";
-import type { PersistCodec, PersistStorage } from "../src/index.js";
 
 describe("persist", () => {
   afterEach(() => {
@@ -121,10 +120,11 @@ describe("persist", () => {
       encode(value) {
         return `value:${String(value)}`;
       },
-      decode(rawValue, initialValue) {
+      decode<Value>(rawValue: string, initialValue: Value) {
         expect(initialValue).toBe(1);
 
-        return Number.parseInt(rawValue.replace("value:", ""), 10);
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- PersistCodec.decode is intentionally generic so custom codecs can restore/migrate values.
+        return Number.parseInt(rawValue.replace("value:", ""), 10) as unknown as Value;
       },
     };
     const storage = createStorage([["count", "value:2"]]);

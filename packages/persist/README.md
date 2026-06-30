@@ -43,9 +43,6 @@ const count = atom(0, {
       setItem: (key, value) => {
         memory.set(key, value);
       },
-      removeItem: (key) => {
-        memory.delete(key);
-      },
     },
   },
 });

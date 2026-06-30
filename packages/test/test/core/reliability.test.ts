@@ -1,7 +1,15 @@
+import {
+  atom,
+  computed,
+  createAtom,
+  type Atom,
+  type AtomCreatorPlugin,
+  type AtomCreatorPluginContext,
+  type NextValue,
+  type StopWatch,
+  type Watcher,
+} from "@zhuangtai-js/core";
 import { describe, expect, it, vi } from "vitest";
-
-import { atom, computed, createAtom } from "../src/index.js";
-import type { Atom, AtomCreatorPlugin, StopWatch, Watcher } from "../src/index.js";
 
 describe("atom reliability", () => {
   it("notifies multiple watchers in registration order", () => {
@@ -231,47 +239,36 @@ describe("createAtom plugin reliability", () => {
   });
 
   it("deduplicates plugins by id even when plugin objects differ", () => {
-    const firstCreate = vi.fn<<Value>(state: Atom<Value>) => Atom<Value>>((state) => state);
-    const secondCreate = vi.fn<<Value>(state: Atom<Value>) => Atom<Value>>((state) => state);
+    let firstCreateCalls = 0;
+    let secondCreateCalls = 0;
     const first: AtomCreatorPlugin<"same", Record<never, never>> = {
       id: "same",
-      create(context) {
-        return firstCreate(context.next(context.initialValue));
+      create<Value>(context: AtomCreatorPluginContext<Value, Record<never, never>>) {
+        firstCreateCalls += 1;
+        return context.next(context.initialValue);
       },
     };
     const second: AtomCreatorPlugin<"same", Record<never, never>> = {
       id: "same",
-      create(context) {
-        return secondCreate(context.next(context.initialValue));
+      create<Value>(context: AtomCreatorPluginContext<Value, Record<never, never>>) {
+        secondCreateCalls += 1;
+        return context.next(context.initialValue);
       },
     };
 
     createAtom().use(first).use(second)(1);
 
-    expect(firstCreate).toHaveBeenCalledOnce();
-    expect(secondCreate).not.toHaveBeenCalled();
+    expect(firstCreateCalls).toBe(1);
+    expect(secondCreateCalls).toBe(0);
   });
 
   it("allows plugins to wrap set/get/watch while preserving watcher stop semantics", () => {
     const wrapped: AtomCreatorPlugin<"wrapped", Record<never, never>> = {
       id: "wrapped",
-      create(context) {
-        const state = context.next(context.initialValue * 2);
-
-        return {
-          get: () => state.get() + 1,
-          set(nextValue) {
-            state.set((prevValue) => {
-              const visiblePrevValue = prevValue + 1;
-              return typeof nextValue === "function"
-                ? nextValue(visiblePrevValue) - 1
-                : nextValue - 1;
-            });
-          },
-          watch(watcher) {
-            return state.watch((value, prevValue) => watcher(value + 1, prevValue?.valueOf() + 1));
-          },
-        };
+      create<Value>(context: AtomCreatorPluginContext<Value, Record<never, never>>) {
+        return wrapNumberAtom(
+          context.next(toGenericValue<Value>(Number(context.initialValue) * 2)),
+        );
       },
     };
     const state = createAtom().use(wrapped)(1);
@@ -478,9 +475,10 @@ function createTransformPlugin<Name extends string>(
 ): AtomCreatorPlugin<Name, Record<never, never>> {
   return {
     id,
-    create(context) {
+    create<Value>(context: AtomCreatorPluginContext<Value, Record<never, never>>) {
       calls.push(`${id}:create`);
-      const state = context.next(`${String(context.initialValue)}${suffix}`);
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- this test plugin intentionally transforms arbitrary values through a string representation.
+      const state = context.next(`${String(context.initialValue)}${suffix}` as Value);
       calls.push(`${id}:after-next`);
 
       return state;
@@ -489,6 +487,40 @@ function createTransformPlugin<Name extends string>(
 }
 
 function noop(): void {}
+
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- the return type carries the caller's generic atom value in numeric wrapper tests.
+function toGenericValue<Value>(value: number): Value {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- runtime wrapper tests intentionally model a numeric plugin through the generic plugin API.
+  return value as Value;
+}
+
+function wrapNumberAtom<Value>(state: Atom<Value>): Atom<Value> {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- this runtime behavior test intentionally wraps a generic atom as a numeric view.
+  const numberState = state as unknown as Atom<number>;
+
+  return {
+    get: () => toGenericValue<Value>(numberState.get() + 1),
+    set(nextValue: NextValue<Value>) {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- this runtime behavior test intentionally maps generic setter input to the numeric backing atom.
+      const numericNextValue = nextValue as unknown as NextValue<number>;
+
+      numberState.set((prevValue) => {
+        const visiblePrevValue = prevValue + 1;
+        return typeof numericNextValue === "function"
+          ? numericNextValue(visiblePrevValue) - 1
+          : numericNextValue - 1;
+      });
+    },
+    watch(watcher: Watcher<Value>) {
+      return numberState.watch((value, prevValue) =>
+        watcher(
+          toGenericValue<Value>(value + 1),
+          prevValue === undefined ? undefined : toGenericValue<Value>(prevValue + 1),
+        ),
+      );
+    },
+  };
+}
 
 function oldFunction(): string {
   return "old";

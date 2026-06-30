@@ -1,7 +1,5 @@
+import { atom, type Watcher } from "@zhuangtai-js/core";
 import { describe, expect, it, vi } from "vitest";
-
-import { atom } from "../src/index.js";
-import type { Watcher } from "../src/index.js";
 
 describe("atom", () => {
   it("returns the initial value", () => {

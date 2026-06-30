@@ -1,7 +1,12 @@
+import {
+  atom,
+  createAtom,
+  type AtomCreatorPluginContext,
+  type Atom,
+  type AtomCreatorPlugin,
+  type Watcher,
+} from "@zhuangtai-js/core";
 import { describe, expect, it, vi } from "vitest";
-
-import { atom, createAtom } from "../src/index.js";
-import type { Atom, AtomCreatorPlugin, Watcher } from "../src/index.js";
 
 describe("createAtom", () => {
   it("creates normal atoms without plugins", () => {
@@ -45,8 +50,9 @@ describe("createAtom", () => {
     type SeedOptions = { readonly value: number };
     const seed: AtomCreatorPlugin<"seed", SeedOptions> = {
       id: "seed",
-      create(context) {
-        return context.next(context.options?.value ?? context.initialValue);
+      create<Value>(context: AtomCreatorPluginContext<Value, SeedOptions>) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- this test plugin intentionally replaces the initial value from untyped plugin options.
+        return context.next((context.options?.value ?? context.initialValue) as Value);
       },
     };
     const createState = createAtom().use(seed);
@@ -63,8 +69,9 @@ describe("createAtom", () => {
     type SeedOptions = { readonly value: number };
     const seed: AtomCreatorPlugin<"seed", SeedOptions> = {
       id: "seed",
-      create(context) {
-        return context.next(context.options?.value ?? context.initialValue);
+      create<Value>(context: AtomCreatorPluginContext<Value, SeedOptions>) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- this test plugin intentionally replaces the initial value from untyped plugin options.
+        return context.next((context.options?.value ?? context.initialValue) as Value);
       },
     };
     const createState = createAtom().use(seed);
@@ -78,9 +85,12 @@ describe("createAtom", () => {
 
   it("applies duplicate plugins once by id", () => {
     // Given
-    const create = vi.fn<<Value>(state: Atom<Value>) => Atom<Value>>(
-      <Value>(state: Atom<Value>) => state,
-    );
+    let calls = 0;
+    function create<Value>(state: Atom<Value>): Atom<Value> {
+      calls += 1;
+
+      return state;
+    }
     const tracking: AtomCreatorPlugin<"tracking", Record<never, never>> = {
       id: "tracking",
       create(context) {
@@ -93,7 +103,7 @@ describe("createAtom", () => {
     createState(1);
 
     // Then
-    expect(create).toHaveBeenCalledOnce();
+    expect(calls).toBe(1);
   });
 
   it("does not mutate previous creators when use is called", () => {
@@ -101,8 +111,9 @@ describe("createAtom", () => {
     type SeedOptions = { readonly value: number };
     const seed: AtomCreatorPlugin<"seed", SeedOptions> = {
       id: "seed",
-      create(context) {
-        return context.next(context.options?.value ?? context.initialValue);
+      create<Value>(context: AtomCreatorPluginContext<Value, SeedOptions>) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- this test plugin intentionally replaces the initial value from untyped plugin options.
+        return context.next((context.options?.value ?? context.initialValue) as Value);
       },
     };
     const baseCreateState = createAtom();
