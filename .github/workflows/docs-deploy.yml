@@ -1,0 +1,58 @@
+name: Docs Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/docs/**"
+      - "packages/core/**"
+      - "packages/persist/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - ".github/workflows/docs-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      DEPLOY_PATH: /opt/1panel/www/sites/zhuangtai.yojigen.cn/index
+      RELEASE_NAME: ${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter docs build
+
+      - name: Prepare SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DOCS_DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.DOCS_DEPLOY_PORT }}" "${{ secrets.DOCS_DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload build
+        run: |
+          tar -C packages/docs/dist -czf - . | ssh -i ~/.ssh/deploy_key -p "${{ secrets.DOCS_DEPLOY_PORT }}" \
+            "${{ secrets.DOCS_DEPLOY_USER }}@${{ secrets.DOCS_DEPLOY_HOST }}" \
+            "mkdir -p '${DEPLOY_PATH}' && find '${DEPLOY_PATH}' -mindepth 1 -maxdepth 1 -exec rm -rf {} + && tar -xzf - -C '${DEPLOY_PATH}'"
