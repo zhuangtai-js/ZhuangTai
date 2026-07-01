@@ -7,6 +7,13 @@ export default defineConfig({
     starlight({
       title: "ZhuàngTài 状态",
       description: "简单、直接的 JavaScript 状态原语。",
+      social: [
+        {
+          icon: "github",
+          label: "GitHub",
+          href: "https://github.com/zhuangtai-js/ZhuangTai",
+        },
+      ],
       defaultLocale: "root",
       locales: {
         root: {
