@@ -5,6 +5,7 @@ import {
   commandOutput,
   isAlreadyPublished,
   normalizePackageName,
+  packedPackageName,
   parseArgs,
   publishPackage,
   publishWorkspaces,
@@ -97,47 +98,69 @@ describe("isAlreadyPublished", () => {
 });
 
 describe("publishPackage", () => {
-  it("uses dry-run publishing without provenance", () => {
-    const recorder = commandRecorder([{ status: 0, stdout: "", stderr: "" }]);
+  it("packs before dry-run publishing", () => {
+    const recorder = commandRecorder([
+      { status: 0, stdout: "zhuangtai-js-core-0.1.0.tgz", stderr: "" },
+      { status: 0, stdout: "", stderr: "" },
+    ]);
 
     publishPackage(
       { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
       { channel: "stable", dryRun: true, runCommand: recorder.run, env: {} },
     );
 
-    assert.deepEqual(recorder.calls[0].args, [
-      "--dir",
-      "/repo/packages/core",
-      "publish",
+    assert.deepEqual(recorder.calls[0].args.slice(0, 4), ["--dir", "/repo/packages/core", "pack", "--pack-destination"]);
+    assert.equal(recorder.calls[1].command, "npm");
+    assert.equal(recorder.calls[1].args[0], "publish");
+    assert.match(recorder.calls[1].args[1], /zhuangtai-js-core-0\.1\.0\.tgz$/u);
+    assert.deepEqual(recorder.calls[1].args.slice(2), [
       "--access",
       "public",
       "--tag",
       "latest",
-      "--no-git-checks",
+      "--registry",
+      "https://registry.npmjs.org",
       "--dry-run",
     ]);
   });
 
-  it("uses provenance for real publishing in GitHub Actions", () => {
-    const recorder = commandRecorder([{ status: 0, stdout: "", stderr: "" }]);
+  it("uses npm tarball publishing in GitHub Actions", () => {
+    const recorder = commandRecorder([
+      { status: 0, stdout: "zhuangtai-js-core-0.1.0.tgz", stderr: "" },
+      { status: 0, stdout: "", stderr: "" },
+    ]);
 
     publishPackage(
       { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
       { channel: "stable", dryRun: false, runCommand: recorder.run, env: { GITHUB_ACTIONS: "true" } },
     );
 
-    assert.ok(recorder.calls[0].args.includes("--provenance"));
+    assert.deepEqual(recorder.calls.map((call) => call.command), ["pnpm", "npm"]);
+    assert.deepEqual(recorder.calls[1].args.slice(0, 1), ["publish"]);
+    assert.ok(!recorder.calls[1].args.includes("--dry-run"));
   });
 
-  it("rejects real publishing outside GitHub Actions", () => {
+  it("uses package manager compatible tarball names", () => {
+    assert.equal(packedPackageName({ name: "@zhuangtai-js/core", version: "0.1.0" }), "zhuangtai-js-core-0.1.0.tgz");
+  });
+
+  it("rejects real publishing outside GitHub Actions after packing", () => {
+    const recorder = commandRecorder([{ status: 0, stdout: "zhuangtai-js-core-0.1.0.tgz", stderr: "" }]);
+
     assert.throws(
       () =>
         publishPackage(
           { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
-          { channel: "stable", dryRun: false, runCommand: commandRecorder().run, env: {} },
+          { channel: "stable", dryRun: false, runCommand: recorder.run, env: {} },
         ),
       /GitHub Actions/,
     );
+    assert.deepEqual(recorder.calls[0].args.slice(0, 4), [
+      "--dir",
+      "/repo/packages/core",
+      "pack",
+      "--pack-destination",
+    ]);
   });
 });
 
@@ -201,6 +224,7 @@ describe("publishWorkspaces", () => {
     const recorder = commandRecorder([
       { status: 0, stdout: "0.1.0", stderr: "" },
       { status: 1, stdout: "", stderr: "npm ERR! code E404" },
+      { status: 0, stdout: "zhuangtai-js-persist-0.1.0.tgz", stderr: "" },
       { status: 0, stdout: "", stderr: "" },
     ]);
     const logs = [];
@@ -235,6 +259,7 @@ describe("publishWorkspaces", () => {
   it("publishes only the requested package", () => {
     const recorder = commandRecorder([
       { status: 1, stdout: "", stderr: "npm ERR! code E404" },
+      { status: 0, stdout: "zhuangtai-js-persist-0.1.0.tgz", stderr: "" },
       { status: 0, stdout: "", stderr: "" },
     ]);
     const summary = publishWorkspaces({

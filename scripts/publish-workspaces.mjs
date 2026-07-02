@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import process from "node:process";
 
@@ -58,6 +59,10 @@ function validatePackage({ manifest }) {
 
 function packageRef(manifest) {
   return `${manifest.name}@${manifest.version}`;
+}
+
+function packedPackageName(manifest) {
+  return `${manifest.name.replace("@", "").replace("/", "-")}-${manifest.version}.tgz`;
 }
 
 function packageShortName(manifest) {
@@ -119,30 +124,44 @@ function isAlreadyPublished(workspacePackage, runCommand) {
 
 function publishPackage(workspacePackage, { channel, dryRun, runCommand, env }) {
   validateChannel(channel, workspacePackage.manifest.version);
+  const tempDir = mkdtempSync(join(tmpdir(), "zhuangtai-publish-"));
 
-  const args = [
-    "--dir",
-    workspacePackage.dir,
-    "publish",
-    "--access",
-    "public",
-    "--tag",
-    channels[channel].npmTag,
-    "--no-git-checks",
-  ];
+  try {
+    const packResult = runCommand("pnpm", ["--dir", workspacePackage.dir, "pack", "--pack-destination", tempDir], {
+      cwd: workspacePackage.dir,
+    });
 
-  if (dryRun) {
-    args.push("--dry-run");
-  } else if (env.GITHUB_ACTIONS === "true") {
-    args.push("--provenance");
-  } else {
-    throw new Error("Real publishing must run in GitHub Actions. Use --dry-run locally.");
-  }
+    if (packResult.status !== 0) {
+      throw new Error(`Failed to pack ${packageRef(workspacePackage.manifest)}:\n${commandOutput(packResult)}`);
+    }
 
-  const result = runCommand("pnpm", args, { cwd: workspacePackage.dir });
+    if (!dryRun && env.GITHUB_ACTIONS !== "true") {
+      throw new Error("Real publishing must run in GitHub Actions. Use --dry-run locally.");
+    }
 
-  if (result.status !== 0) {
-    throw new Error(`Failed to publish ${packageRef(workspacePackage.manifest)}:\n${commandOutput(result)}`);
+    const tarballPath = join(tempDir, packedPackageName(workspacePackage.manifest));
+    const publishArgs = [
+      "publish",
+      tarballPath,
+      "--access",
+      "public",
+      "--tag",
+      channels[channel].npmTag,
+      "--registry",
+      npmRegistry,
+    ];
+
+    if (dryRun) {
+      publishArgs.push("--dry-run");
+    }
+
+    const publishResult = runCommand("npm", publishArgs, { cwd: workspacePackage.dir });
+
+    if (publishResult.status !== 0) {
+      throw new Error(`Failed to publish ${packageRef(workspacePackage.manifest)}:\n${commandOutput(publishResult)}`);
+    }
+  } finally {
+    rmSync(tempDir, { force: true, recursive: true });
   }
 }
 
@@ -268,6 +287,7 @@ export {
   normalizePackageName,
   packageRef,
   packageShortName,
+  packedPackageName,
   parseArgs,
   publishPackage,
   publishWorkspaces,

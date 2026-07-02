@@ -58,7 +58,7 @@ The release script must reject channel/version mismatches. Dev and beta releases
 1. Update the target workspace package version.
 2. Run local verification.
 3. Merge through CI.
-4. Open GitHub Actions > Release.
+4. Open GitHub Actions > npm Publish.
 5. Select the release `channel`.
 6. Run with `dry_run: true` first.
 7. If the dry run is correct, rerun with `dry_run: false`.
@@ -81,9 +81,9 @@ For prerelease validation, use package versions matching the selected channel be
 - Use `actions/checkout@v7`.
 - Use `actions/setup-node@v6`.
 - Use `pnpm/action-setup@v6`.
-- Release workflow uses the `NPM_TOKEN` secret.
-- Keep the release workflow protected by the `npm-production` environment.
-- Release workflow needs `contents: write` for GitHub Release creation and `id-token: write` for npm provenance.
+- npm publish workflow uses npm Trusted Publishing through GitHub OIDC; do not use a long-lived `NPM_TOKEN`.
+- Keep the npm publish workflow protected by the `npm-production` environment.
+- npm publish workflow needs `contents: write` for GitHub Release creation and `id-token: write` for npm Trusted Publishing.
 
 ## Repository References
 
