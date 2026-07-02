@@ -2,6 +2,20 @@
 
 All notable changes to ZhuàngTài packages are documented here.
 
+## 0.2.1 - 2026-07-02
+
+### 变更
+
+- 将 npm 发布入口从通用 Release workflow 拆分为专用的 `npm Publish` workflow。
+- 发布脚本改为先生成包 tarball，再使用 npm CLI 发布 tarball，便于使用 npm Trusted Publishing。
+- 更新维护者发布说明，发布入口改为 GitHub Actions > npm Publish，并移除对长期 `NPM_TOKEN` 的依赖。
+
+### Changed
+
+- Split npm publishing from the generic Release workflow into a dedicated `npm Publish` workflow.
+- Changed the publish script to pack each package first and publish the generated tarball with the npm CLI, preparing for npm Trusted Publishing.
+- Updated maintainer release notes to use GitHub Actions > npm Publish and remove the long-lived `NPM_TOKEN` dependency.
+
 ## 0.2.0 - 2026-06-30
 
 ### Added
