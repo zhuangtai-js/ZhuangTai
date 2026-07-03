@@ -53,6 +53,10 @@ Publishable workspace packages are released through npm dist-tags:
 
 The release script must reject channel/version mismatches. Dev and beta releases must never publish to the default `latest` install path.
 
+Workspace package versions are independent. Do not force all publishable packages to share the same version. For example, `@zhuangtai-js/core` may release `0.3.0` or `0.3.1` while `@zhuangtai-js/persist` remains on `0.2.1`.
+
+Each publishable package owns its changelog at `packages/<name>/CHANGELOG.md`. GitHub Release notes must come from the matching package changelog entry for the exact package version being released.
+
 ## Maintainer Release Flow
 
 1. Update the target workspace package version.

@@ -72,7 +72,7 @@ jobs:
         run: |
           node - <<'NODE'
           const { execFileSync } = require("node:child_process");
-          const { readFileSync } = require("node:fs");
+          const { readFileSync, writeFileSync } = require("node:fs");
 
           const summary = JSON.parse(readFileSync("release-summary.json", "utf8"));
 
@@ -83,7 +83,10 @@ jobs:
               continue;
             } catch {}
 
-            const args = ["release", "create", release.tag, "--title", release.title, "--generate-notes"];
+            const notesFile = `${release.tag}-notes.md`;
+            writeFileSync(notesFile, `${release.notes}\n`);
+
+            const args = ["release", "create", release.tag, "--title", release.title, "--notes-file", notesFile];
 
             if (release.prerelease) {
               args.push("--prerelease");

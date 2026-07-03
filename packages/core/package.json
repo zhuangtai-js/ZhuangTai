@@ -21,6 +21,7 @@
     "directory": "packages/core"
   },
   "files": [
+    "CHANGELOG.md",
     "dist/index.d.ts",
     "dist/index.js"
   ],

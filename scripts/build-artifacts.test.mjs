@@ -12,7 +12,7 @@ function readManifest(packagePath) {
 function assertPackageManifest(packagePath) {
   const manifest = readManifest(packagePath);
 
-  assert.deepEqual(manifest.files, ["dist/index.d.ts", "dist/index.js"]);
+  assert.deepEqual(manifest.files, ["CHANGELOG.md", "dist/index.d.ts", "dist/index.js"]);
   assert.equal(manifest.module, "./dist/index.js");
   assert.equal(manifest.types, "./dist/index.d.ts");
   assert.equal(manifest.exports["."].import, manifest.module);

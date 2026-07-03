@@ -22,6 +22,7 @@
     "directory": "packages/persist"
   },
   "files": [
+    "CHANGELOG.md",
     "dist/index.d.ts",
     "dist/index.js"
   ],

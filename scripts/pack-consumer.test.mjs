@@ -34,6 +34,7 @@ function assertPackedFiles(tarballPath) {
   assert.equal(files.some((file) => file.endsWith(".js.map")), false);
   assert.equal(files.some((file) => file.endsWith("dist/index.js")), true);
   assert.equal(files.some((file) => file.endsWith("dist/index.d.ts")), true);
+  assert.equal(files.some((file) => file.endsWith("CHANGELOG.md")), true);
   assert.equal(files.some((file) => file.endsWith("LICENSE")), true);
 }
 

@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  changelogNotesForPackage,
   commandOutput,
   isAlreadyPublished,
   normalizePackageName,
@@ -33,6 +34,10 @@ function commandRecorder(results = []) {
       return results.shift() ?? { status: 0, stdout: "", stderr: "" };
     },
   };
+}
+
+function releaseNotes({ manifest }) {
+  return `${manifest.name} ${manifest.version} notes`;
 }
 
 describe("validatePackage", () => {
@@ -219,6 +224,48 @@ describe("normalizePackageName", () => {
   });
 });
 
+describe("changelogNotesForPackage", () => {
+  it("reads the matching package changelog entry", () => {
+    const notes = changelogNotesForPackage(
+      { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.3.1" } },
+      {
+        readFileSync() {
+          return [
+            "# core 更新日志 / Changelog",
+            "",
+            "## 0.3.1 - 2026-07-03",
+            "",
+            "### 变更",
+            "",
+            "- 中文说明。",
+            "",
+            "### Changed",
+            "",
+            "- English notes.",
+            "",
+            "## 0.3.0 - 2026-07-02",
+            "",
+            "- Older notes.",
+          ].join("\n");
+        },
+      },
+    );
+
+    assert.equal(notes, "### 变更\n\n- 中文说明。\n\n### Changed\n\n- English notes.");
+  });
+
+  it("requires a matching package changelog entry", () => {
+    assert.throws(
+      () =>
+        changelogNotesForPackage(
+          { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.3.1" } },
+          { readFileSync: () => "# core 更新日志 / Changelog\n" },
+        ),
+      /Missing @zhuangtai-js\/core 0.3.1 changelog entry/,
+    );
+  });
+});
+
 describe("publishWorkspaces", () => {
   it("skips already published packages and publishes unpublished ones", () => {
     const recorder = commandRecorder([
@@ -237,6 +284,7 @@ describe("publishWorkspaces", () => {
       dryRun: true,
       runCommand: recorder.run,
       log: (line) => logs.push(line),
+      readReleaseNotes: releaseNotes,
     });
 
     assert.deepEqual(summary.skipped, ["@zhuangtai-js/core@0.1.0"]);
@@ -245,12 +293,14 @@ describe("publishWorkspaces", () => {
       {
         prerelease: false,
         tag: "core-v0.1.0",
-        title: "@zhuangtai-js/core v0.1.0",
+        notes: "@zhuangtai-js/core 0.1.0 notes",
+        title: "core v0.1.0",
       },
       {
         prerelease: false,
         tag: "persist-v0.1.0",
-        title: "@zhuangtai-js/persist v0.1.0",
+        notes: "@zhuangtai-js/persist 0.1.0 notes",
+        title: "persist v0.1.0",
       },
     ]);
     assert.ok(logs.some((line) => line.startsWith("summary:")));
@@ -272,10 +322,41 @@ describe("publishWorkspaces", () => {
       packageName: "@zhuangtai-js/persist",
       runCommand: recorder.run,
       log: () => {},
+      readReleaseNotes: releaseNotes,
     });
 
     assert.deepEqual(summary.published, ["@zhuangtai-js/persist@0.1.0"]);
     assert.equal(recorder.calls[0].args[1], "@zhuangtai-js/persist@0.1.0");
+  });
+
+  it("allows workspace package versions to release independently", () => {
+    const recorder = commandRecorder([
+      { status: 1, stdout: "", stderr: "npm ERR! code E404" },
+      { status: 0, stdout: "zhuangtai-js-core-0.3.1.tgz", stderr: "" },
+      { status: 0, stdout: "", stderr: "" },
+    ]);
+    const summary = publishWorkspaces({
+      workspacePackages: [
+        { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.3.1" } },
+        { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.2.1" } },
+      ],
+      channel: "stable",
+      dryRun: true,
+      packageName: "@zhuangtai-js/core",
+      runCommand: recorder.run,
+      log: () => {},
+      readReleaseNotes: releaseNotes,
+    });
+
+    assert.deepEqual(summary.published, ["@zhuangtai-js/core@0.3.1"]);
+    assert.deepEqual(summary.releases, [
+      {
+        prerelease: false,
+        tag: "core-v0.3.1",
+        notes: "@zhuangtai-js/core 0.3.1 notes",
+        title: "core v0.3.1",
+      },
+    ]);
   });
 
   it("rejects unknown requested packages", () => {
@@ -288,6 +369,7 @@ describe("publishWorkspaces", () => {
           packageName: "@zhuangtai-js/persist",
           runCommand: commandRecorder().run,
           log: () => {},
+          readReleaseNotes: releaseNotes,
         }),
       /No publishable workspace package/,
     );
@@ -304,6 +386,7 @@ describe("publishWorkspaces", () => {
           dryRun: true,
           runCommand: recorder.run,
           log: () => {},
+          readReleaseNotes: releaseNotes,
         }),
       /beta channel/,
     );

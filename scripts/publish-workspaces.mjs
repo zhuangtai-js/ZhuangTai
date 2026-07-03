@@ -77,11 +77,35 @@ function normalizePackageName(value) {
   return value.startsWith(packageScope) ? value : `${packageScope}${value}`;
 }
 
-function githubReleaseForPackage(manifest, channel) {
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+function changelogNotesForPackage(workspacePackage, fs = { readFileSync }) {
+  const { manifest } = workspacePackage;
+  const changelogPath = join(workspacePackage.dir, "CHANGELOG.md");
+  const changelog = fs.readFileSync(changelogPath, "utf8");
+  const versionPattern = escapeRegExp(manifest.version);
+  const match = new RegExp(`^## ${versionPattern}(?:\\s+-[^\\n]*)?\\n`, "mu").exec(changelog);
+
+  if (match === null) {
+    throw new Error(`Missing ${manifest.name} ${manifest.version} changelog entry in ${changelogPath}`);
+  }
+
+  const rest = changelog.slice(match.index + match[0].length);
+  const nextEntryIndex = rest.search(/^##\s+/mu);
+
+  return (nextEntryIndex === -1 ? rest : rest.slice(0, nextEntryIndex)).trim();
+}
+
+function githubReleaseForPackage(workspacePackage, channel, readReleaseNotes = changelogNotesForPackage) {
+  const { manifest } = workspacePackage;
+
   return {
+    notes: readReleaseNotes(workspacePackage),
     prerelease: channels[channel].prerelease,
     tag: `${packageShortName(manifest)}-v${manifest.version}`,
-    title: `${manifest.name} v${manifest.version}`,
+    title: `${packageShortName(manifest)} v${manifest.version}`,
   };
 }
 
@@ -173,6 +197,7 @@ function publishWorkspaces({
   env = process.env,
   log = console.log,
   packageName,
+  readReleaseNotes,
   workspacePackages,
 }) {
   if (rootDir === undefined && workspacePackages === undefined) {
@@ -202,14 +227,14 @@ function publishWorkspaces({
     if (isAlreadyPublished(workspacePackage, runCommand)) {
       log(`skip: ${ref} already published`);
       summary.skipped.push(ref);
-      summary.releases.push(githubReleaseForPackage(workspacePackage.manifest, channel));
+      summary.releases.push(githubReleaseForPackage(workspacePackage, channel, readReleaseNotes));
       continue;
     }
 
     publishPackage(workspacePackage, { channel, dryRun, runCommand, env });
     log(`${dryRun ? "dry-run" : "publish"}: ${ref} tag=${channels[channel].npmTag}`);
     summary.published.push(ref);
-    summary.releases.push(githubReleaseForPackage(workspacePackage.manifest, channel));
+    summary.releases.push(githubReleaseForPackage(workspacePackage, channel, readReleaseNotes));
   }
 
   if (!foundRequestedPackage) {
@@ -280,6 +305,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
 export {
   channels,
+  changelogNotesForPackage,
   commandOutput,
   discoverWorkspacePackages,
   githubReleaseForPackage,
