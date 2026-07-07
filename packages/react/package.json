@@ -1,9 +1,10 @@
 {
-  "name": "@zhuangtai-js/core",
-  "version": "0.3.0",
-  "description": "Simple, direct state primitives for JavaScript.",
+  "name": "@zhuangtai-js/react",
+  "version": "0.1.0",
+  "description": "React adapter for ZhuangTai atoms.",
   "keywords": [
     "javascript",
+    "react",
     "state",
     "state-management",
     "store",
@@ -18,7 +19,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zhuangtai-js/ZhuangTai.git",
-    "directory": "packages/core"
+    "directory": "packages/react"
   },
   "files": [
     "CHANGELOG.md",
@@ -41,16 +42,23 @@
   },
   "scripts": {
     "build": "rslib",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node -e \"\"",
-    "lint": "oxlint . -f agent",
     "format": "oxfmt .",
-    "format:check": "oxfmt . --check"
+    "format:check": "oxfmt . --check",
+    "lint": "oxlint . -f agent",
+    "test": "node -e \"\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@zhuangtai-js/core": "workspace:*",
     "oxfmt": "^0.58.0",
     "oxlint": "^1.73.0",
     "oxlint-tsgolint": "^0.24.0",
+    "react": "^19.2.0",
     "typescript": "rc"
+  },
+  "peerDependencies": {
+    "@zhuangtai-js/core": "*",
+    "react": ">=18"
   }
 }

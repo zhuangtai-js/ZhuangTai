@@ -9,6 +9,6 @@ export default defineConfig({
       instances: [{ browser: "chromium" }],
       provider: playwright(),
     },
-    include: ["test/browser-smoke.test.ts"],
+    include: ["test/browser-smoke.test.ts", "test/react.browser.test.tsx"],
   },
 });

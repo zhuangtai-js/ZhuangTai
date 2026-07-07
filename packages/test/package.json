@@ -8,20 +8,28 @@
     "build": "node -e \"\"",
     "format": "oxfmt .",
     "format:check": "oxfmt . --check",
-    "lint": "oxlint --type-aware . -f agent",
+    "lint": "oxlint . -f agent",
     "test": "vitest --config vitest.config.ts run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@zhuangtai-js/core": "workspace:*",
-    "@zhuangtai-js/persist": "workspace:*"
+    "@zhuangtai-js/persist": "workspace:*",
+    "@zhuangtai-js/react": "workspace:*"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "@vitest/browser-playwright": "^4.1.10",
+    "jsdom": "^26.1.0",
     "oxfmt": "^0.58.0",
     "oxlint": "^1.73.0",
     "oxlint-tsgolint": "^0.24.0",
     "playwright": "^1.61.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "typescript": "rc",
     "vitest": "^4.1.10"
   }

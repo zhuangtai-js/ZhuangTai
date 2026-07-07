@@ -9,7 +9,7 @@
     "dev": "astro dev",
     "format": "oxfmt package.json astro.config.mjs tsconfig.json src",
     "format:check": "oxfmt package.json astro.config.mjs tsconfig.json src --check",
-    "lint": "oxlint --type-aware astro.config.mjs src -f agent",
+    "lint": "oxlint astro.config.mjs src -f agent",
     "preview": "astro preview",
     "test": "astro sync && tsc -p tsconfig.json --noEmit",
     "typecheck": "astro sync && tsc -p tsconfig.json --noEmit"

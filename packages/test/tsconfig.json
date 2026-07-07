@@ -4,7 +4,8 @@
     "rootDir": ".",
     "outDir": "dist",
     "composite": true,
-    "tsBuildInfoFile": "tsconfig.tsbuildinfo"
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
+    "jsx": "react-jsx"
   },
   "include": ["test", "vitest.config.ts", "vitest.browser.config.ts"],
   "exclude": ["dist"]
