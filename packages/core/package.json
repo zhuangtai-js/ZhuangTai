@@ -43,7 +43,7 @@
     "build": "rslib",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node -e \"\"",
-    "lint": "oxlint --type-aware . -f agent",
+    "lint": "oxlint . -f agent",
     "format": "oxfmt .",
     "format:check": "oxfmt . --check"
   },

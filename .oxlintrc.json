@@ -4,6 +4,10 @@
     "correctness": "error",
     "suspicious": "error"
   },
+  "options": {
+    "typeAware": true,
+    "typeCheck": true
+  },
   "plugins": [
     "typescript",
     "oxc",

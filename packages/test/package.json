@@ -8,7 +8,7 @@
     "build": "node -e \"\"",
     "format": "oxfmt .",
     "format:check": "oxfmt . --check",
-    "lint": "oxlint --type-aware . -f agent",
+    "lint": "oxlint . -f agent",
     "test": "vitest --config vitest.config.ts run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
