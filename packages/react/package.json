@@ -1,0 +1,64 @@
+{
+  "name": "@zhuangtai-js/react",
+  "version": "0.1.0",
+  "description": "React adapter for ZhuangTai atoms.",
+  "keywords": [
+    "javascript",
+    "react",
+    "state",
+    "state-management",
+    "store",
+    "typescript"
+  ],
+  "homepage": "https://github.com/zhuangtai-js/ZhuangTai#readme",
+  "bugs": {
+    "url": "https://github.com/zhuangtai-js/ZhuangTai/issues"
+  },
+  "license": "ISC",
+  "author": "mouyase",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhuangtai-js/ZhuangTai.git",
+    "directory": "packages/react"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "dist/index.d.ts",
+    "dist/index.js"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "rslib",
+    "format": "oxfmt .",
+    "format:check": "oxfmt . --check",
+    "lint": "oxlint --type-aware . -f agent",
+    "test": "node -e \"\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@zhuangtai-js/core": "workspace:*",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0",
+    "oxlint-tsgolint": "^0.24.0",
+    "react": "^19.2.0",
+    "typescript": "rc"
+  },
+  "peerDependencies": {
+    "@zhuangtai-js/core": "*",
+    "react": ">=18"
+  }
+}

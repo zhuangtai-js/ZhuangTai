@@ -47,6 +47,10 @@ export default defineConfig({
               slug: "reference/persist",
               label: "Persist",
             },
+            {
+              slug: "reference/react",
+              label: "React",
+            },
           ],
         },
       ],
