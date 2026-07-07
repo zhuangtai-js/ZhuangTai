@@ -4,6 +4,10 @@ export type Watcher<Value> = (value: Value, prevValue: Value | undefined) => voi
 
 export type NextValue<Value> = Value | ((prevValue: Value) => Value);
 
+export type RejectFunctionValue<Value> = Value extends (...args: never[]) => unknown
+  ? "[@zhuangtai-js/core] atom() does not support function values. Wrap it in an object, e.g. atom({ fn })."
+  : Value;
+
 export type ReadableAtom<Value> = {
   readonly get: () => Value;
   readonly watch: (watcher: Watcher<Value>) => StopWatch;
@@ -32,7 +36,10 @@ export type AtomCreatorArgs<OptionsByPlugin extends Record<string, object>> =
   keyof OptionsByPlugin extends never ? [] : [options?: AtomCreatorOptions<OptionsByPlugin>];
 
 export type AtomCreator<OptionsByPlugin extends Record<string, object> = Record<never, never>> = {
-  <Value>(initialValue: Value, ...args: AtomCreatorArgs<OptionsByPlugin>): Atom<Value>;
+  <Value>(
+    initialValue: RejectFunctionValue<Value>,
+    ...args: AtomCreatorArgs<OptionsByPlugin>
+  ): Atom<Value>;
   readonly use: <Name extends string, Options extends object>(
     plugin: AtomCreatorPlugin<Name, Options>,
   ) => AtomCreator<OptionsByPlugin & { readonly [Key in Name]: Options }>;

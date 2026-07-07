@@ -43,13 +43,13 @@ count.set(1);
 count.set((value) => value + 1);
 ```
 
-Function values are ambiguous with setters: `set(fn)` treats `fn` as an updater. To store a function value, wrap it.
+Function values are not supported as atom values: `set(fn)` treats `fn` as an updater, and passing a function type when defining an atom is a type error. To store a function, wrap it in an object, e.g. `atom({ fn })`.
 
 ```ts
-const fnAtom = atom<() => void>(() => {});
+const fnAtom = atom({ fn: () => {} });
 const nextFn = () => {};
 
-fnAtom.set(() => nextFn);
+fnAtom.set({ fn: nextFn });
 ```
 
 ### `watch(callback)`
@@ -124,7 +124,12 @@ Internal creator argument types are not exported from the package entrypoint.
 ## Semantics quick reference
 
 - `set()` applies immediately.
-- `watch()` runs synchronously and is called once when registered.
+- `watch()` runs synchronously and is called once when registered (`prevValue` is an `undefined` sentinel). For an `Atom<T | undefined>` this cannot distinguish the first notification from a previous value that happened to be `undefined`.
 - Equality uses `Object.is`.
 - Object and array updates are reference-based; use immutable updates.
+- Watcher callbacks are isolated: a throwing watcher does not interrupt the current round; after all watchers run, a single error is rethrown as-is and multiple errors are rethrown in an `AggregateError`.
+- A watcher added during notification is immediately invoked once with `(currentValue, undefined)`, but does not join the broadcast snapshot in progress.
+- A multi-source `computed` is a synchronous snapshot, not a transactional consistency boundary: updating several sources one by one, or updating other sources from within a watcher, can expose intermediate combinations; keep tightly coupled values in the same atom.
+- `computed` compares derived results with `Object.is`; a derive that returns a new object/array every time is treated as changed and may notify repeatedly, so return a reference-stable value when you need to suppress notifications.
+- Plugins are idempotent by id: installing a plugin with the same id via `use()` is a no-op, and plugin ids must be globally unique.
 - The core does not add hidden batching, deferring, debouncing, or transactions.

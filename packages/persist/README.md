@@ -2,7 +2,7 @@
 
 ZhuàngTài atom 的持久化插件。
 
-`@zhuangtai-js/persist` 扩展来自 `@zhuangtai-js/core` 的 atom creator。它会在 atom 创建前恢复已存储的值，并在底层 atom 的 `set()` 正常返回后写入最新值。
+`@zhuangtai-js/persist` 扩展来自 `@zhuangtai-js/core` 的 atom creator。它会在 atom 创建前恢复已存储的值，并在每次更新时先写入 storage、成功后再提交内存状态。
 
 ## 安装
 
@@ -73,10 +73,12 @@ const count = atom(0, {
 
 - 省略 `persist` 选项时，atom 保持不变。
 - 已存储的值会在第一次 `get()` 前恢复。
-- 底层 atom 的 `set()` 正常返回后，会同步写入 storage。
-- 如果 watcher 在 `set()` 过程中抛错，内存状态可能已经更新，但本次不会写入 storage。
+- 更新会先持久化：先用 codec 编码并写入 storage，成功后才提交内存状态并同步通知 watcher。
+- 如果 encode 或 storage 写入失败，内存状态保持不变，并抛出错误。
+- watcher 在提交阶段抛错时，值已经持久化且内存状态已更新（仅通知失败，不回滚）。
 - `Object.is` 判定为无变化的更新不会写入 storage。
-- Codec 和 storage 错误会直接冒泡给调用方。插件不会捕获、包装、记录或吞掉 storage 失败，持久化失败后也不会回滚内存状态。
+- 恢复已存储值时，若 codec decode 抛错，会包装成带出错 key 的错误（原错误保留在 `cause`），而不会静默回退到初始值。
+- 省略 `storage` 且读取 `globalThis.localStorage` 抛错（如 SecurityError）时，会抛出提示传入显式 storage 的清晰错误（原错误保留在 `cause`）。
 - 不支持异步 storage。
 
 ## 许可证
@@ -89,7 +91,7 @@ const count = atom(0, {
 
 Persistence plugin for ZhuàngTài atoms.
 
-`@zhuangtai-js/persist` extends atom creators from `@zhuangtai-js/core`. It restores a stored value before the atom is created and writes the latest value after the underlying atom's `set()` returns normally.
+`@zhuangtai-js/persist` extends atom creators from `@zhuangtai-js/core`. It restores a stored value before the atom is created and persists each update to storage before committing the in-memory state.
 
 ## Install
 
@@ -160,10 +162,12 @@ const count = atom(0, {
 
 - Omitting `persist` options leaves the atom unchanged.
 - Stored values are restored before the first `get()`.
-- Writes happen synchronously after the underlying atom's `set()` returns normally.
-- If a watcher throws during `set()`, in-memory state may already be updated, but storage is not written for that update.
+- Updates persist first: the value is encoded and written to storage, and only after a successful write is the in-memory state committed and watchers notified synchronously.
+- If encode or the storage write fails, the in-memory state stays unchanged and the error is thrown.
+- If a watcher throws during the commit phase, the value has already been persisted and the in-memory state has already been updated (only notification failed; there is no rollback).
 - `Object.is` no-op updates do not write to storage.
-- Codec and storage errors are propagated to the caller. The plugin does not catch, wrap, log, or silence storage failures, and in-memory state is not rolled back after a persistence failure.
+- If the codec's decode throws while restoring a stored value, the failure is wrapped in an error that includes the offending key (the original error is preserved as `cause`); it does not silently fall back to the initial value.
+- If `storage` is omitted and reading `globalThis.localStorage` throws (e.g. a SecurityError), a clear error is thrown advising you to pass an explicit storage option (the original error is preserved as `cause`).
 - Async storage is not supported.
 
 ## License

@@ -6,7 +6,7 @@
 
 [![Release](https://img.shields.io/github/v/release/zhuangtai-js/ZhuangTai?style=flat&colorA=000000&colorB=000000)](https://github.com/zhuangtai-js/ZhuangTai/releases)
 [![Core Version](https://img.shields.io/npm/v/@zhuangtai-js/core?label=core&style=flat&colorA=000000&colorB=000000)](https://www.npmjs.com/package/@zhuangtai-js/core)
-[![Core JS](https://img.shields.io/badge/core%20js-1.17%20kB-000000?style=flat&labelColor=000000)](https://www.npmjs.com/package/@zhuangtai-js/core)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/%40zhuangtai-js%2Fcore?label=bundle%20size&style=flat&colorA=000000&colorB=000000)](https://bundlephobia.com/package/@zhuangtai-js/core)
 [![Runtime Deps](https://img.shields.io/badge/runtime%20deps-0-000000?style=flat&labelColor=000000)](./packages/core/package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-ready-000000?style=flat&labelColor=000000)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/npm/l/@zhuangtai-js/core?style=flat&colorA=000000&colorB=000000)](./LICENSE)

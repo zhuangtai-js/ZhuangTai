@@ -4,6 +4,7 @@ import type {
   AtomCreatorPlugin,
   AtomCreatorOptions,
   NextValue,
+  RejectFunctionValue,
   Watcher,
 } from "./types.js";
 
@@ -11,9 +12,9 @@ function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue:
   return typeof nextValue === "function";
 }
 
-export function atom<Value>(initialValue: Value): Atom<Value> {
+function createAtomState<Value>(initialValue: Value): Atom<Value> {
   let currentValue = initialValue;
-  let notificationDepth = 0;
+  let callbackDepth = 0;
   const watchers = new Set<Watcher<Value>>();
 
   function get(): Value {
@@ -21,9 +22,9 @@ export function atom<Value>(initialValue: Value): Atom<Value> {
   }
 
   function set(nextValue: NextValue<Value>): void {
-    if (notificationDepth > 0) {
+    if (callbackDepth > 0) {
       throw new Error(
-        "[@zhuangtai-js/core] Cannot call set() on an atom while it is notifying watchers.",
+        "[@zhuangtai-js/core] Cannot call set() on an atom while it is running watcher callbacks.",
       );
     }
 
@@ -36,25 +37,41 @@ export function atom<Value>(initialValue: Value): Atom<Value> {
     const prevValue = currentValue;
     currentValue = value;
 
-    notificationDepth += 1;
+    callbackDepth += 1;
+    const errors: unknown[] = [];
 
     try {
       for (const watcher of Array.from(watchers)) {
-        watcher(currentValue, prevValue);
+        try {
+          watcher(currentValue, prevValue);
+        } catch (error) {
+          errors.push(error);
+        }
       }
     } finally {
-      notificationDepth -= 1;
+      callbackDepth -= 1;
+    }
+
+    if (errors.length === 1) {
+      throw errors[0];
+    }
+
+    if (errors.length > 1) {
+      throw new AggregateError(errors, "[@zhuangtai-js/core] One or more atom watchers threw.");
     }
   }
 
   function watch(watcher: Watcher<Value>): () => void {
     watchers.add(watcher);
-    notificationDepth += 1;
+    callbackDepth += 1;
 
     try {
       watcher(currentValue, undefined);
+    } catch (error) {
+      watchers.delete(watcher);
+      throw error;
     } finally {
-      notificationDepth -= 1;
+      callbackDepth -= 1;
     }
 
     return () => {
@@ -65,8 +82,15 @@ export function atom<Value>(initialValue: Value): Atom<Value> {
   return { get, set, watch };
 }
 
+export function atom<Value>(initialValue: RejectFunctionValue<Value>): Atom<Value> {
+  // RejectFunctionValue<Value> narrows the public parameter to reject function types while
+  // preserving literal widening; internally it is structurally the plain Value.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the guard is a public-surface constraint only; the value is exactly Value at runtime.
+  return createAtomState<Value>(initialValue as Value);
+}
+
 export function createAtom(): AtomCreator {
-  return createAtomWithFactory(atom, new Set());
+  return createAtomWithFactory(createAtomState, new Set());
 }
 
 type AtomFactory<OptionsByPlugin extends Record<string, object>> = <Value>(
@@ -111,5 +135,10 @@ function createAtomWithFactory<OptionsByPlugin extends Record<string, object>>(
     return createAtomWithFactory(nextFactory, new Set([...installedPluginIds, plugin.id]));
   };
 
-  return createState;
+  // createState is plain-`Value` internally; AtomCreator's public call signature adds the
+  // RejectFunctionValue guard. Atom<Value> is invariant, so the guarded interface is not
+  // structurally inferable from the plain impl even though every call is sound. Assert at
+  // this single boundary rather than leaking the guard into internal inference.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- single-boundary assertion for the invariant Atom<Value>; every call is sound (see comment above).
+  return createState as AtomCreator<OptionsByPlugin>;
 }

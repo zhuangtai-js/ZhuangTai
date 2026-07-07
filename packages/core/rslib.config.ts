@@ -18,6 +18,6 @@ export default defineConfig({
   output: {
     cleanDistPath: true,
     minify: true,
-    sourceMap: true,
+    sourceMap: false,
   },
 });

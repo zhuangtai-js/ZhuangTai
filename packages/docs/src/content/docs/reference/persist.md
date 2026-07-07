@@ -87,12 +87,13 @@ const count = atom(0, {
 
 ## 错误语义
 
-持久化写入发生在底层 atom 的 `set()` 正常返回之后。
+更新会先持久化：先用 codec 编码并写入 storage，成功后才提交内存状态并同步通知 watcher。
 
-- 如果 watcher 在 `set()` 过程中抛错，内存状态可能已经更新，但本次不会写入 storage。
-- 如果 codec 或 storage 抛错，错误会直接冒泡给调用方。
-- 插件不会捕获、包装、记录或吞掉 storage 失败。
-- 持久化失败后，不会回滚内存状态。
+- 如果 encode 或 storage 写入失败，内存状态保持不变，并抛出错误。
+- watcher 在提交阶段抛错时，值已经持久化且内存状态已更新（仅通知失败，不回滚）。
+- `Object.is` 判定为无变化的更新不会写入 storage。
+- 恢复已存储值时，若 codec decode 抛错，会包装成带出错 key 的错误（原错误保留在 `cause`），而不会静默回退到初始值。
+- 省略 `storage` 且读取 `globalThis.localStorage` 抛错（如 SecurityError）时，会抛出提示传入显式 storage 的清晰错误（原错误保留在 `cause`）。
 
 ## 类型
 

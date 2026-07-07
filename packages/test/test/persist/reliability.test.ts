@@ -17,7 +17,7 @@ describe("persist reliability", () => {
     expect(() => createState(1, { persist: { key: "count", storage } })).toThrow("get failed");
   });
 
-  it("keeps memory updated and watchers notified when setItem throws", () => {
+  it("keeps state unchanged and does not notify when setItem throws", () => {
     const storage = createStorage();
     vi.spyOn(storage, "setItem").mockImplementation(() => {
       throw new Error("quota");
@@ -29,12 +29,11 @@ describe("persist reliability", () => {
     watcher.mockClear();
 
     expect(() => state.set(2)).toThrow("quota");
-    expect(state.get()).toBe(2);
-    expect(watcher).toHaveBeenCalledOnce();
-    expect(watcher).toHaveBeenCalledWith(2, 1);
+    expect(state.get()).toBe(1);
+    expect(watcher).not.toHaveBeenCalled();
   });
 
-  it("keeps memory updated and skips storage when codec encode throws", () => {
+  it("keeps state unchanged when codec encode throws", () => {
     const storage = createStorage();
     const setItem = vi.spyOn(storage, "setItem");
     const codec: PersistCodec = {
@@ -49,7 +48,7 @@ describe("persist reliability", () => {
     const state = createState(1, { persist: { key: "count", storage, codec } });
 
     expect(() => state.set(2)).toThrow("encode failed");
-    expect(state.get()).toBe(2);
+    expect(state.get()).toBe(1);
     expect(setItem).not.toHaveBeenCalled();
   });
 
@@ -69,7 +68,7 @@ describe("persist reliability", () => {
     expect(setItem).not.toHaveBeenCalled();
   });
 
-  it("keeps memory updated but skips storage when a watcher throws", () => {
+  it("persists and updates state even when a later watcher throws", () => {
     const storage = createStorage();
     const setItem = vi.spyOn(storage, "setItem");
     const createState = createAtom().use(persist);
@@ -82,7 +81,8 @@ describe("persist reliability", () => {
 
     expect(() => state.set(2)).toThrow("watch failed");
     expect(state.get()).toBe(2);
-    expect(setItem).not.toHaveBeenCalled();
+    expect(setItem).toHaveBeenCalledOnce();
+    expect(setItem).toHaveBeenCalledWith("count", "2");
   });
 
   it("preserves watcher and stop semantics", () => {
@@ -133,16 +133,28 @@ describe("persist reliability", () => {
     expect(state.get()).toBe(1);
   });
 
-  it("propagates global localStorage getter errors when storage is omitted", () => {
+  it("wraps global localStorage getter errors with a clear message when storage is omitted", () => {
+    const getterError = new Error("storage denied");
     Object.defineProperty(globalThis, "localStorage", {
       configurable: true,
       get() {
-        throw new Error("storage denied");
+        throw getterError;
       },
     });
     const createState = createAtom().use(persist);
 
-    expect(() => createState(1, { persist: { key: "count" } })).toThrow("storage denied");
+    // The raw getter failure is wrapped with guidance to pass an explicit storage,
+    // and the original error is preserved as `cause`.
+    let caught: unknown;
+    try {
+      createState(1, { persist: { key: "count" } });
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toContain("Pass an explicit storage option");
+    expect((caught as Error).cause).toBe(getterError);
   });
 
   it.each([
@@ -192,7 +204,7 @@ describe("persist reliability", () => {
     const state = createState<unknown>("initial", { persist: { key: "value", storage } });
 
     expect(() => state.set(() => value)).toThrow("JSON-serializable values");
-    expect(state.get()).toBe(value);
+    expect(state.get()).toBe("initial");
     expect(setItem).not.toHaveBeenCalled();
     expect(storage.values.size).toBe(0);
   });

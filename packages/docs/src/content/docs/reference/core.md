@@ -43,13 +43,13 @@ count.set(1);
 count.set((value) => value + 1);
 ```
 
-函数值有 setter 歧义：`set(fn)` 会把 `fn` 当作 updater。如果要存储函数值，请包一层。
+不支持把函数作为 atom 值：`set(fn)` 会把 `fn` 当作 updater。定义 atom 时传入函数类型会产生类型错误；如需存储函数，请包一层对象，例如 `atom({ fn })`。
 
 ```ts
-const fnAtom = atom<() => void>(() => {});
+const fnAtom = atom({ fn: () => {} });
 const nextFn = () => {};
 
-fnAtom.set(() => nextFn);
+fnAtom.set({ fn: nextFn });
 ```
 
 ### `watch(callback)`
@@ -124,7 +124,12 @@ const atom = createAtom().use(persist);
 ## 语义速查
 
 - `set()` 立即生效。
-- `watch()` 同步触发，并在注册时立即调用一次。
+- `watch()` 同步触发，并在注册时立即调用一次（`prevValue` 为 `undefined` 哨兵）。对 `Atom<T | undefined>` 无法据此区分首次通知与“上一个值恰好是 `undefined`”。
 - 相等性使用 `Object.is`。
 - 对象和数组更新按引用比较；请使用不可变更新。
+- watcher 回调相互隔离：某个 watcher 抛错不中断本轮通知；全部跑完后，单个错误原样抛出，多个错误用 `AggregateError` 抛出。
+- 在通知期间新增的 watcher 会立即以 `(currentValue, undefined)` 触发一次，但不加入本轮广播快照。
+- 多来源 `computed` 是同步快照，非事务一致：逐个更新多个来源、或在 watcher 中更新其他来源时，可能观察到中间组合值；紧耦合的值请放进同一个 atom。
+- `computed` 用 `Object.is` 比较派生结果；derive 每次返回新对象/数组会被判为已变化并可能重复通知，需抑制时请返回引用稳定的值。
+- 插件按 id 幂等：`use()` 安装相同 id 的插件是 no-op；插件 id 必须全局唯一。
 - 核心不做隐藏批处理、延迟、debounce 或 transaction。

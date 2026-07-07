@@ -100,7 +100,7 @@ describe("atom reliability", () => {
       state.watch(() => {
         state.set(1);
       });
-    }).toThrow("Cannot call set() on an atom while it is notifying watchers");
+    }).toThrow("Cannot call set() on an atom while it is running watcher callbacks");
     expect(state.get()).toBe(0);
   });
 
@@ -118,7 +118,7 @@ describe("atom reliability", () => {
     calls.length = 0;
 
     expect(() => state.set(1)).toThrow(
-      "Cannot call set() on an atom while it is notifying watchers",
+      "Cannot call set() on an atom while it is running watcher callbacks",
     );
 
     expect(state.get()).toBe(1);
@@ -144,7 +144,7 @@ describe("atom reliability", () => {
     expect(target.get()).toBe(2);
   });
 
-  it("propagates watcher errors after updating state and before later watchers run", () => {
+  it("isolates watcher errors and still notifies later watchers", () => {
     const state = atom(0);
     const laterWatcher = vi.fn<Watcher<number>>();
 
@@ -156,14 +156,52 @@ describe("atom reliability", () => {
     state.watch(laterWatcher);
     laterWatcher.mockClear();
 
+    // The first watcher throws, but the later watcher is still notified before the
+    // error is rethrown to the caller.
     expect(() => state.set(1)).toThrow("watch failed");
     expect(state.get()).toBe(1);
-    expect(laterWatcher).not.toHaveBeenCalled();
+    expect(laterWatcher).toHaveBeenCalledOnce();
+    expect(laterWatcher).toHaveBeenCalledWith(1, 0);
 
+    laterWatcher.mockClear();
     state.set(2);
     expect(state.get()).toBe(2);
     expect(laterWatcher).toHaveBeenCalledOnce();
     expect(laterWatcher).toHaveBeenCalledWith(2, 1);
+  });
+
+  it("aggregates errors when multiple watchers throw and still notifies all of them", () => {
+    const state = atom(0);
+    const thirdWatcher = vi.fn<Watcher<number>>();
+    const errorA = new Error("watcher a failed");
+    const errorB = new Error("watcher b failed");
+
+    state.watch((value) => {
+      if (value === 1) {
+        throw errorA;
+      }
+    });
+    state.watch((value) => {
+      if (value === 1) {
+        throw errorB;
+      }
+    });
+    state.watch(thirdWatcher);
+    thirdWatcher.mockClear();
+
+    let caught: unknown;
+    try {
+      state.set(1);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(AggregateError);
+    expect((caught as AggregateError).errors).toEqual([errorA, errorB]);
+    // Every watcher runs, including the one registered after the throwing watchers.
+    expect(thirdWatcher).toHaveBeenCalledOnce();
+    expect(thirdWatcher).toHaveBeenCalledWith(1, 0);
+    expect(state.get()).toBe(1);
   });
 
   it("deduplicates the same watcher function by Set identity", () => {
@@ -182,20 +220,23 @@ describe("atom reliability", () => {
     expect(watcher).toHaveBeenCalledWith(1, 0);
   });
 
-  it("treats a direct function value as an updater", () => {
-    const state = atom<unknown>(oldFunction);
+  it("removes a watcher whose initial callback throws", () => {
+    const state = atom(0);
+    const laterWatcher = vi.fn<Watcher<number>>();
 
-    state.set(newFunction);
+    expect(() =>
+      state.watch(() => {
+        throw new Error("initial watch failed");
+      }),
+    ).toThrow("initial watch failed");
 
-    expect(state.get()).toBe("new");
-  });
+    // The throwing watcher must not remain subscribed.
+    state.watch(laterWatcher);
+    laterWatcher.mockClear();
+    state.set(1);
 
-  it("stores function values when an updater returns the function", () => {
-    const state = atom<() => string>(oldFunction);
-
-    state.set(() => newFunction);
-
-    expect(state.get()).toBe(newFunction);
+    expect(laterWatcher).toHaveBeenCalledOnce();
+    expect(laterWatcher).toHaveBeenCalledWith(1, 0);
   });
 });
 
@@ -404,7 +445,7 @@ describe("computed reliability", () => {
     calls.length = 0;
 
     expect(() => count.set(2)).toThrow(
-      "Cannot call set() on an atom while it is notifying watchers",
+      "Cannot call set() on an atom while it is running watcher callbacks",
     );
 
     expect(count.get()).toBe(2);
@@ -427,7 +468,7 @@ describe("computed reliability", () => {
     expect(watcher).toHaveBeenCalledWith({ value: 2 }, stableObject);
   });
 
-  it("propagates watcher errors after updating the current value", () => {
+  it("isolates computed watcher errors and still notifies later watchers", () => {
     const source = atom(1);
     const double = computed(source, (value) => value * 2);
     const laterWatcher = vi.fn<Watcher<number>>();
@@ -440,9 +481,46 @@ describe("computed reliability", () => {
     double.watch(laterWatcher);
     laterWatcher.mockClear();
 
+    // The first computed watcher throws, but the later watcher is still notified
+    // before the error is rethrown.
     expect(() => source.set(2)).toThrow("computed watch failed");
     expect(double.get()).toBe(4);
-    expect(laterWatcher).not.toHaveBeenCalled();
+    expect(laterWatcher).toHaveBeenCalledOnce();
+    expect(laterWatcher).toHaveBeenCalledWith(4, 2);
+  });
+
+  it("aggregates errors when multiple computed watchers throw", () => {
+    const source = atom(1);
+    const double = computed(source, (value) => value * 2);
+    const thirdWatcher = vi.fn<Watcher<number>>();
+    const errorA = new Error("computed watcher a failed");
+    const errorB = new Error("computed watcher b failed");
+
+    double.watch((value) => {
+      if (value === 4) {
+        throw errorA;
+      }
+    });
+    double.watch((value) => {
+      if (value === 4) {
+        throw errorB;
+      }
+    });
+    double.watch(thirdWatcher);
+    thirdWatcher.mockClear();
+
+    let caught: unknown;
+    try {
+      source.set(2);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(AggregateError);
+    expect((caught as AggregateError).errors).toEqual([errorA, errorB]);
+    expect(thirdWatcher).toHaveBeenCalledOnce();
+    expect(thirdWatcher).toHaveBeenCalledWith(4, 2);
+    expect(double.get()).toBe(4);
   });
 
   it("propagates derive errors from creation, get, and watched source changes", () => {
@@ -465,6 +543,30 @@ describe("computed reliability", () => {
 
     expect(() => source.set(2)).toThrow("derive on update");
     expect(() => derived.get()).toThrow("derive on update");
+  });
+
+  it("removes a first watcher and stops watching sources when its initial callback throws", () => {
+    const source = atom(1);
+    const derived = computed(source, (value) => value * 2);
+    const stableWatcher = vi.fn<Watcher<number>>();
+
+    expect(() =>
+      derived.watch(() => {
+        throw new Error("initial watch failed");
+      }),
+    ).toThrow("initial watch failed");
+
+    // The failed watcher was removed and source subscriptions were rolled back,
+    // so a later source change must not attempt to notify it.
+    expect(() => source.set(2)).not.toThrow();
+
+    // A fresh watcher can re-establish the subscription from a clean state.
+    derived.watch(stableWatcher);
+    stableWatcher.mockClear();
+    source.set(3);
+
+    expect(stableWatcher).toHaveBeenCalledOnce();
+    expect(stableWatcher).toHaveBeenCalledWith(6, 4);
   });
 });
 
@@ -520,12 +622,4 @@ function wrapNumberAtom<Value>(state: Atom<Value>): Atom<Value> {
       );
     },
   };
-}
-
-function oldFunction(): string {
-  return "old";
-}
-
-function newFunction(): string {
-  return "new";
 }

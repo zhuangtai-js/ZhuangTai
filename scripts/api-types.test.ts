@@ -25,6 +25,11 @@ numberAtom.set((value) => value + 1);
 // @ts-expect-error string should not be assignable to Atom<number>.set
 numberAtom.set("nope");
 
+// @ts-expect-error atom() does not support function values; wrap it in an object.
+atom(() => 1);
+const wrappedFunctionAtom = atom({ fn: (): number => 1 });
+type _WrappedFunctionAtom = Expect<Equal<typeof wrappedFunctionAtom, Atom<{ fn: () => number }>>>;
+
 const singleComputed = computed(numberAtom, (value) => String(value));
 const tupleComputed = computed([atom(1), atom("x")] as const, (n, s) => {
   type _N = Expect<Equal<typeof n, number>>;
@@ -63,6 +68,9 @@ const codec: PersistCodec = {
 const persistedAtom = createPersistedAtom(5, { persist: { key: "counter", storage, codec } });
 
 type _PersistedAtom = Expect<Equal<typeof persistedAtom, Atom<number>>>;
+
+// @ts-expect-error creator atom() does not support function values; wrap it in an object.
+createPersistedAtom(() => 1, { persist: { key: "fn" } });
 
 // @ts-expect-error persist key is required
 createPersistedAtom(0, { persist: {} });

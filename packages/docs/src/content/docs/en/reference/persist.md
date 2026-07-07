@@ -87,12 +87,13 @@ The default codec only supports values that `JSON.stringify` returns as a string
 
 ## Error semantics
 
-Persistence writes happen after the underlying atom's `set()` returns normally.
+Updates persist first: the value is encoded and written to storage, and only after a successful write is the in-memory state committed and watchers notified synchronously.
 
-- If a watcher throws during `set()`, in-memory state may already be updated, but storage is not written for that update.
-- If the codec or storage throws, the error is propagated to the caller.
-- The plugin does not catch, wrap, log, or silence storage failures.
-- In-memory state is not rolled back after a persistence failure.
+- If encode or the storage write fails, the in-memory state stays unchanged and the error is thrown.
+- If a watcher throws during the commit phase, the value has already been persisted and the in-memory state has already been updated (only notification failed; there is no rollback).
+- `Object.is` no-op updates do not write to storage.
+- If the codec's decode throws while restoring a stored value, the failure is wrapped in an error that includes the offending key (the original error is preserved as `cause`); it does not silently fall back to the initial value.
+- If `storage` is omitted and reading `globalThis.localStorage` throws (e.g. a SecurityError), a clear error is thrown advising you to pass an explicit storage option (the original error is preserved as `cause`).
 
 ## Types
 

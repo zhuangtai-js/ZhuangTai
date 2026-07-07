@@ -33,9 +33,14 @@ double.watch((value, prevValue) => {});
 - `watch` 回调同步执行。
 - 相等性使用 `Object.is`。
 - 对象和数组更新按引用比较；请使用不可变更新。
-- 函数值与 React state setter 有相同歧义：`set(fn)` 会把 `fn` 当作 updater。如果要存储函数值，请包一层：`set(() => fn)`。
-- `computed(...)` 创建时会计算初始值。它只会在有 watcher 时订阅来源，`get()` 会基于当前来源值重新计算。
+- 不支持把函数作为 atom 值：`set(fn)` 会把 `fn` 当作 updater。定义 atom 时传入函数类型会产生类型错误；如需存储函数，请包一层对象，例如 `atom({ fn })`。
+- watcher 回调相互隔离：某个 watcher 抛错不会中断本轮通知，其余 watcher 仍会收到本次更新。全部通知完成后，若只有一个错误则原样抛出；多个错误会包进 `AggregateError` 抛出。
+- 在通知期间新增的 watcher 会立即以 `(currentValue, undefined)` 触发一次，但不会加入本轮正在进行的广播快照。
+- 初始 `watch` 回调的 `prevValue` 是 `undefined` 哨兵值。对 `Atom<T | undefined>` 而言，无法据此区分“首次通知”与“上一个值恰好是 `undefined`”。
 - 同一个 atom 正在通知 watcher 时，再次 `set()` 该 atom 会抛错。watcher 可以更新其他 atom，但应避免 atom 之间形成循环。
+- `computed(...)` 创建时会计算初始值。它只会在有 watcher 时订阅来源，`get()` 会基于当前来源值重新计算。
+- 多来源 `computed` 是同步快照，而非事务一致：逐个更新多个来源、或在 watcher 中更新其他来源时，可能观察到中间的组合值。需要保持一致的值请放进同一个 atom。
+- `computed` 用 `Object.is` 比较来源值与派生结果。若 derive 每次都返回新的对象或数组，会被判定为已变化并可能重复通知；需要抑制通知时请返回引用稳定的值。
 
 ## Creator 插件
 
@@ -97,9 +102,14 @@ double.watch((value, prevValue) => {});
 - `watch` callbacks run synchronously.
 - Equality uses `Object.is`.
 - Object and array updates are reference-based; use immutable updates.
-- Function values follow the same ambiguity as React state setters: `set(fn)` treats `fn` as an updater. To store a function value, wrap it: `set(() => fn)`.
-- `computed(...)` calculates its initial value when it is created. It subscribes to sources only while it has watchers, and `get()` recalculates from the current source values.
+- Function values are not supported as atom values: `set(fn)` treats `fn` as an updater, and passing a function type when defining an atom is a type error. To store a function, wrap it in an object, e.g. `atom({ fn })`.
+- Watcher callbacks are isolated: a throwing watcher does not interrupt the current round of notifications, and the remaining watchers still receive the update. After every watcher has run, a single error is rethrown as-is, and multiple errors are rethrown wrapped in an `AggregateError`.
+- A watcher added during notification is immediately invoked once with `(currentValue, undefined)`, but it does not join the broadcast snapshot currently in progress.
+- The `prevValue` of the initial `watch` callback is an `undefined` sentinel. For an `Atom<T | undefined>` this cannot be used to distinguish the first notification from a previous value that happened to be `undefined`.
 - Calling `set()` on an atom while that same atom is notifying watchers throws. Watchers may update other atoms, but avoid cycles between atoms.
+- `computed(...)` calculates its initial value when it is created. It subscribes to sources only while it has watchers, and `get()` recalculates from the current source values.
+- A multi-source `computed` is a synchronous snapshot, not a transactional consistency boundary: updating several sources one by one, or updating other sources from within a watcher, can expose intermediate combinations. Keep tightly coupled values in the same atom.
+- `computed` compares source values and derived results with `Object.is`. If the derive returns a new object or array every time, it is treated as changed and may notify repeatedly; return a reference-stable value when you need to suppress notifications.
 
 ## Creator plugins
 

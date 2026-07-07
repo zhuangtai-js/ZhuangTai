@@ -19,15 +19,8 @@ function assertPackageManifest(packagePath) {
   assert.equal(manifest.exports["."].types, manifest.types);
 }
 
-function formatKilobytes(bytes) {
-  return `${(bytes / 1000).toFixed(2)} kB`;
-}
-
-function coreSizeBadgeUrl(bytes) {
-  const size = encodeURIComponent(formatKilobytes(bytes));
-
-  return `https://img.shields.io/badge/core%20js-${size}-000000?style=flat&labelColor=000000`;
-}
+const CORE_BUNDLE_BADGE_URL =
+  "https://img.shields.io/bundlephobia/minzip/%40zhuangtai-js%2Fcore?label=bundle%20size&style=flat&colorA=000000&colorB=000000";
 
 describe("build artifacts", () => {
   it("emits package export targets", () => {
@@ -97,14 +90,14 @@ describe("build artifacts", () => {
     packages.forEach(assertPackageManifest);
   });
 
-  it("keeps the README core size badge tied to the built runtime size", () => {
+  it("keeps the core runtime small and the README bundle-size badge present", () => {
     // Given
     const coreRuntime = readFileSync(join(rootPath, "packages/core/dist/index.js"));
     const readme = readFileSync(join(rootPath, "README.md"), "utf8");
 
     // Then
     assert.ok(coreRuntime.byteLength < 2000, `Expected core runtime below 2 kB, got ${coreRuntime.byteLength} B`);
-    assert.ok(readme.includes(coreSizeBadgeUrl(coreRuntime.byteLength)));
+    assert.ok(readme.includes(CORE_BUNDLE_BADGE_URL));
   });
 
   it("smokes core and persist consumer APIs from built outputs", async () => {

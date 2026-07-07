@@ -32,9 +32,22 @@ export function computed<Value>(
 
     const prevValue = currentValue;
     currentValue = value;
+    const errors: unknown[] = [];
 
     for (const watcher of Array.from(watchers)) {
-      watcher(currentValue, prevValue);
+      try {
+        watcher(currentValue, prevValue);
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+
+    if (errors.length === 1) {
+      throw errors[0];
+    }
+
+    if (errors.length > 1) {
+      throw new AggregateError(errors, "[@zhuangtai-js/core] One or more computed watchers threw.");
     }
   }
 
@@ -67,13 +80,26 @@ export function computed<Value>(
   }
 
   function watch(watcher: Watcher<Value>): StopWatch {
-    if (watchers.size === 0) {
+    const isFirstWatcher = watchers.size === 0;
+
+    if (isFirstWatcher) {
       currentValue = read();
       startWatchingSources();
     }
 
     watchers.add(watcher);
-    watcher(currentValue, undefined);
+
+    try {
+      watcher(currentValue, undefined);
+    } catch (error) {
+      watchers.delete(watcher);
+
+      if (isFirstWatcher) {
+        stopWatchingSources();
+      }
+
+      throw error;
+    }
 
     return () => {
       watchers.delete(watcher);

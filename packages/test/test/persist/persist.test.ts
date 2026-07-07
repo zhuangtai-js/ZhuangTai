@@ -111,7 +111,17 @@ describe("persist", () => {
     }
 
     // Then
-    expect(createPersistedState).toThrow(SyntaxError);
+    // The raw decode failure is wrapped with the offending key and preserved as `cause`.
+    let caught: unknown;
+    try {
+      createPersistedState();
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toContain('for key "count"');
+    expect((caught as Error).cause).toBeInstanceOf(SyntaxError);
   });
 
   it("uses a custom codec", () => {
