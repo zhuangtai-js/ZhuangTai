@@ -20,6 +20,7 @@ on:
           - all
           - core
           - persist
+          - react
         default: all
       dry_run:
         description: "Run npm publish --dry-run instead of publishing"
