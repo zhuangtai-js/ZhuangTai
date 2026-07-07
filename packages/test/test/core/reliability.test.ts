@@ -331,7 +331,7 @@ describe("computed reliability", () => {
   it("does not subscribe to sources until watched while get remains fresh", () => {
     const source = atom(1);
     const watchSpy = vi.spyOn(source, "watch");
-    const double = computed(source, (value) => value * 2);
+    const double = computed(() => source.get() * 2);
 
     expect(watchSpy).not.toHaveBeenCalled();
     expect(double.get()).toBe(2);
@@ -354,7 +354,7 @@ describe("computed reliability", () => {
         stop();
       };
     });
-    const double = computed(source, (value) => value * 2);
+    const double = computed(() => source.get() * 2);
 
     const stopA = double.watch(vi.fn<Watcher<number>>());
     const stopB = double.watch(vi.fn<Watcher<number>>());
@@ -380,7 +380,7 @@ describe("computed reliability", () => {
         stop();
       };
     });
-    const double = computed(source, (value) => value * 2);
+    const double = computed(() => source.get() * 2);
 
     const stop = double.watch(vi.fn<Watcher<number>>());
     stop();
@@ -392,7 +392,7 @@ describe("computed reliability", () => {
   it("calls a multi-source watcher only once for the initial value", () => {
     const a = atom(1);
     const b = atom(2);
-    const sum = computed([a, b] as const, (first, second) => first + second);
+    const sum = computed(() => a.get() + b.get());
     const watcher = vi.fn<Watcher<number>>();
 
     sum.watch(watcher);
@@ -403,7 +403,7 @@ describe("computed reliability", () => {
 
   it("notifies once when the same source appears more than once", () => {
     const source = atom(1);
-    const sum = computed([source, source] as const, (first, second) => first + second);
+    const sum = computed(() => source.get() + source.get());
     const watcher = vi.fn<Watcher<number>>();
     sum.watch(watcher);
     watcher.mockClear();
@@ -417,8 +417,8 @@ describe("computed reliability", () => {
 
   it("supports computed chains", () => {
     const count = atom(1);
-    const double = computed(count, (value) => value * 2);
-    const plusOne = computed(double, (value) => value + 1);
+    const double = computed(() => count.get() * 2);
+    const plusOne = computed(() => double.get() + 1);
     const watcher = vi.fn<Watcher<number>>();
 
     plusOne.watch(watcher);
@@ -432,7 +432,7 @@ describe("computed reliability", () => {
 
   it("rejects setting a source atom from its computed watcher", () => {
     const count = atom(1);
-    const double = computed(count, (value) => value * 2);
+    const double = computed(() => count.get() * 2);
     const calls: number[] = [];
 
     double.watch((value) => {
@@ -456,7 +456,7 @@ describe("computed reliability", () => {
   it("compares derived references with Object.is", () => {
     const source = atom(0);
     const stableObject = { value: "stable" };
-    const derived = computed(source, (value) => (value < 2 ? stableObject : { value }));
+    const derived = computed(() => (source.get() < 2 ? stableObject : { value: source.get() }));
     const watcher = vi.fn<Watcher<{ value: string } | { value: number }>>();
     derived.watch(watcher);
     watcher.mockClear();
@@ -470,7 +470,7 @@ describe("computed reliability", () => {
 
   it("isolates computed watcher errors and still notifies later watchers", () => {
     const source = atom(1);
-    const double = computed(source, (value) => value * 2);
+    const double = computed(() => source.get() * 2);
     const laterWatcher = vi.fn<Watcher<number>>();
 
     double.watch((value) => {
@@ -491,7 +491,7 @@ describe("computed reliability", () => {
 
   it("aggregates errors when multiple computed watchers throw", () => {
     const source = atom(1);
-    const double = computed(source, (value) => value * 2);
+    const double = computed(() => source.get() * 2);
     const thirdWatcher = vi.fn<Watcher<number>>();
     const errorA = new Error("computed watcher a failed");
     const errorB = new Error("computed watcher b failed");
@@ -524,20 +524,19 @@ describe("computed reliability", () => {
   });
 
   it("propagates derive errors from creation, get, and watched source changes", () => {
-    const invalidAtCreation = atom(0);
     expect(() =>
-      computed(invalidAtCreation, () => {
+      computed(() => {
         throw new Error("derive at creation");
       }),
     ).toThrow("derive at creation");
 
     const source = atom(1);
-    const derived = computed(source, (value) => {
-      if (value === 2) {
+    const derived = computed(() => {
+      if (source.get() === 2) {
         throw new Error("derive on update");
       }
 
-      return value * 2;
+      return source.get() * 2;
     });
     derived.watch(vi.fn<Watcher<number>>());
 
@@ -547,7 +546,7 @@ describe("computed reliability", () => {
 
   it("removes a first watcher and stops watching sources when its initial callback throws", () => {
     const source = atom(1);
-    const derived = computed(source, (value) => value * 2);
+    const derived = computed(() => source.get() * 2);
     const stableWatcher = vi.fn<Watcher<number>>();
 
     expect(() =>

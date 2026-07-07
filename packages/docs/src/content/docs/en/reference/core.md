@@ -68,27 +68,29 @@ Calling `set()` on an atom while that same atom is notifying watchers throws. Wa
 
 ## `computed()`
 
-Derive read-only state from one or more source atoms.
+Derive read-only state from one or more atoms, with dependencies discovered automatically from the `.get()` calls made inside the derive.
 
 ```ts
 import { atom, computed } from "@zhuangtai-js/core";
 
 const count = atom(1);
-const double = computed(count, (value) => value * 2);
+const double = computed(() => count.get() * 2);
 
 double.get(); // 2
 ```
-
-Pass multiple sources as a readonly array.
 
 ```ts
 const firstName = atom("Ada");
 const lastName = atom("Lovelace");
 
-const fullName = computed([firstName, lastName] as const, (first, last) => `${first} ${last}`);
+const fullName = computed(() => `${firstName.get()} ${lastName.get()}`);
 ```
 
 `computed()` calculates its initial value when created. It subscribes to sources only while watched, and `get()` recalculates from current source values.
+`computed()` discovers dependencies from the `.get()` calls it makes during the derive. The subscription set comes from the actual reads, so declared sources can’t drift away from what the derive really uses.
+Conditional dependencies switch automatically. A shape like `computed(() => flag.get() ? a.get() : b.get())` unsubscribes the old branch and subscribes the new one when `flag` flips.
+Tracking only happens inside the synchronous derive. Reads after `await` or inside `setTimeout` are not tracked, so derives should stay synchronous.
+Nested computed values stay isolated. Reading `inner.get()` inside an outer derive makes the outer depend on `inner` itself, not on `inner`’s internal sources.
 
 ## `createAtom()`
 
@@ -114,7 +116,6 @@ Plugins are installed on creators, not atom instances.
 - `Watcher<Value>`
 - `StopWatch`
 - `AtomValue<Atom>`
-- `AtomValues<Sources>`
 - `AtomCreator`
 - `AtomCreatorPlugin`
 - `AtomCreatorPluginContext`

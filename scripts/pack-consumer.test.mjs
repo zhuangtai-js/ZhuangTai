@@ -90,7 +90,7 @@ describe("packed package consumer", () => {
 import { persist } from "@zhuangtai-js/persist";
 
 const count = atom(1);
-const double = computed(count, (value) => value * 2);
+const double = computed(() => count.get() * 2);
 count.set((value) => value + 1);
 if (double.get() !== 4) throw new Error("core smoke failed");
 

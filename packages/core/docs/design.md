@@ -23,11 +23,13 @@ A computed atom is derived state. You can read it and watch it, but you cannot s
 
 ```ts
 const count = atom(1);
-const double = computed(count, (value) => value * 2);
+const double = computed(() => count.get() * 2);
 
 double.get();
 double.watch((value, prevValue) => {});
 ```
+
+`computed` uses auto-tracking, so the derive reads determine the dependency set. That is dependency discovery, not scheduling.
 
 ## Watch
 

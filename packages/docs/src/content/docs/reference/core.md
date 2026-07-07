@@ -68,27 +68,29 @@ stop();
 
 ## `computed()`
 
-从一个或多个 source atom 派生只读状态。
+从一个或多个 atom 派生只读状态，依赖会根据 derive 内部实际读取的 `.get()` 自动发现。
 
 ```ts
 import { atom, computed } from "@zhuangtai-js/core";
 
 const count = atom(1);
-const double = computed(count, (value) => value * 2);
+const double = computed(() => count.get() * 2);
 
 double.get(); // 2
 ```
-
-多个 source 使用只读数组传入。
 
 ```ts
 const firstName = atom("Ada");
 const lastName = atom("Lovelace");
 
-const fullName = computed([firstName, lastName] as const, (first, last) => `${first} ${last}`);
+const fullName = computed(() => `${firstName.get()} ${lastName.get()}`);
 ```
 
 `computed()` 创建时会计算初始值。它只会在有 watcher 时订阅 source；调用 `get()` 时会基于当前 source 值重新计算。
+`computed()` 会从 derive 内部实际调用的 `.get()` 自动发现依赖。订阅集合来自真实读取结果，所以不会出现声明的来源和实际读取的来源不一致。
+条件分支下的依赖会自动切换。`computed(() => flag.get() ? a.get() : b.get())` 这类写法会在 `flag` 翻转时自动退订旧分支并订阅新分支。
+跟踪只会发生在同步的 derive 里。`await` 之后或 `setTimeout` 里的读取不会被追踪，derive 应该保持同步。
+嵌套 computed 会隔离依赖。外层在 `inner.get()` 上只依赖 `inner` 本身，不会把 inner 内部的源状态透传到外层。
 
 ## `createAtom()`
 
@@ -114,7 +116,6 @@ const atom = createAtom().use(persist);
 - `Watcher<Value>`
 - `StopWatch`
 - `AtomValue<Atom>`
-- `AtomValues<Sources>`
 - `AtomCreator`
 - `AtomCreatorPlugin`
 - `AtomCreatorPluginContext`

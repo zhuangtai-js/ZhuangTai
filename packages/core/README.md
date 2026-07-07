@@ -16,7 +16,7 @@ pnpm add @zhuangtai-js/core
 import { atom, computed } from "@zhuangtai-js/core";
 
 const count = atom(0);
-const double = computed(count, (value) => value * 2);
+const double = computed(() => count.get() * 2);
 
 count.get();
 count.set(1);
@@ -39,6 +39,10 @@ double.watch((value, prevValue) => {});
 - 初始 `watch` 回调的 `prevValue` 是 `undefined` 哨兵值。对 `Atom<T | undefined>` 而言，无法据此区分“首次通知”与“上一个值恰好是 `undefined`”。
 - 同一个 atom 正在通知 watcher 时，再次 `set()` 该 atom 会抛错。watcher 可以更新其他 atom，但应避免 atom 之间形成循环。
 - `computed(...)` 创建时会计算初始值。它只会在有 watcher 时订阅来源，`get()` 会基于当前来源值重新计算。
+- `computed(...)` 会从 derive 内部实际调用的 `.get()` 自动发现依赖。订阅集合来自真实读取结果，所以不会出现声明的来源和实际读取的来源不一致。
+- 条件分支下的依赖会自动切换。`computed(() => flag.get() ? a.get() : b.get())` 这类写法会在 `flag` 翻转时自动退订旧分支并订阅新分支。
+- 跟踪只会发生在同步的 derive 里。`await` 之后或 `setTimeout` 里的读取不会被追踪，derive 应该保持同步。
+- 嵌套 computed 会隔离依赖。外层在 `inner.get()` 上只依赖 `inner` 本身，不会把 inner 内部的源状态透传到外层。
 - 多来源 `computed` 是同步快照，而非事务一致：逐个更新多个来源、或在 watcher 中更新其他来源时，可能观察到中间的组合值。需要保持一致的值请放进同一个 atom。
 - `computed` 用 `Object.is` 比较来源值与派生结果。若 derive 每次都返回新的对象或数组，会被判定为已变化并可能重复通知；需要抑制通知时请返回引用稳定的值。
 
@@ -85,7 +89,7 @@ pnpm add @zhuangtai-js/core
 import { atom, computed } from "@zhuangtai-js/core";
 
 const count = atom(0);
-const double = computed(count, (value) => value * 2);
+const double = computed(() => count.get() * 2);
 
 count.get();
 count.set(1);

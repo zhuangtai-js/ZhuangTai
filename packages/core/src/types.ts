@@ -48,7 +48,3 @@ export type AtomCreator<OptionsByPlugin extends Record<string, object> = Record<
 export type Computed<Value> = ReadableAtom<Value>;
 
 export type AtomValue<Source> = Source extends ReadableAtom<infer Value> ? Value : never;
-
-export type AtomValues<Sources extends readonly ReadableAtom<unknown>[]> = {
-  readonly [Index in keyof Sources]: AtomValue<Sources[Index]>;
-};

@@ -34,13 +34,13 @@ count.get(); // 2
 
 ## Derive state
 
-Use `computed()` to derive read-only state from one or more atoms.
+Use `computed()` to derive read-only state from one or more atoms, with dependencies discovered automatically from the `.get()` calls inside the derive.
 
 ```ts
 import { atom, computed } from "@zhuangtai-js/core";
 
 const count = atom(1);
-const double = computed(count, (value) => value * 2);
+const double = computed(() => count.get() * 2);
 
 double.get(); // 2
 count.set(2);

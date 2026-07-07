@@ -96,7 +96,7 @@ describe("build artifacts", () => {
     const readme = readFileSync(join(rootPath, "README.md"), "utf8");
 
     // Then
-    assert.ok(coreRuntime.byteLength < 2000, `Expected core runtime below 2 kB, got ${coreRuntime.byteLength} B`);
+    assert.ok(coreRuntime.byteLength < 2500, `Expected core runtime below 2.5 kB, got ${coreRuntime.byteLength} B`);
     assert.ok(readme.includes(CORE_BUNDLE_BADGE_URL));
   });
 
@@ -107,12 +107,12 @@ describe("build artifacts", () => {
     ]);
 
     const state = atom(0);
-    const derived = computed(state, (value) => String(value));
-    const tupleDerived = computed([atom(1), atom("x")], (n, s) => `${n}${s}`);
+    const derived = computed(() => String(state.get()));
+    const multiDerived = computed(() => `${atom(1).get()}${atom("x").get()}`);
 
     assert.equal(state.get(), 0);
     assert.equal(derived.get(), "0");
-    assert.equal(tupleDerived.get(), "1x");
+    assert.equal(multiDerived.get(), "1x");
 
     state.set(1);
     assert.equal(derived.get(), "1");

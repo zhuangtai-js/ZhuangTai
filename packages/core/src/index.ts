@@ -7,7 +7,6 @@ export type {
   AtomCreatorPlugin,
   AtomCreatorPluginContext,
   AtomValue,
-  AtomValues,
   Computed,
   NextValue,
   ReadableAtom,

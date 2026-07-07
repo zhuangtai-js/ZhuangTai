@@ -1,37 +1,96 @@
-import type { AtomValues, Computed, ReadableAtom, StopWatch, Watcher } from "./types.js";
+import type { Computed, ReadableAtom, StopWatch, Watcher } from "./types.js";
+import { collectDependencies, trackDependency } from "./tracking.js";
 
-export function computed<Source extends ReadableAtom<unknown>, Value>(
-  source: Source,
-  derive: (value: Source extends ReadableAtom<infer SourceValue> ? SourceValue : never) => Value,
-): Computed<Value>;
+type Dependency = ReadableAtom<unknown>;
 
-export function computed<Sources extends readonly ReadableAtom<unknown>[], Value>(
-  sources: Sources,
-  derive: (...values: AtomValues<Sources>) => Value,
-): Computed<Value>;
-
-export function computed<Value>(
-  sourceOrSources: ReadableAtom<unknown> | readonly ReadableAtom<unknown>[],
-  derive: (...values: readonly unknown[]) => Value,
-): Computed<Value> {
-  const sources = Array.isArray(sourceOrSources) ? sourceOrSources : [sourceOrSources];
+export function computed<Value>(derive: () => Value): Computed<Value> {
   const watchers = new Set<Watcher<Value>>();
-  let stopSourceWatches: readonly StopWatch[] = [];
-  let currentValue = read();
+  const dependencyStops = new Map<Dependency, StopWatch>();
+  let isComputing = false;
+  let currentValue: Value;
 
-  function read(): Value {
-    return derive(...sources.map((source) => source.get()));
+  function readTracked(): {
+    readonly value: Value;
+    readonly dependencies: ReadonlySet<Dependency>;
+  } {
+    if (isComputing) {
+      throw new Error("[@zhuangtai-js/core] Cannot read a computed while it is deriving itself.");
+    }
+
+    isComputing = true;
+
+    try {
+      return collectDependencies(derive);
+    } finally {
+      isComputing = false;
+    }
+  }
+
+  function subscribeToDependency(dependency: Dependency): StopWatch {
+    let skipInitialWatch = true;
+
+    return dependency.watch(() => {
+      if (skipInitialWatch) {
+        skipInitialWatch = false;
+        return;
+      }
+
+      notifyIfChanged();
+    });
+  }
+
+  function reconcileDependencies(nextDependencies: ReadonlySet<Dependency>): void {
+    if (nextDependencies.has(self)) {
+      throw new Error("[@zhuangtai-js/core] A computed cannot depend on itself.");
+    }
+
+    const addedStops = new Map<Dependency, StopWatch>();
+
+    try {
+      for (const dependency of nextDependencies) {
+        if (!dependencyStops.has(dependency)) {
+          addedStops.set(dependency, subscribeToDependency(dependency));
+        }
+      }
+    } catch (error) {
+      for (const stopWatch of addedStops.values()) {
+        stopWatch();
+      }
+
+      throw error;
+    }
+
+    for (const [dependency, stopWatch] of dependencyStops) {
+      if (!nextDependencies.has(dependency)) {
+        stopWatch();
+        dependencyStops.delete(dependency);
+      }
+    }
+
+    for (const [dependency, stopWatch] of addedStops) {
+      dependencyStops.set(dependency, stopWatch);
+    }
+  }
+
+  function stopWatchingDependencies(): void {
+    for (const stopWatch of dependencyStops.values()) {
+      stopWatch();
+    }
+
+    dependencyStops.clear();
   }
 
   function notifyIfChanged(): void {
-    const value = read();
+    const prevValue = currentValue;
+    const result = readTracked();
 
-    if (Object.is(value, currentValue)) {
+    reconcileDependencies(result.dependencies);
+
+    if (Object.is(result.value, prevValue)) {
       return;
     }
 
-    const prevValue = currentValue;
-    currentValue = value;
+    currentValue = result.value;
     const errors: unknown[] = [];
 
     for (const watcher of Array.from(watchers)) {
@@ -51,31 +110,15 @@ export function computed<Value>(
     }
   }
 
-  function startWatchingSources(): void {
-    stopSourceWatches = sources.map((source) => {
-      let skipInitialWatch = true;
+  function get(): Value {
+    trackDependency(self);
+    const result = readTracked();
 
-      return source.watch(() => {
-        if (skipInitialWatch) {
-          skipInitialWatch = false;
-          return;
-        }
-
-        notifyIfChanged();
-      });
-    });
-  }
-
-  function stopWatchingSources(): void {
-    for (const stopWatch of stopSourceWatches) {
-      stopWatch();
+    if (watchers.size > 0) {
+      reconcileDependencies(result.dependencies);
     }
 
-    stopSourceWatches = [];
-  }
-
-  function get(): Value {
-    currentValue = read();
+    currentValue = result.value;
     return currentValue;
   }
 
@@ -83,8 +126,9 @@ export function computed<Value>(
     const isFirstWatcher = watchers.size === 0;
 
     if (isFirstWatcher) {
-      currentValue = read();
-      startWatchingSources();
+      const result = readTracked();
+      reconcileDependencies(result.dependencies);
+      currentValue = result.value;
     }
 
     watchers.add(watcher);
@@ -95,7 +139,7 @@ export function computed<Value>(
       watchers.delete(watcher);
 
       if (isFirstWatcher) {
-        stopWatchingSources();
+        stopWatchingDependencies();
       }
 
       throw error;
@@ -105,10 +149,14 @@ export function computed<Value>(
       watchers.delete(watcher);
 
       if (watchers.size === 0) {
-        stopWatchingSources();
+        stopWatchingDependencies();
       }
     };
   }
 
-  return { get, watch };
+  const self: Computed<Value> = { get, watch };
+
+  currentValue = readTracked().value;
+
+  return self;
 }

@@ -7,6 +7,7 @@ import type {
   RejectFunctionValue,
   Watcher,
 } from "./types.js";
+import { trackDependency } from "./tracking.js";
 
 function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue: Value) => Value {
   return typeof nextValue === "function";
@@ -18,6 +19,7 @@ function createAtomState<Value>(initialValue: Value): Atom<Value> {
   const watchers = new Set<Watcher<Value>>();
 
   function get(): Value {
+    trackDependency(self);
     return currentValue;
   }
 
@@ -79,7 +81,9 @@ function createAtomState<Value>(initialValue: Value): Atom<Value> {
     };
   }
 
-  return { get, set, watch };
+  const self: Atom<Value> = { get, set, watch };
+
+  return self;
 }
 
 export function atom<Value>(initialValue: RejectFunctionValue<Value>): Atom<Value> {

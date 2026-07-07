@@ -34,13 +34,13 @@ count.get(); // 2
 
 ## 派生状态
 
-使用 `computed()` 从一个或多个 atom 派生只读状态。
+使用 `computed()` 从一个或多个 atom 派生只读状态，依赖会根据 derive 内部实际读取的 `.get()` 自动发现。
 
 ```ts
 import { atom, computed } from "@zhuangtai-js/core";
 
 const count = atom(1);
-const double = computed(count, (value) => value * 2);
+const double = computed(() => count.get() * 2);
 
 double.get(); // 2
 

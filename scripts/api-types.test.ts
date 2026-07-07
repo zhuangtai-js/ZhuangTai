@@ -1,4 +1,4 @@
-import { atom, computed, createAtom, type Atom, type AtomValue, type AtomValues, type Computed } from "@zhuangtai-js/core";
+import { atom, computed, createAtom, type Atom, type AtomValue, type Computed } from "@zhuangtai-js/core";
 // @ts-expect-error AtomCreatorArgs is internal type plumbing, not public API.
 import type { AtomCreatorArgs } from "@zhuangtai-js/core";
 // @ts-expect-error AtomCreatorOptions is internal type plumbing, not public API.
@@ -14,11 +14,9 @@ type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ?
 
 const numberAtom = atom(0);
 const stringAtom = atom("x");
-const tupleSources = [atom(1), stringAtom] as const;
 
 type _NumberAtom = Expect<Equal<typeof numberAtom, Atom<number>>>;
 type _NumberAtomValue = Expect<Equal<AtomValue<typeof numberAtom>, number>>;
-type _TupleAtomValues = Expect<Equal<AtomValues<typeof tupleSources>, readonly [number, string]>>;
 
 numberAtom.set(1);
 numberAtom.set((value) => value + 1);
@@ -30,17 +28,15 @@ atom(() => 1);
 const wrappedFunctionAtom = atom({ fn: (): number => 1 });
 type _WrappedFunctionAtom = Expect<Equal<typeof wrappedFunctionAtom, Atom<{ fn: () => number }>>>;
 
-const singleComputed = computed(numberAtom, (value) => String(value));
-const tupleComputed = computed([atom(1), atom("x")] as const, (n, s) => {
-  type _N = Expect<Equal<typeof n, number>>;
-  type _S = Expect<Equal<typeof s, string>>;
-
-  return `${n}${s}`;
-});
+const singleComputed = computed(() => String(numberAtom.get()));
+const multiComputed = computed(() => `${numberAtom.get()}${stringAtom.get()}`);
 
 type _SingleComputed = Expect<Equal<typeof singleComputed, Computed<string>>>;
 type _SingleComputedValue = Expect<Equal<AtomValue<typeof singleComputed>, string>>;
-type _TupleComputed = Expect<Equal<typeof tupleComputed, Computed<string>>>;
+type _MultiComputed = Expect<Equal<typeof multiComputed, Computed<string>>>;
+
+// @ts-expect-error computed derive takes no arguments in the auto-tracking API.
+computed((value: number) => value * 2);
 
 const createPersistedAtom = createAtom().use(persist);
 

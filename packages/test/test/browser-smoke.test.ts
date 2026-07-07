@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 describe("browser smoke", () => {
   it("uses core primitives in a real browser", () => {
     const count = atom(1);
-    const double = computed(count, (value) => value * 2);
+    const double = computed(() => count.get() * 2);
 
     count.set((value) => value + 1);
 
