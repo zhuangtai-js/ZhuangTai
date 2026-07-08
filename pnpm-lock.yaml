@@ -247,6 +247,24 @@ importers:
         specifier: rc
         version: 7.0.1-rc
 
+  packages/freeze:
+    devDependencies:
+      '@zhuangtai-js/core':
+        specifier: workspace:*
+        version: link:../core
+      oxfmt:
+        specifier: ^0.58.0
+        version: 0.58.0
+      oxlint:
+        specifier: ^1.73.0
+        version: 1.73.0(oxlint-tsgolint@0.24.0)
+      oxlint-tsgolint:
+        specifier: ^0.24.0
+        version: 0.24.0
+      typescript:
+        specifier: rc
+        version: 7.0.1-rc
+
   packages/persist:
     devDependencies:
       '@zhuangtai-js/core':
@@ -294,6 +312,9 @@ importers:
       '@zhuangtai-js/core':
         specifier: workspace:*
         version: link:../core
+      '@zhuangtai-js/freeze':
+        specifier: workspace:*
+        version: link:../freeze
       '@zhuangtai-js/persist':
         specifier: workspace:*
         version: link:../persist
@@ -1854,7 +1875,7 @@ packages:
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
 
   '@typescript/typescript-aix-ppc64@7.0.1-rc':
-    resolution: {integrity: sha512-oqq2ZfEJ7BQuufcC3QBQndZLPNyamYNHLao8lKRBeeSkZKypBqxPSgkzrcFZtbYcIaBvpiyUnQP9MT7DEYHWbw==}
+    resolution: {integrity: sha512-oqq2ZfEJ7BQuufcC3QBQndZLPNyamYNHLao8lKRBeeSkZKypBqxPSgkzrcFZtbYcIaBvpiyUnQP9MT7DEYHWbw==, tarball: https://registry.npmjs.org/@typescript/typescript-aix-ppc64/-/typescript-aix-ppc64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [ppc64]
     os: [aix]
@@ -1872,55 +1893,55 @@ packages:
     os: [darwin]
 
   '@typescript/typescript-freebsd-arm64@7.0.1-rc':
-    resolution: {integrity: sha512-DE+ppd8Ix2c6OMuRkKY4PJ4hngMGJ9M95OQUP17p9xL/1IKXof7npIeuusMN/bgL5o5JzMfSGh+N+5scTYRg0Q==}
+    resolution: {integrity: sha512-DE+ppd8Ix2c6OMuRkKY4PJ4hngMGJ9M95OQUP17p9xL/1IKXof7npIeuusMN/bgL5o5JzMfSGh+N+5scTYRg0Q==, tarball: https://registry.npmjs.org/@typescript/typescript-freebsd-arm64/-/typescript-freebsd-arm64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [freebsd]
 
   '@typescript/typescript-freebsd-x64@7.0.1-rc':
-    resolution: {integrity: sha512-ST1ozHMw0u+CLOnWkcTyWDMV4Qn9osZ6fd1V1lnKDM1t0hZIp81mdGpdHxyHJjd7jdGrb6Gb/QXcZ1uqZ0t5zw==}
+    resolution: {integrity: sha512-ST1ozHMw0u+CLOnWkcTyWDMV4Qn9osZ6fd1V1lnKDM1t0hZIp81mdGpdHxyHJjd7jdGrb6Gb/QXcZ1uqZ0t5zw==, tarball: https://registry.npmjs.org/@typescript/typescript-freebsd-x64/-/typescript-freebsd-x64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [freebsd]
 
   '@typescript/typescript-linux-arm64@7.0.1-rc':
-    resolution: {integrity: sha512-N46pRihK3t5zD5MUtTQcdmQUqr1WI4U2nxno1gLwOtRSsB4krFkRjPHcQNG7h2DtRkX64rQiReX6WKwg2wprMA==}
+    resolution: {integrity: sha512-N46pRihK3t5zD5MUtTQcdmQUqr1WI4U2nxno1gLwOtRSsB4krFkRjPHcQNG7h2DtRkX64rQiReX6WKwg2wprMA==, tarball: https://registry.npmjs.org/@typescript/typescript-linux-arm64/-/typescript-linux-arm64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [linux]
 
   '@typescript/typescript-linux-arm@7.0.1-rc':
-    resolution: {integrity: sha512-gHmHwT5Naq5CKM8g9bbaGeEpnwQEvWCLn3fwP4K2m61VQdDKkPk0Dhab/OoZ4LV2SrMddmclYXTzpyg23YGt5g==}
+    resolution: {integrity: sha512-gHmHwT5Naq5CKM8g9bbaGeEpnwQEvWCLn3fwP4K2m61VQdDKkPk0Dhab/OoZ4LV2SrMddmclYXTzpyg23YGt5g==, tarball: https://registry.npmjs.org/@typescript/typescript-linux-arm/-/typescript-linux-arm-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [arm]
     os: [linux]
 
   '@typescript/typescript-linux-loong64@7.0.1-rc':
-    resolution: {integrity: sha512-G17Sao312rgiPBTh2F4nOpLpa3CcnBSaNhqNghZk2LNhnsp1RaMO5HMq2me21gqu9xLpc6CIgHtOzU6JBgNlfg==}
+    resolution: {integrity: sha512-G17Sao312rgiPBTh2F4nOpLpa3CcnBSaNhqNghZk2LNhnsp1RaMO5HMq2me21gqu9xLpc6CIgHtOzU6JBgNlfg==, tarball: https://registry.npmjs.org/@typescript/typescript-linux-loong64/-/typescript-linux-loong64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [loong64]
     os: [linux]
 
   '@typescript/typescript-linux-mips64el@7.0.1-rc':
-    resolution: {integrity: sha512-0FQspOb5UsQ4tQKvWgUO3pS9OIWkP7/8dPRWq+CRazJUeQZ4LBjtYK52jg5iIOrvItrVl2CwvRtrU3/9OihwJg==}
+    resolution: {integrity: sha512-0FQspOb5UsQ4tQKvWgUO3pS9OIWkP7/8dPRWq+CRazJUeQZ4LBjtYK52jg5iIOrvItrVl2CwvRtrU3/9OihwJg==, tarball: https://registry.npmjs.org/@typescript/typescript-linux-mips64el/-/typescript-linux-mips64el-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [mips64el]
     os: [linux]
 
   '@typescript/typescript-linux-ppc64@7.0.1-rc':
-    resolution: {integrity: sha512-SUmwfVBEv6A2Ld0eWfcvW0FqrgemfQL8jFGOmV1qYxsDqumjE5DekHXqbstgmbE4SHr4rrjHjvmuGCY+kTH/vw==}
+    resolution: {integrity: sha512-SUmwfVBEv6A2Ld0eWfcvW0FqrgemfQL8jFGOmV1qYxsDqumjE5DekHXqbstgmbE4SHr4rrjHjvmuGCY+kTH/vw==, tarball: https://registry.npmjs.org/@typescript/typescript-linux-ppc64/-/typescript-linux-ppc64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [ppc64]
     os: [linux]
 
   '@typescript/typescript-linux-riscv64@7.0.1-rc':
-    resolution: {integrity: sha512-rxeqnNnGiYzv/LlPHi/3+4p0ooR1cNJLjRIHXKovtiVmxXGJq6gtw8VSpbHuWPekyFMXgIAoLCZN0SQ51rAALQ==}
+    resolution: {integrity: sha512-rxeqnNnGiYzv/LlPHi/3+4p0ooR1cNJLjRIHXKovtiVmxXGJq6gtw8VSpbHuWPekyFMXgIAoLCZN0SQ51rAALQ==, tarball: https://registry.npmjs.org/@typescript/typescript-linux-riscv64/-/typescript-linux-riscv64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [riscv64]
     os: [linux]
 
   '@typescript/typescript-linux-s390x@7.0.1-rc':
-    resolution: {integrity: sha512-RYWCHCiPypxajdRHM2CNK/eM22e4Ex5TTjV2pXf7PTtBowGr0xX8i8kIMknyZS0LX2QfleYHouaoMVsFDSle3g==}
+    resolution: {integrity: sha512-RYWCHCiPypxajdRHM2CNK/eM22e4Ex5TTjV2pXf7PTtBowGr0xX8i8kIMknyZS0LX2QfleYHouaoMVsFDSle3g==, tarball: https://registry.npmjs.org/@typescript/typescript-linux-s390x/-/typescript-linux-s390x-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [s390x]
     os: [linux]
@@ -1932,31 +1953,31 @@ packages:
     os: [linux]
 
   '@typescript/typescript-netbsd-arm64@7.0.1-rc':
-    resolution: {integrity: sha512-FfbPxH3dTfp8yVIaNM7bdWTixXuyxpzoemluqcqMROSIz+ImpCG3Q9HO9Ptzp9/giv+P9YYEnCMSXh61migj2w==}
+    resolution: {integrity: sha512-FfbPxH3dTfp8yVIaNM7bdWTixXuyxpzoemluqcqMROSIz+ImpCG3Q9HO9Ptzp9/giv+P9YYEnCMSXh61migj2w==, tarball: https://registry.npmjs.org/@typescript/typescript-netbsd-arm64/-/typescript-netbsd-arm64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [netbsd]
 
   '@typescript/typescript-netbsd-x64@7.0.1-rc':
-    resolution: {integrity: sha512-FzdTfSzhRYb6hlav6K3cI5RVgcvCTvNAu/vc+t7B6AmZkThQ+t/1ntnvT5fnHmY1Az2RIBw7/b+qtCEG61HJTQ==}
+    resolution: {integrity: sha512-FzdTfSzhRYb6hlav6K3cI5RVgcvCTvNAu/vc+t7B6AmZkThQ+t/1ntnvT5fnHmY1Az2RIBw7/b+qtCEG61HJTQ==, tarball: https://registry.npmjs.org/@typescript/typescript-netbsd-x64/-/typescript-netbsd-x64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [netbsd]
 
   '@typescript/typescript-openbsd-arm64@7.0.1-rc':
-    resolution: {integrity: sha512-PQGhlxfNig+0YQ9Wwzd0USPBkt6w/ZqkBQWsU7G/0JkTzunJel+jSWwhKw4947pak/m7hGSeYiI04xReDLGZww==}
+    resolution: {integrity: sha512-PQGhlxfNig+0YQ9Wwzd0USPBkt6w/ZqkBQWsU7G/0JkTzunJel+jSWwhKw4947pak/m7hGSeYiI04xReDLGZww==, tarball: https://registry.npmjs.org/@typescript/typescript-openbsd-arm64/-/typescript-openbsd-arm64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [openbsd]
 
   '@typescript/typescript-openbsd-x64@7.0.1-rc':
-    resolution: {integrity: sha512-WJ7NYgO2mHmLUkI/tZ+hl8lFd26QPJqO8ONOHNuYbdsybLvSB6B6sep222JIVrOfPRDGvFinbGGB+l3m1FWRWA==}
+    resolution: {integrity: sha512-WJ7NYgO2mHmLUkI/tZ+hl8lFd26QPJqO8ONOHNuYbdsybLvSB6B6sep222JIVrOfPRDGvFinbGGB+l3m1FWRWA==, tarball: https://registry.npmjs.org/@typescript/typescript-openbsd-x64/-/typescript-openbsd-x64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [openbsd]
 
   '@typescript/typescript-sunos-x64@7.0.1-rc':
-    resolution: {integrity: sha512-UYjDeUxd765V9qcwlUPk4pEXyL0i3G76CJm9baK4i99u1pGO1psf3nXDw4MMmElVOPvGbZag99ZR/O59E2OX6w==}
+    resolution: {integrity: sha512-UYjDeUxd765V9qcwlUPk4pEXyL0i3G76CJm9baK4i99u1pGO1psf3nXDw4MMmElVOPvGbZag99ZR/O59E2OX6w==, tarball: https://registry.npmjs.org/@typescript/typescript-sunos-x64/-/typescript-sunos-x64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [sunos]
@@ -1968,7 +1989,7 @@ packages:
     os: [win32]
 
   '@typescript/typescript-win32-x64@7.0.1-rc':
-    resolution: {integrity: sha512-98R3+OqDr/r0/PLWEoXu88AE0lGVLNd335Ew8ONgzK1JWkNs4ou/5BGt3Or1ij4iXjH+c7PRL+jFjCbtWze+EA==}
+    resolution: {integrity: sha512-98R3+OqDr/r0/PLWEoXu88AE0lGVLNd335Ew8ONgzK1JWkNs4ou/5BGt3Or1ij4iXjH+c7PRL+jFjCbtWze+EA==, tarball: https://registry.npmjs.org/@typescript/typescript-win32-x64/-/typescript-win32-x64-7.0.1-rc.tgz}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [win32]
