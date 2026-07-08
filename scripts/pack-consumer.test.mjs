@@ -39,23 +39,28 @@ function assertPackedFiles(tarballPath) {
 }
 
 describe("packed package consumer", () => {
-  it("installs packed core and persist tarballs in a fresh consumer", () => {
+  it("installs packed core, persist, and react tarballs in a fresh consumer", () => {
     const tempPath = mkdtempSync(join(tmpdir(), "zhuangtai-pack-consumer-"));
 
     try {
       const coreManifest = readManifest("packages/core");
       const persistManifest = readManifest("packages/persist");
+      const reactManifest = readManifest("packages/react");
 
       run("pnpm", ["--filter", coreManifest.name, "pack", "--pack-destination", tempPath]);
       run("pnpm", ["--filter", persistManifest.name, "pack", "--pack-destination", tempPath]);
+      run("pnpm", ["--filter", reactManifest.name, "pack", "--pack-destination", tempPath]);
 
       const coreTarballPath = join(tempPath, `zhuangtai-js-core-${coreManifest.version}.tgz`);
       const persistTarballPath = join(tempPath, `zhuangtai-js-persist-${persistManifest.version}.tgz`);
+      const reactTarballPath = join(tempPath, `zhuangtai-js-react-${reactManifest.version}.tgz`);
 
       assert.equal(existsSync(coreTarballPath), true);
       assert.equal(existsSync(persistTarballPath), true);
+      assert.equal(existsSync(reactTarballPath), true);
       assertPackedFiles(coreTarballPath);
       assertPackedFiles(persistTarballPath);
+      assertPackedFiles(reactTarballPath);
 
       writeFileSync(
         join(tempPath, "package.json"),
@@ -67,6 +72,9 @@ describe("packed package consumer", () => {
             dependencies: {
               "@zhuangtai-js/core": `file:${coreTarballPath}`,
               "@zhuangtai-js/persist": `file:${persistTarballPath}`,
+              "@zhuangtai-js/react": `file:${reactTarballPath}`,
+              "@types/react": "^19.2.0",
+              react: "^19.2.0",
               typescript: "rc",
             },
           },
@@ -88,6 +96,13 @@ describe("packed package consumer", () => {
           "-e",
           `import { atom, computed, createAtom } from "@zhuangtai-js/core";
 import { persist } from "@zhuangtai-js/persist";
+import {
+  useAtom,
+  useAtomValue,
+  useSetAtom,
+  createAtomHook,
+  createComputedHook,
+} from "@zhuangtai-js/react";
 
 const count = atom(1);
 const double = computed(() => count.get() * 2);
@@ -103,15 +118,32 @@ const storage = {
 const createState = createAtom().use(persist);
 const persisted = createState(1, { persist: { key: "count", storage } });
 persisted.set(3);
-if (data.get("count") !== "3") throw new Error("persist smoke failed");`,
+if (data.get("count") !== "3") throw new Error("persist smoke failed");
+
+// React hooks require a renderer to invoke; verify the module exports and that
+// the bound-hook factories return hook functions without calling any hook.
+for (const hook of [useAtom, useAtomValue, useSetAtom, createAtomHook, createComputedHook]) {
+  if (typeof hook !== "function") throw new Error("react export smoke failed");
+}
+const useCount = createAtomHook(atom(0));
+const useDouble = createComputedHook(computed(() => count.get() * 2));
+if (typeof useCount !== "function") throw new Error("react createAtomHook smoke failed");
+if (typeof useDouble !== "function") throw new Error("react createComputedHook smoke failed");`,
         ],
         { cwd: tempPath },
       );
 
       writeFileSync(
         join(tempPath, "smoke.ts"),
-        `import { atom, type Atom } from "@zhuangtai-js/core";
+        `import { atom, computed, type Atom, type ReadableAtom } from "@zhuangtai-js/core";
 import { persist, type PersistStorage } from "@zhuangtai-js/persist";
+import {
+  useAtom,
+  useAtomValue,
+  useSetAtom,
+  createAtomHook,
+  createComputedHook,
+} from "@zhuangtai-js/react";
 
 const count: Atom<number> = atom(1);
 count.set((value) => value + 1);
@@ -122,8 +154,18 @@ const storage: PersistStorage = {
   removeItem: () => {},
 };
 
+const double: ReadableAtom<number> = computed(() => count.get() * 2);
+const useCount: () => readonly [number, (nextValue: number | ((prev: number) => number)) => void] =
+  createAtomHook(count);
+const useDouble: () => number = createComputedHook(double);
+
 void persist;
 void storage;
+void useAtom;
+void useAtomValue;
+void useSetAtom;
+void useCount;
+void useDouble;
 `,
       );
 
