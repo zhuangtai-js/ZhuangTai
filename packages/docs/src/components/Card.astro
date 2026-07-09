@@ -18,6 +18,10 @@ const { title, icon } = Astro.props;
     height: 100%;
   }
 
+  .landing-card > :global(.card) {
+    flex: 1;
+  }
+
   .landing-card::before {
     content: '';
     position: absolute;
