@@ -15,6 +15,7 @@
   "dependencies": {
     "@zhuangtai-js/core": "workspace:*",
     "@zhuangtai-js/freeze": "workspace:*",
+    "@zhuangtai-js/immer": "workspace:*",
     "@zhuangtai-js/persist": "workspace:*",
     "@zhuangtai-js/react": "workspace:*"
   },

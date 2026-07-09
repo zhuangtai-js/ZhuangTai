@@ -265,6 +265,28 @@ importers:
         specifier: rc
         version: 7.0.1-rc
 
+  packages/immer:
+    dependencies:
+      immer:
+        specifier: ^11.1.11
+        version: 11.1.11
+    devDependencies:
+      '@zhuangtai-js/core':
+        specifier: workspace:*
+        version: link:../core
+      oxfmt:
+        specifier: ^0.58.0
+        version: 0.58.0
+      oxlint:
+        specifier: ^1.73.0
+        version: 1.73.0(oxlint-tsgolint@0.24.0)
+      oxlint-tsgolint:
+        specifier: ^0.24.0
+        version: 0.24.0
+      typescript:
+        specifier: rc
+        version: 7.0.1-rc
+
   packages/persist:
     devDependencies:
       '@zhuangtai-js/core':
@@ -315,6 +337,9 @@ importers:
       '@zhuangtai-js/freeze':
         specifier: workspace:*
         version: link:../freeze
+      '@zhuangtai-js/immer':
+        specifier: workspace:*
+        version: link:../immer
       '@zhuangtai-js/persist':
         specifier: workspace:*
         version: link:../persist
@@ -2546,6 +2571,9 @@ packages:
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
+
+  immer@11.1.11:
+    resolution: {integrity: sha512-qzXuyXAkPySAGYkfsAwodDPWT8Zm7/Uo5BNt4BjhMhG5WlWyZZ4wQqnWwdS8kjlQ1Cwu6gjw3A6+0gTQwlyYtw==}
 
   import-lazy@4.0.0:
     resolution: {integrity: sha512-rKtvo6a868b5Hu3heneU+L4yEQ4jYKLtjpnPeUdK7h0yzXGmyBTypknlkCvHFBqfX9YlorEiMM6Dnq/5atfHkw==}
@@ -5719,6 +5747,8 @@ snapshots:
   iconv-lite@0.6.3:
     dependencies:
       safer-buffer: 2.1.2
+
+  immer@11.1.11: {}
 
   import-lazy@4.0.0: {}
 

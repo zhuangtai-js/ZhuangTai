@@ -1,5 +1,27 @@
 # core 更新日志 / Changelog
 
+## 0.4.0 - 2026-07-09
+
+### 新增
+
+- 新增 atom 形态注册表，让 creator 插件可以在类型层拓宽 atom 的公共接口。插件可通过可选的 `kind` 字段声明自己的形态，`createAtom().use(plugin)` 会把该形态带到最终 atom 的类型上（例如 Immer 插件让 `set` 接受“修改草稿”的 recipe）。
+- 新增公共类型 `AtomKindRegistry`、`AtomKind` 和 `AtomOf`，供插件通过 `declare module` 注册自定义 atom 形态。
+
+### 说明
+
+- 纯类型层改动，零运行时开销，不改变任何 core 语义（`set` 立即生效、`watch` 同步、`Object.is` 相等性均不变）。
+- 向后兼容：`kind` 为可选字段，现有插件无需修改；未声明 `kind` 的插件继续产出默认的 `Atom<Value>`。
+
+### Added
+
+- Added an atom-kind registry so creator plugins can widen an atom's public interface at the type level. A plugin declares its kind via the optional `kind` field, and `createAtom().use(plugin)` carries that kind through to the resulting atom's type (for example, the Immer plugin makes `set` accept a "mutate the draft" recipe).
+- Added public types `AtomKindRegistry`, `AtomKind`, and `AtomOf` so plugins can register custom atom kinds through `declare module`.
+
+### Notes
+
+- A type-only change with zero runtime overhead; it does not alter any core semantics (`set` applies immediately, `watch` is synchronous, equality uses `Object.is`).
+- Backward compatible: `kind` is optional, existing plugins need no changes, and plugins that do not declare a `kind` continue to produce the default `Atom<Value>`.
+
 ## 0.3.0 - 2026-07-07
 
 ### 重大变更

@@ -17,15 +17,30 @@ export type Atom<Value> = ReadableAtom<Value> & {
   readonly set: (nextValue: NextValue<Value>) => void;
 };
 
+export interface AtomKindRegistry<Value> {
+  readonly default: Atom<Value>;
+}
+
+export type AtomKind = keyof AtomKindRegistry<unknown>;
+
+export type AtomOf<Kind extends AtomKind, Value> = AtomKindRegistry<Value>[Kind];
+
 export type AtomCreatorPluginContext<Value, Options extends object> = {
   readonly initialValue: Value;
   readonly options: Options | undefined;
   readonly next: (initialValue: Value) => Atom<Value>;
 };
 
-export type AtomCreatorPlugin<Name extends string, Options extends object> = {
+export type AtomCreatorPlugin<
+  Name extends string,
+  Options extends object,
+  Kind extends AtomKind = "default",
+> = {
   readonly id: Name;
-  readonly create: <Value>(context: AtomCreatorPluginContext<Value, Options>) => Atom<Value>;
+  readonly kind?: Kind;
+  readonly create: <Value>(
+    context: AtomCreatorPluginContext<Value, Options>,
+  ) => AtomOf<NoInfer<Kind>, Value>;
 };
 
 export type AtomCreatorOptions<OptionsByPlugin extends Record<string, object>> = {
@@ -35,14 +50,24 @@ export type AtomCreatorOptions<OptionsByPlugin extends Record<string, object>> =
 export type AtomCreatorArgs<OptionsByPlugin extends Record<string, object>> =
   keyof OptionsByPlugin extends never ? [] : [options?: AtomCreatorOptions<OptionsByPlugin>];
 
-export type AtomCreator<OptionsByPlugin extends Record<string, object> = Record<never, never>> = {
+export type AtomCreator<
+  OptionsByPlugin extends Record<string, object> = Record<never, never>,
+  Kind extends AtomKind = "default",
+> = {
   <Value>(
     initialValue: RejectFunctionValue<Value>,
     ...args: AtomCreatorArgs<OptionsByPlugin>
-  ): Atom<Value>;
-  readonly use: <Name extends string, Options extends object>(
-    plugin: AtomCreatorPlugin<Name, Options>,
-  ) => AtomCreator<OptionsByPlugin & { readonly [Key in Name]: Options }>;
+  ): AtomOf<Kind, Value>;
+  readonly use: <
+    Name extends string,
+    Options extends object,
+    PluginKind extends AtomKind = "default",
+  >(
+    plugin: AtomCreatorPlugin<Name, Options, PluginKind>,
+  ) => AtomCreator<
+    OptionsByPlugin & { readonly [Key in Name]: Options },
+    PluginKind extends "default" ? Kind : PluginKind
+  >;
 };
 
 export type Computed<Value> = ReadableAtom<Value>;

@@ -39,7 +39,7 @@ function assertPackedFiles(tarballPath) {
 }
 
 describe("packed package consumer", () => {
-  it("installs packed core, persist, react, and freeze tarballs in a fresh consumer", () => {
+  it("installs packed core, persist, react, freeze, and immer tarballs in a fresh consumer", () => {
     const tempPath = mkdtempSync(join(tmpdir(), "zhuangtai-pack-consumer-"));
 
     try {
@@ -47,25 +47,30 @@ describe("packed package consumer", () => {
       const persistManifest = readManifest("packages/persist");
       const reactManifest = readManifest("packages/react");
       const freezeManifest = readManifest("packages/freeze");
+      const immerManifest = readManifest("packages/immer");
 
       run("pnpm", ["--filter", coreManifest.name, "pack", "--pack-destination", tempPath]);
       run("pnpm", ["--filter", persistManifest.name, "pack", "--pack-destination", tempPath]);
       run("pnpm", ["--filter", reactManifest.name, "pack", "--pack-destination", tempPath]);
       run("pnpm", ["--filter", freezeManifest.name, "pack", "--pack-destination", tempPath]);
+      run("pnpm", ["--filter", immerManifest.name, "pack", "--pack-destination", tempPath]);
 
       const coreTarballPath = join(tempPath, `zhuangtai-js-core-${coreManifest.version}.tgz`);
       const persistTarballPath = join(tempPath, `zhuangtai-js-persist-${persistManifest.version}.tgz`);
       const reactTarballPath = join(tempPath, `zhuangtai-js-react-${reactManifest.version}.tgz`);
       const freezeTarballPath = join(tempPath, `zhuangtai-js-freeze-${freezeManifest.version}.tgz`);
+      const immerTarballPath = join(tempPath, `zhuangtai-js-immer-${immerManifest.version}.tgz`);
 
       assert.equal(existsSync(coreTarballPath), true);
       assert.equal(existsSync(persistTarballPath), true);
       assert.equal(existsSync(reactTarballPath), true);
       assert.equal(existsSync(freezeTarballPath), true);
+      assert.equal(existsSync(immerTarballPath), true);
       assertPackedFiles(coreTarballPath);
       assertPackedFiles(persistTarballPath);
       assertPackedFiles(reactTarballPath);
       assertPackedFiles(freezeTarballPath);
+      assertPackedFiles(immerTarballPath);
 
       writeFileSync(
         join(tempPath, "package.json"),
@@ -79,6 +84,7 @@ describe("packed package consumer", () => {
               "@zhuangtai-js/persist": `file:${persistTarballPath}`,
               "@zhuangtai-js/react": `file:${reactTarballPath}`,
               "@zhuangtai-js/freeze": `file:${freezeTarballPath}`,
+              "@zhuangtai-js/immer": `file:${immerTarballPath}`,
               "@types/react": "^19.2.0",
               react: "^19.2.0",
               typescript: "rc",
@@ -103,6 +109,7 @@ describe("packed package consumer", () => {
           `import { atom, computed, createAtom } from "@zhuangtai-js/core";
 import { persist } from "@zhuangtai-js/persist";
 import { freeze } from "@zhuangtai-js/freeze";
+import { immer } from "@zhuangtai-js/immer";
 import {
   useAtom,
   useAtomValue,
@@ -131,6 +138,13 @@ const frozenCreate = createAtom().use(freeze);
 const frozen = frozenCreate({ n: 1 }, { freeze: { enabled: true } });
 if (!Object.isFrozen(frozen.get())) throw new Error("freeze smoke failed");
 
+const immerCreate = createAtom().use(immer);
+const withImmer = immerCreate({ items: [{ done: false }] });
+withImmer.set((draft) => {
+  draft.items[0].done = true;
+});
+if (withImmer.get().items[0].done !== true) throw new Error("immer smoke failed");
+
 // React hooks require a renderer to invoke; verify the module exports and that
 // the bound-hook factories return hook functions without calling any hook.
 for (const hook of [useAtom, useAtomValue, useSetAtom, createAtomHook, createComputedHook]) {
@@ -146,9 +160,10 @@ if (typeof useDouble !== "function") throw new Error("react createComputedHook s
 
       writeFileSync(
         join(tempPath, "smoke.ts"),
-        `import { atom, computed, type Atom, type ReadableAtom } from "@zhuangtai-js/core";
+        `import { atom, computed, createAtom, type Atom, type ReadableAtom } from "@zhuangtai-js/core";
 import { persist, type PersistStorage } from "@zhuangtai-js/persist";
 import { freeze, type FreezeOptions } from "@zhuangtai-js/freeze";
+import { immer, type ImmerAtom } from "@zhuangtai-js/immer";
 import {
   useAtom,
   useAtomValue,
@@ -171,6 +186,10 @@ const useCount: () => readonly [number, (nextValue: number | ((prev: number) => 
   createAtomHook(count);
 const useDouble: () => number = createComputedHook(double);
 const freezeOptions: FreezeOptions = { enabled: true };
+const immerState: ImmerAtom<{ count: number }> = createAtom().use(immer)({ count: 0 });
+immerState.set((draft) => {
+  draft.count += 1;
+});
 
 void persist;
 void storage;
@@ -181,6 +200,8 @@ void useCount;
 void useDouble;
 void freeze;
 void freezeOptions;
+void immer;
+void immerState;
 `,
       );
 

@@ -3,6 +3,7 @@ import type {
   AtomCreator,
   AtomCreatorPlugin,
   AtomCreatorOptions,
+  AtomKind,
   NextValue,
   RejectFunctionValue,
   Watcher,
@@ -102,10 +103,13 @@ type AtomFactory<OptionsByPlugin extends Record<string, object>> = <Value>(
   options?: AtomCreatorOptions<OptionsByPlugin>,
 ) => Atom<Value>;
 
-function createAtomWithFactory<OptionsByPlugin extends Record<string, object>>(
+function createAtomWithFactory<
+  OptionsByPlugin extends Record<string, object>,
+  Kind extends AtomKind = "default",
+>(
   factory: AtomFactory<OptionsByPlugin>,
   installedPluginIds: ReadonlySet<string>,
-): AtomCreator<OptionsByPlugin> {
+): AtomCreator<OptionsByPlugin, Kind> {
   function createState<Value>(
     initialValue: Value,
     options?: AtomCreatorOptions<OptionsByPlugin>,
@@ -113,19 +117,26 @@ function createAtomWithFactory<OptionsByPlugin extends Record<string, object>>(
     return factory(initialValue, options);
   }
 
-  createState.use = function use<Name extends string, Options extends object>(
-    plugin: AtomCreatorPlugin<Name, Options>,
-  ): AtomCreator<OptionsByPlugin & { readonly [Key in Name]: Options }> {
+  createState.use = function use<
+    Name extends string,
+    Options extends object,
+    PluginKind extends AtomKind = "default",
+  >(
+    plugin: AtomCreatorPlugin<Name, Options, PluginKind>,
+  ): AtomCreator<
+    OptionsByPlugin & { readonly [Key in Name]: Options },
+    PluginKind extends "default" ? Kind : PluginKind
+  > {
+    type NextOptions = OptionsByPlugin & { readonly [Key in Name]: Options };
+    type NextKind = PluginKind extends "default" ? Kind : PluginKind;
+
     if (installedPluginIds.has(plugin.id)) {
-      return createAtomWithFactory<OptionsByPlugin & { readonly [Key in Name]: Options }>(
-        factory,
-        installedPluginIds,
-      );
+      return createAtomWithFactory<NextOptions, NextKind>(factory, installedPluginIds);
     }
 
     function nextFactory<Value>(
       initialValue: Value,
-      options?: AtomCreatorOptions<OptionsByPlugin & { readonly [Key in Name]: Options }>,
+      options?: AtomCreatorOptions<NextOptions>,
     ): Atom<Value> {
       return plugin.create({
         initialValue,
@@ -136,7 +147,10 @@ function createAtomWithFactory<OptionsByPlugin extends Record<string, object>>(
       });
     }
 
-    return createAtomWithFactory(nextFactory, new Set([...installedPluginIds, plugin.id]));
+    return createAtomWithFactory<NextOptions, NextKind>(
+      nextFactory,
+      new Set([...installedPluginIds, plugin.id]),
+    );
   };
 
   // createState is plain-`Value` internally; AtomCreator's public call signature adds the
@@ -144,5 +158,5 @@ function createAtomWithFactory<OptionsByPlugin extends Record<string, object>>(
   // structurally inferable from the plain impl even though every call is sound. Assert at
   // this single boundary rather than leaking the guard into internal inference.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- single-boundary assertion for the invariant Atom<Value>; every call is sound (see comment above).
-  return createState as AtomCreator<OptionsByPlugin>;
+  return createState as AtomCreator<OptionsByPlugin, Kind>;
 }

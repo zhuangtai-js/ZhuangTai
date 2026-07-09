@@ -6,6 +6,7 @@ export default defineConfig({
       "test/core/**/*.test.ts",
       "test/persist/**/*.test.ts",
       "test/freeze/**/*.test.ts",
+      "test/immer/**/*.test.ts",
       "test/react/**/*.test.tsx",
     ],
   },
