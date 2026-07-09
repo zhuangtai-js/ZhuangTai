@@ -9,7 +9,7 @@ import {
   useAtomValue,
   useSetAtom,
 } from "@zhuangtai-js/react";
-import { act } from "react";
+import { act, StrictMode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 beforeAll(() => {
@@ -280,5 +280,76 @@ describe("rendered components", () => {
 
     expect(readerRenders).toHaveBeenCalledTimes(2);
     expect(setterRenders).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("StrictMode", () => {
+  it("renders and updates under StrictMode double rendering", () => {
+    const count = atom(0);
+
+    function Counter(): React.JSX.Element {
+      const [value, setValue] = useAtom(count);
+
+      return (
+        <button
+          type="button"
+          onClick={() => setValue((current) => current + 1)}>
+          count: {value}
+        </button>
+      );
+    }
+
+    render(
+      <StrictMode>
+        <Counter />
+      </StrictMode>,
+    );
+
+    const button = screen.getByRole("button");
+
+    expect(button.textContent).toBe("count: 0");
+
+    // A click exercises the updater path; double-invoked effects must not
+    // double-apply the update.
+    fireEvent.click(button);
+
+    expect(button.textContent).toBe("count: 1");
+    expect(count.get()).toBe(1);
+
+    // External updates still reach the component after StrictMode has torn
+    // down and re-created the subscription once.
+    act(() => {
+      count.set(5);
+    });
+
+    expect(button.textContent).toBe("count: 5");
+  });
+
+  it("stops updating after unmount under StrictMode", () => {
+    const count = atom(0);
+    const values: number[] = [];
+
+    function Reader(): React.JSX.Element {
+      const value = useAtomValue(count);
+      values.push(value);
+
+      return <span>{value}</span>;
+    }
+
+    const { unmount } = render(
+      <StrictMode>
+        <Reader />
+      </StrictMode>,
+    );
+
+    unmount();
+
+    act(() => {
+      count.set(9);
+    });
+
+    // No render observed the post-unmount value: the StrictMode re-created
+    // subscription was cleaned up on unmount instead of leaking.
+    expect(values).not.toContain(9);
   });
 });
