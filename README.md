@@ -39,6 +39,8 @@ double.watch((value, prevValue) => {});
 
 `@zhuangtai-js/core` 刻意保持零第三方运行时依赖。框架适配器会放在独立包中。
 
+核心语义：`set` 立即生效，`watch` 回调同步执行，相等性使用 `Object.is`，对象和数组更新按引用比较，watcher 抛错相互隔离。完整语义清单见 [`@zhuangtai-js/core` README](./packages/core/README.md)。
+
 ## 持久化
 
 ```ts
@@ -56,7 +58,7 @@ const theme = atom("light", {
 theme.set("dark");
 ```
 
-`@zhuangtai-js/persist` 使用同步的 Web Storage 兼容存储。你可以显式传入 `storage` 选项；如果没有传入，它会在可用时回退到 `globalThis.localStorage`。自定义 `storage` 需要实现 `getItem`、`setItem` 和 `removeItem`。默认 JSON codec 支持 JSON 可序列化值；如果需要处理 `undefined`、函数或 symbol 等值，请使用自定义 codec。
+`@zhuangtai-js/persist` 使用同步的 Web Storage 兼容存储。你可以显式传入 `storage` 选项；如果没有传入，它会在可用时回退到 `globalThis.localStorage`。自定义 `storage` 需要实现 `getItem`、`setItem` 和 `removeItem`。更新会先持久化：写入 storage 成功后才提交内存状态并通知 watcher；encode 或写入失败时，内存状态保持不变。默认 JSON codec 支持 JSON 可序列化值；如果需要处理 `undefined`、函数或 symbol 等值，请使用自定义 codec。
 
 ## 冻结
 
@@ -110,7 +112,7 @@ const theme = atom("light", {
 theme.set("dark"); // 其他标签页里的同名 atom 也会更新为 "dark"。
 ```
 
-`@zhuangtai-js/sync` 通过 `BroadcastChannel` 在同源的多个标签页、窗口或 worker 之间同步 atom 状态：本地更新提交后广播，收到远端广播时直接写入底层状态而不再二次广播，从而避免回环。可传入自定义 `channel` 与 `codec`；在 SSR 或不支持 `BroadcastChannel` 的运行时会静默降级为普通 atom。
+`@zhuangtai-js/sync` 通过 `BroadcastChannel` 在同源的多个标签页、窗口或 worker 之间同步 atom 状态：本地更新提交后广播，收到远端广播时直接写入底层状态而不再二次广播，从而避免回环。可传入自定义 `channel` 与 `codec`；在 SSR 或不支持 `BroadcastChannel` 的运行时会静默降级为普通 atom，默认 channel 在 Node 中也不会阻止进程退出。
 
 ## 许可证
 
@@ -152,6 +154,8 @@ double.watch((value, prevValue) => {});
 
 `@zhuangtai-js/core` intentionally has no third-party runtime dependencies. Framework adapters live in separate packages.
 
+Core semantics: `set` applies immediately, `watch` callbacks run synchronously, equality uses `Object.is`, object and array updates are reference-based, and throwing watchers are isolated from each other. See the [`@zhuangtai-js/core` README](./packages/core/README.md) for the full semantics list.
+
 ## Persistence
 
 ```ts
@@ -169,7 +173,7 @@ const theme = atom("light", {
 theme.set("dark");
 ```
 
-`@zhuangtai-js/persist` uses synchronous Web Storage-compatible storage. Pass a `storage` option explicitly, or it falls back to `globalThis.localStorage` when available. Custom `storage` objects need to implement `getItem`, `setItem`, and `removeItem`. Its default JSON codec supports JSON-serializable values; use a custom codec for values such as `undefined`, functions, or symbols.
+`@zhuangtai-js/persist` uses synchronous Web Storage-compatible storage. Pass a `storage` option explicitly, or it falls back to `globalThis.localStorage` when available. Custom `storage` objects need to implement `getItem`, `setItem`, and `removeItem`. Updates persist first: only after a successful storage write is the in-memory state committed and watchers notified; if encode or the write fails, the in-memory state stays unchanged. Its default JSON codec supports JSON-serializable values; use a custom codec for values such as `undefined`, functions, or symbols.
 
 ## Freeze
 
@@ -223,7 +227,7 @@ const theme = atom("light", {
 theme.set("dark"); // The same-named atom in other tabs updates to "dark" too.
 ```
 
-`@zhuangtai-js/sync` synchronizes atom state across same-origin tabs, windows, or workers through `BroadcastChannel`: local updates broadcast after they commit, and incoming broadcasts write straight to the underlying state without re-broadcasting, avoiding echo loops. Pass a custom `channel` and `codec` if needed; under SSR or a runtime without `BroadcastChannel`, it silently degrades to a plain atom.
+`@zhuangtai-js/sync` synchronizes atom state across same-origin tabs, windows, or workers through `BroadcastChannel`: local updates broadcast after they commit, and incoming broadcasts write straight to the underlying state without re-broadcasting, avoiding echo loops. Pass a custom `channel` and `codec` if needed; under SSR or a runtime without `BroadcastChannel`, it silently degrades to a plain atom, and the default channel never blocks process exit on Node.
 
 ## License
 

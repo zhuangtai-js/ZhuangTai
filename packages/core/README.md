@@ -112,6 +112,10 @@ double.watch((value, prevValue) => {});
 - The `prevValue` of the initial `watch` callback is an `undefined` sentinel. For an `Atom<T | undefined>` this cannot be used to distinguish the first notification from a previous value that happened to be `undefined`.
 - Calling `set()` on an atom while that same atom is notifying watchers throws. Watchers may update other atoms, but avoid cycles between atoms.
 - `computed(...)` calculates its initial value when it is created. It subscribes to sources only while it has watchers, and `get()` recalculates from the current source values.
+- `computed(...)` auto-discovers dependencies from the `.get()` calls actually made inside the derive. The subscription set comes from real reads, so the declared sources can never disagree with the sources actually read.
+- Dependencies under conditional branches switch automatically. A derive like `computed(() => flag.get() ? a.get() : b.get())` unsubscribes from the old branch and subscribes to the new one when `flag` flips.
+- Tracking only happens inside the synchronous derive. Reads after an `await` or inside `setTimeout` are not tracked; keep the derive synchronous.
+- Nested computeds isolate dependencies. Through `inner.get()` the outer computed depends only on `inner` itself; inner source states are not passed through to the outer computed.
 - A multi-source `computed` is a synchronous snapshot, not a transactional consistency boundary: updating several sources one by one, or updating other sources from within a watcher, can expose intermediate combinations. Keep tightly coupled values in the same atom.
 - `computed` compares source values and derived results with `Object.is`. If the derive returns a new object or array every time, it is treated as changed and may notify repeatedly; return a reference-stable value when you need to suppress notifications.
 
