@@ -39,7 +39,7 @@ function assertPackedFiles(tarballPath) {
 }
 
 describe("packed package consumer", () => {
-  it("installs packed core, persist, react, freeze, and immer tarballs in a fresh consumer", () => {
+  it("installs packed core, persist, react, freeze, immer, and sync tarballs in a fresh consumer", () => {
     const tempPath = mkdtempSync(join(tmpdir(), "zhuangtai-pack-consumer-"));
 
     try {
@@ -48,29 +48,34 @@ describe("packed package consumer", () => {
       const reactManifest = readManifest("packages/react");
       const freezeManifest = readManifest("packages/freeze");
       const immerManifest = readManifest("packages/immer");
+      const syncManifest = readManifest("packages/sync");
 
       run("pnpm", ["--filter", coreManifest.name, "pack", "--pack-destination", tempPath]);
       run("pnpm", ["--filter", persistManifest.name, "pack", "--pack-destination", tempPath]);
       run("pnpm", ["--filter", reactManifest.name, "pack", "--pack-destination", tempPath]);
       run("pnpm", ["--filter", freezeManifest.name, "pack", "--pack-destination", tempPath]);
       run("pnpm", ["--filter", immerManifest.name, "pack", "--pack-destination", tempPath]);
+      run("pnpm", ["--filter", syncManifest.name, "pack", "--pack-destination", tempPath]);
 
       const coreTarballPath = join(tempPath, `zhuangtai-js-core-${coreManifest.version}.tgz`);
       const persistTarballPath = join(tempPath, `zhuangtai-js-persist-${persistManifest.version}.tgz`);
       const reactTarballPath = join(tempPath, `zhuangtai-js-react-${reactManifest.version}.tgz`);
       const freezeTarballPath = join(tempPath, `zhuangtai-js-freeze-${freezeManifest.version}.tgz`);
       const immerTarballPath = join(tempPath, `zhuangtai-js-immer-${immerManifest.version}.tgz`);
+      const syncTarballPath = join(tempPath, `zhuangtai-js-sync-${syncManifest.version}.tgz`);
 
       assert.equal(existsSync(coreTarballPath), true);
       assert.equal(existsSync(persistTarballPath), true);
       assert.equal(existsSync(reactTarballPath), true);
       assert.equal(existsSync(freezeTarballPath), true);
       assert.equal(existsSync(immerTarballPath), true);
+      assert.equal(existsSync(syncTarballPath), true);
       assertPackedFiles(coreTarballPath);
       assertPackedFiles(persistTarballPath);
       assertPackedFiles(reactTarballPath);
       assertPackedFiles(freezeTarballPath);
       assertPackedFiles(immerTarballPath);
+      assertPackedFiles(syncTarballPath);
 
       writeFileSync(
         join(tempPath, "package.json"),
@@ -85,6 +90,7 @@ describe("packed package consumer", () => {
               "@zhuangtai-js/react": `file:${reactTarballPath}`,
               "@zhuangtai-js/freeze": `file:${freezeTarballPath}`,
               "@zhuangtai-js/immer": `file:${immerTarballPath}`,
+              "@zhuangtai-js/sync": `file:${syncTarballPath}`,
               "@types/react": "^19.2.0",
               react: "^19.2.0",
               typescript: "rc",
@@ -110,6 +116,7 @@ describe("packed package consumer", () => {
 import { persist } from "@zhuangtai-js/persist";
 import { freeze } from "@zhuangtai-js/freeze";
 import { immer } from "@zhuangtai-js/immer";
+import { sync } from "@zhuangtai-js/sync";
 import {
   useAtom,
   useAtomValue,
@@ -145,6 +152,14 @@ withImmer.set((draft) => {
 });
 if (withImmer.get().items[0].done !== true) throw new Error("immer smoke failed");
 
+const syncCreate = createAtom().use(sync);
+const broadcasts = [];
+const syncChannel = { postMessage: (message) => broadcasts.push(message), addEventListener: () => {} };
+const synced = syncCreate(1, { sync: { key: "count", channel: syncChannel } });
+synced.set(2);
+if (synced.get() !== 2) throw new Error("sync smoke failed");
+if (broadcasts[0] !== "2") throw new Error("sync broadcast smoke failed");
+
 // React hooks require a renderer to invoke; verify the module exports and that
 // the bound-hook factories return hook functions without calling any hook.
 for (const hook of [useAtom, useAtomValue, useSetAtom, createAtomHook, createComputedHook]) {
@@ -164,6 +179,7 @@ if (typeof useDouble !== "function") throw new Error("react createComputedHook s
 import { persist, type PersistStorage } from "@zhuangtai-js/persist";
 import { freeze, type FreezeOptions } from "@zhuangtai-js/freeze";
 import { immer, type ImmerAtom } from "@zhuangtai-js/immer";
+import { sync, type SyncChannel } from "@zhuangtai-js/sync";
 import {
   useAtom,
   useAtomValue,
@@ -191,6 +207,16 @@ immerState.set((draft) => {
   draft.count += 1;
 });
 
+const syncChannel: SyncChannel = {
+  postMessage: () => {},
+  addEventListener: () => {},
+};
+const syncedState: Atom<{ count: number }> = createAtom().use(sync)(
+  { count: 0 },
+  { sync: { key: "count", channel: syncChannel } },
+);
+syncedState.set((prev) => ({ count: prev.count + 1 }));
+
 void persist;
 void storage;
 void useAtom;
@@ -202,6 +228,9 @@ void freeze;
 void freezeOptions;
 void immer;
 void immerState;
+void sync;
+void syncChannel;
+void syncedState;
 `,
       );
 

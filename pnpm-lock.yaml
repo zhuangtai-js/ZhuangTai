@@ -329,6 +329,24 @@ importers:
         specifier: rc
         version: 7.0.1-rc
 
+  packages/sync:
+    devDependencies:
+      '@zhuangtai-js/core':
+        specifier: workspace:*
+        version: link:../core
+      oxfmt:
+        specifier: ^0.58.0
+        version: 0.58.0
+      oxlint:
+        specifier: ^1.73.0
+        version: 1.73.0(oxlint-tsgolint@0.24.0)
+      oxlint-tsgolint:
+        specifier: ^0.24.0
+        version: 0.24.0
+      typescript:
+        specifier: rc
+        version: 7.0.1-rc
+
   packages/test:
     dependencies:
       '@zhuangtai-js/core':
@@ -346,6 +364,9 @@ importers:
       '@zhuangtai-js/react':
         specifier: workspace:*
         version: link:../react
+      '@zhuangtai-js/sync':
+        specifier: workspace:*
+        version: link:../sync
     devDependencies:
       '@testing-library/dom':
         specifier: ^10.4.1

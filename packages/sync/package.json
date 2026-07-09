@@ -1,0 +1,63 @@
+{
+  "name": "@zhuangtai-js/sync",
+  "version": "0.1.0",
+  "description": "Cross-context sync plugin for ZhuangTai atoms.",
+  "keywords": [
+    "broadcastchannel",
+    "cross-tab",
+    "javascript",
+    "state",
+    "state-management",
+    "store",
+    "sync",
+    "typescript"
+  ],
+  "homepage": "https://github.com/zhuangtai-js/ZhuangTai#readme",
+  "bugs": {
+    "url": "https://github.com/zhuangtai-js/ZhuangTai/issues"
+  },
+  "license": "ISC",
+  "author": "mouyase",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhuangtai-js/ZhuangTai.git",
+    "directory": "packages/sync"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "dist/index.d.ts",
+    "dist/index.js"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "rslib",
+    "format": "oxfmt .",
+    "format:check": "oxfmt . --check",
+    "lint": "oxlint . -f agent",
+    "test": "node -e \"\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@zhuangtai-js/core": "workspace:*",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0",
+    "oxlint-tsgolint": "^0.24.0",
+    "typescript": "rc"
+  },
+  "peerDependencies": {
+    "@zhuangtai-js/core": "*"
+  }
+}
