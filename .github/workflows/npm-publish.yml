@@ -19,8 +19,11 @@ on:
         options:
           - all
           - core
+          - freeze
+          - immer
           - persist
           - react
+          - sync
         default: all
       dry_run:
         description: "Run npm publish --dry-run instead of publishing"
