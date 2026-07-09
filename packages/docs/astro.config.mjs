@@ -62,6 +62,13 @@ export default defineConfig({
           },
         },
         {
+          slug: "philosophy",
+          label: "设计理念",
+          translations: {
+            en: "Philosophy",
+          },
+        },
+        {
           label: "指南",
           translations: {
             en: "Guides",
@@ -121,6 +128,13 @@ export default defineConfig({
               label: "Sync",
             },
           ],
+        },
+        {
+          slug: "ai",
+          label: "AI 友好",
+          translations: {
+            en: "AI Friendly",
+          },
         },
       ],
       plugins: [starlightLlmsTxt()],
