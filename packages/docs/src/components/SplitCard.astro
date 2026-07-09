@@ -29,21 +29,16 @@ const { title, icon } = Astro.props;
     gap: 1.5rem;
   }
 
-  .split-left {
-    flex: 1;
-  }
-
+  .split-left,
   .split-right {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    margin-top: 0 !important;
   }
 
   @media (min-width: 50rem) {
     .split {
       flex-direction: row;
-      align-items: center;
+      align-items: flex-start;
       gap: 3rem;
     }
   }
