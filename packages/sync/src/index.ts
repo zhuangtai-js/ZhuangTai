@@ -108,7 +108,20 @@ function resolveChannel(channel: SyncChannel | undefined, key: string): SyncChan
     return undefined;
   }
 
-  return toSyncChannel(new channelCtor(key));
+  const broadcast = new channelCtor(key);
+
+  unrefChannel(broadcast);
+
+  return toSyncChannel(broadcast);
+}
+
+function unrefChannel(broadcast: BroadcastChannel): void {
+  // Node's BroadcastChannel (unlike the browser's) keeps the event loop
+  // alive. unref, where available, lets the process exit naturally while sync
+  // stays active for the lifetime of the process.
+  if ("unref" in broadcast && typeof broadcast.unref === "function") {
+    broadcast.unref();
+  }
 }
 
 function toSyncChannel(broadcast: BroadcastChannel): SyncChannel {

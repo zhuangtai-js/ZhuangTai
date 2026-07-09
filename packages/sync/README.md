@@ -69,6 +69,7 @@ const count = atom(0, {
 - `Object.is` 判定为无变化的更新不会广播。
 - 收到的广播直接写入底层状态，因此会跳过其他包裹在 `sync` 之上的插件的 `set` 逻辑。
 - SSR 或没有 `BroadcastChannel` 的运行时会静默降级为普通 atom。
+- 默认创建的 `BroadcastChannel` 在 Node 等支持 `unref` 的运行时中不会阻止进程退出；进程存活期间同步照常工作。显式传入的 `channel` 由调用方自行管理。
 - `BroadcastChannel` 只在同源上下文间工作，不跨设备、不做持久化；需要持久化请搭配 `@zhuangtai-js/persist`。
 - 不支持异步 channel。
 
@@ -149,6 +150,7 @@ const count = atom(0, {
 - `Object.is` no-op updates are not broadcast.
 - Because received broadcasts write straight to the underlying state, they bypass the `set` logic of any other plugin wrapped above `sync`.
 - SSR or runtimes without `BroadcastChannel` silently degrade to a plain atom.
+- The default `BroadcastChannel` is unref'ed on runtimes that support it (such as Node), so a synced atom never blocks process exit; sync keeps working for the lifetime of the process. An explicitly passed `channel` is managed by the caller.
 - `BroadcastChannel` only works across same-origin contexts; it does not cross devices and does not persist. Combine with `@zhuangtai-js/persist` when you need persistence.
 - Async channels are not supported.
 
