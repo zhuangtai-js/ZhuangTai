@@ -2,6 +2,11 @@
 
 This file is for AI agents and maintainers working on this repository. Do not put internal maintenance or release instructions in `README.md`; the README should contain only externally useful project information.
 
+## Communication
+
+- When reasoning about this repository and when replying to the user, always use Simplified Chinese (简体中文).
+
+
 ## Project Identity
 
 - Display name: `ZhuàngTài`
