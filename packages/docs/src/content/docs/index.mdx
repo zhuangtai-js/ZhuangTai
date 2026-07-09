@@ -1,0 +1,97 @@
+---
+title: ZhuàngTài 状态
+description: 简单、直接的 JavaScript 状态原语。用同步、可预测的小原语管理状态，不把调度藏进核心。
+template: splash
+hero:
+  title: ZhuàngTài 状态
+  tagline: 简单、直接的 JavaScript 状态原语。用同步、可预测的小原语管理状态，不把调度藏进核心。
+  actions:
+    - text: 快速开始
+      link: /getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: 在 GitHub 查看
+      link: https://github.com/zhuangtai-js/ZhuangTai
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## 为什么选择 ZhuàngTài？
+
+<CardGrid stagger>
+  <Card
+    title="同步直达"
+    icon="rocket">
+    `set()` 立即更新，`watch()` 同步触发，没有隐藏的批处理或延迟调度。
+  </Card>
+  <Card
+    title="零依赖内核"
+    icon="puzzle">
+    `@zhuangtai-js/core` 没有第三方运行时依赖，核心 API 保持少量且直接。
+  </Card>
+  <Card
+    title="可组合插件"
+    icon="setting">
+    使用 `createAtom()` 安装插件；默认 `atom()` 保持干净，不受插件影响。
+  </Card>
+  <Card
+    title="TypeScript 优先"
+    icon="seti:typescript">
+    原生 TypeScript 编写，提供完整的类型推导和类型安全。
+  </Card>
+</CardGrid>
+
+## 核心包与插件
+
+<CardGrid>
+  <Card
+    title="Core"
+    icon="star">
+    零依赖状态内核。 [查看参考 &rarr;](/reference/core/)
+  </Card>
+  <Card
+    title="Persist"
+    icon="document">
+    Web Storage 持久化。 [查看参考 &rarr;](/reference/persist/)
+  </Card>
+  <Card
+    title="React"
+    icon="seti:react">
+    React hooks 适配器。 [查看参考 &rarr;](/reference/react/)
+  </Card>
+  <Card
+    title="Freeze"
+    icon="warning">
+    开发期深冻结。 [查看参考 &rarr;](/reference/freeze/)
+  </Card>
+  <Card
+    title="Immer"
+    icon="pencil">
+    草稿式不可变更新。 [查看参考 &rarr;](/reference/immer/)
+  </Card>
+  <Card
+    title="Sync"
+    icon="random">
+    BroadcastChannel 跨标签页同步。 [查看参考 &rarr;](/reference/sync/)
+  </Card>
+</CardGrid>
+
+## 安装
+
+```sh
+pnpm add @zhuangtai-js/core
+```
+
+需要持久化或 React 适配器时再安装插件：
+
+```sh
+pnpm add @zhuangtai-js/core @zhuangtai-js/persist @zhuangtai-js/react
+```
+
+## 深入了解
+
+- [核心概念](/guides/core-concepts/)
+- [插件机制](/guides/plugins/)
+- [在 React 中使用](/guides/react/)

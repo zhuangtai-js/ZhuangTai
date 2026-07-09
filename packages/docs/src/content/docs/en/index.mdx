@@ -1,0 +1,98 @@
+---
+title: ZhuàngTài State
+description: Simple, direct state primitives for JavaScript. Manage state with small, synchronous, predictable primitives without hidden scheduling in the core.
+template: splash
+hero:
+  title: ZhuàngTài State
+  tagline: Simple, direct state primitives for JavaScript. Manage state with small, synchronous, predictable primitives without hidden scheduling in the core.
+  actions:
+    - text: Getting Started
+      link: /en/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/zhuangtai-js/ZhuangTai
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## Why ZhuàngTài?
+
+<CardGrid stagger>
+  <Card
+    title="Synchronous by default"
+    icon="rocket">
+    `set()` updates immediately and `watch()` runs synchronously. There is no hidden batching or
+    delayed scheduling.
+  </Card>
+  <Card
+    title="Zero-dependency core"
+    icon="puzzle">
+    `@zhuangtai-js/core` has no third-party runtime dependencies and keeps the core API small.
+  </Card>
+  <Card
+    title="Composable plugins"
+    icon="setting">
+    Install plugins with `createAtom()`. The default `atom()` export stays clean and unextended.
+  </Card>
+  <Card
+    title="TypeScript first"
+    icon="seti:typescript">
+    Written in TypeScript natively, providing complete type inference and type safety.
+  </Card>
+</CardGrid>
+
+## Packages
+
+<CardGrid>
+  <Card
+    title="Core"
+    icon="star">
+    The zero-runtime-dependency state core. [View Reference &rarr;](/en/reference/core/)
+  </Card>
+  <Card
+    title="Persist"
+    icon="document">
+    Web Storage persistence. [View Reference &rarr;](/en/reference/persist/)
+  </Card>
+  <Card
+    title="React"
+    icon="seti:react">
+    React hooks adapter. [View Reference &rarr;](/en/reference/react/)
+  </Card>
+  <Card
+    title="Freeze"
+    icon="warning">
+    Development-time deep-freeze. [View Reference &rarr;](/en/reference/freeze/)
+  </Card>
+  <Card
+    title="Immer"
+    icon="pencil">
+    Immutable updates by mutating a draft. [View Reference &rarr;](/en/reference/immer/)
+  </Card>
+  <Card
+    title="Sync"
+    icon="random">
+    Cross-tab sync via BroadcastChannel. [View Reference &rarr;](/en/reference/sync/)
+  </Card>
+</CardGrid>
+
+## Install
+
+```sh
+pnpm add @zhuangtai-js/core
+```
+
+Install plugins like persistence or React adapter only when you need them:
+
+```sh
+pnpm add @zhuangtai-js/core @zhuangtai-js/persist @zhuangtai-js/react
+```
+
+## Learn More
+
+- [Core Concepts](/en/guides/core-concepts/)
+- [Plugins](/en/guides/plugins/)
+- [Usage with React](/en/guides/react/)
