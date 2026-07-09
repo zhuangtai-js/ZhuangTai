@@ -20,7 +20,7 @@ export default defineConfig({
   ],
   output: {
     cleanDistPath: true,
-    minify: true,
+    minify: false,
     sourceMap: false,
   },
 });

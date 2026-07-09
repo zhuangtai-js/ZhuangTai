@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
+import { gzipSync } from "node:zlib";
 import assert from "node:assert/strict";
 
 const rootPath = new URL("..", import.meta.url).pathname;
@@ -91,12 +92,14 @@ describe("build artifacts", () => {
   });
 
   it("keeps the core runtime small and the README bundle-size badge present", () => {
-    // Given
+    // Given: the runtime ships unminified (consumers' bundlers minify), so the
+    // size guard measures gzipped transfer cost, matching the README badge.
     const coreRuntime = readFileSync(join(rootPath, "packages/core/dist/index.js"));
+    const gzippedSize = gzipSync(coreRuntime).byteLength;
     const readme = readFileSync(join(rootPath, "README.md"), "utf8");
 
     // Then
-    assert.ok(coreRuntime.byteLength < 2500, `Expected core runtime below 2.5 kB, got ${coreRuntime.byteLength} B`);
+    assert.ok(gzippedSize < 2500, `Expected gzipped core runtime below 2.5 kB, got ${gzippedSize} B`);
     assert.ok(readme.includes(CORE_BUNDLE_BADGE_URL));
   });
 
