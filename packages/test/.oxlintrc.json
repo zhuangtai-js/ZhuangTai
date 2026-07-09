@@ -3,6 +3,7 @@
   "rules": {
     "react/react-in-jsx-scope": "off",
     "typescript/no-redundant-type-constituents": "allow",
-    "typescript/no-unsafe-type-assertion": "allow"
+    "typescript/no-unsafe-type-assertion": "allow",
+    "unicorn/require-post-message-target-origin": "off"
   }
 }

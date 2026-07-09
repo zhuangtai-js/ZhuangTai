@@ -7,3 +7,5 @@ coverage
 *.log
 .codegraph
 .omo
+.vitest-attachments
+__screenshots__

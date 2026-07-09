@@ -27,4 +27,19 @@ describe("browser smoke", () => {
 
     expect(localStorage.getItem("count")).toBe("6");
   });
+
+  it("restores persisted state across atom instances like a reload", () => {
+    localStorage.clear();
+
+    const createState = createAtom().use(persist);
+    const first = createState(0, { persist: { key: "reload-count" } });
+
+    first.set(42);
+
+    // A second instance with the same key stands in for the atom re-created
+    // after a page reload: it must restore what the first instance wrote.
+    const second = createState(0, { persist: { key: "reload-count" } });
+
+    expect(second.get()).toBe(42);
+  });
 });
