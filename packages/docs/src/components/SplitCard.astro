@@ -1,0 +1,50 @@
+---
+import { Card } from '@astrojs/starlight/components';
+
+const { title, icon } = Astro.props;
+---
+
+<div class="split-card">
+  <Card title={title} icon={icon}>
+    <div class="split">
+      <div class="split-left">
+        <slot name="left" />
+      </div>
+      <div class="split-right">
+        <slot name="right" />
+      </div>
+    </div>
+  </Card>
+</div>
+
+<style>
+  .split-card {
+    grid-column: 1 / -1;
+    margin-top: 2rem;
+  }
+
+  .split {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .split-left {
+    flex: 1;
+  }
+
+  .split-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  @media (min-width: 50rem) {
+    .split {
+      flex-direction: row;
+      align-items: center;
+      gap: 3rem;
+    }
+  }
+</style>

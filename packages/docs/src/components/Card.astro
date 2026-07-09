@@ -1,0 +1,37 @@
+---
+import { Card } from '@astrojs/starlight/components';
+
+const { title, icon } = Astro.props;
+---
+
+<div class="landing-card">
+  <Card title={title} icon={icon}>
+    <slot />
+  </Card>
+</div>
+
+<style>
+  .landing-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .landing-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--landing-card-accent, var(--sl-color-accent-low));
+    filter: blur(3.25rem);
+    opacity: 0.15;
+    z-index: -1;
+    border-radius: 1rem;
+    transition: opacity 0.3s ease;
+  }
+
+  .landing-card:hover::before {
+    opacity: 0.25;
+  }
+
+</style>

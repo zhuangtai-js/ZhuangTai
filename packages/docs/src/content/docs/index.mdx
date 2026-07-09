@@ -16,11 +16,15 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid } from "@astrojs/starlight/components";
+import { CardGrid, LinkButton } from "@astrojs/starlight/components";
+import Card from "../../components/Card.astro";
+import SplitCard from "../../components/SplitCard.astro";
+import ListCard from "../../components/ListCard.astro";
+import Cta from "../../components/Cta.astro";
 
 ## 为什么选择 ZhuàngTài？
 
-<CardGrid stagger>
+<CardGrid>
   <Card
     title="同步直达"
     icon="rocket">
@@ -43,55 +47,82 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
   </Card>
 </CardGrid>
 
-## 核心包与插件
-
-<CardGrid>
-  <Card
-    title="Core"
-    icon="star">
-    零依赖状态内核。 [查看参考 &rarr;](/reference/core/)
-  </Card>
-  <Card
-    title="Persist"
-    icon="document">
-    Web Storage 持久化。 [查看参考 &rarr;](/reference/persist/)
-  </Card>
-  <Card
-    title="React"
-    icon="seti:react">
-    React hooks 适配器。 [查看参考 &rarr;](/reference/react/)
-  </Card>
-  <Card
-    title="Freeze"
-    icon="warning">
-    开发期深冻结。 [查看参考 &rarr;](/reference/freeze/)
-  </Card>
-  <Card
-    title="Immer"
-    icon="pencil">
-    草稿式不可变更新。 [查看参考 &rarr;](/reference/immer/)
-  </Card>
-  <Card
-    title="Sync"
-    icon="random">
-    BroadcastChannel 跨标签页同步。 [查看参考 &rarr;](/reference/sync/)
-  </Card>
-</CardGrid>
-
-## 安装
+<SplitCard
+  title="安装"
+  icon="puzzle">
+  <div slot="left">
 
 ```sh
 pnpm add @zhuangtai-js/core
 ```
 
-需要持久化或 React 适配器时再安装插件：
+  </div>
+  <div slot="right">
+    <p>需要持久化或 React 适配器时再安装插件：</p>
 
 ```sh
 pnpm add @zhuangtai-js/core @zhuangtai-js/persist @zhuangtai-js/react
 ```
 
-## 深入了解
+  </div>
+</SplitCard>
 
-- [核心概念](/guides/core-concepts/)
-- [插件机制](/guides/plugins/)
-- [在 React 中使用](/guides/react/)
+<div style="margin-top: 2rem;">
+  <CardGrid>
+    <ListCard
+      title="学习"
+      icon="open-book">
+      <ul>
+        <li>
+          <a href="/getting-started/">快速开始</a>
+        </li>
+        <li>
+          <a href="/philosophy/">设计理念</a>
+        </li>
+        <li>
+          <a href="/guides/core-concepts/">核心概念</a>
+        </li>
+        <li>
+          <a href="/guides/plugins/">插件机制</a>
+        </li>
+      </ul>
+    </ListCard>
+    <ListCard
+      title="扩展"
+      icon="puzzle">
+      <ul>
+        <li>
+          <a href="/guides/react/">在 React 中使用</a>
+        </li>
+        <li>
+          <a href="/reference/persist/">Persist 持久化</a>
+        </li>
+        <li>
+          <a href="/reference/sync/">Sync 跨标签页同步</a>
+        </li>
+        <li>
+          <a href="/ai/">AI 友好</a>
+        </li>
+      </ul>
+    </ListCard>
+  </CardGrid>
+</div>
+
+<Cta>
+  <h2>准备好开始了吗？</h2>
+  <p>阅读快速开始指南，或者在 GitHub 上查看源码。</p>
+  <div class="action-group">
+    <LinkButton
+      href="/getting-started/"
+      variant="primary"
+      icon="right-arrow">
+      快速开始
+    </LinkButton>
+    <LinkButton
+      href="https://github.com/zhuangtai-js/ZhuangTai"
+      variant="secondary"
+      icon="star">
+      Star on GitHub
+    </LinkButton>
+  </div>
+</Cta>

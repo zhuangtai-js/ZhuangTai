@@ -16,11 +16,15 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid } from "@astrojs/starlight/components";
+import { CardGrid, LinkButton } from "@astrojs/starlight/components";
+import Card from "../../../components/Card.astro";
+import SplitCard from "../../../components/SplitCard.astro";
+import ListCard from "../../../components/ListCard.astro";
+import Cta from "../../../components/Cta.astro";
 
 ## Why ZhuàngTài?
 
-<CardGrid stagger>
+<CardGrid>
   <Card
     title="Synchronous by default"
     icon="rocket">
@@ -44,55 +48,82 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
   </Card>
 </CardGrid>
 
-## Packages
-
-<CardGrid>
-  <Card
-    title="Core"
-    icon="star">
-    The zero-runtime-dependency state core. [View Reference &rarr;](/en/reference/core/)
-  </Card>
-  <Card
-    title="Persist"
-    icon="document">
-    Web Storage persistence. [View Reference &rarr;](/en/reference/persist/)
-  </Card>
-  <Card
-    title="React"
-    icon="seti:react">
-    React hooks adapter. [View Reference &rarr;](/en/reference/react/)
-  </Card>
-  <Card
-    title="Freeze"
-    icon="warning">
-    Development-time deep-freeze. [View Reference &rarr;](/en/reference/freeze/)
-  </Card>
-  <Card
-    title="Immer"
-    icon="pencil">
-    Immutable updates by mutating a draft. [View Reference &rarr;](/en/reference/immer/)
-  </Card>
-  <Card
-    title="Sync"
-    icon="random">
-    Cross-tab sync via BroadcastChannel. [View Reference &rarr;](/en/reference/sync/)
-  </Card>
-</CardGrid>
-
-## Install
+<SplitCard
+  title="Install"
+  icon="puzzle">
+  <div slot="left">
 
 ```sh
 pnpm add @zhuangtai-js/core
 ```
 
-Install plugins like persistence or React adapter only when you need them:
+  </div>
+  <div slot="right">
+    <p>Install plugins like persistence or React adapter only when you need them:</p>
 
 ```sh
 pnpm add @zhuangtai-js/core @zhuangtai-js/persist @zhuangtai-js/react
 ```
 
-## Learn More
+  </div>
+</SplitCard>
 
-- [Core Concepts](/en/guides/core-concepts/)
-- [Plugins](/en/guides/plugins/)
-- [Usage with React](/en/guides/react/)
+<div style="margin-top: 2rem;">
+  <CardGrid>
+    <ListCard
+      title="Learn"
+      icon="open-book">
+      <ul>
+        <li>
+          <a href="/en/getting-started/">Getting Started</a>
+        </li>
+        <li>
+          <a href="/en/philosophy/">Philosophy</a>
+        </li>
+        <li>
+          <a href="/en/guides/core-concepts/">Core Concepts</a>
+        </li>
+        <li>
+          <a href="/en/guides/plugins/">Plugins</a>
+        </li>
+      </ul>
+    </ListCard>
+    <ListCard
+      title="Extend"
+      icon="puzzle">
+      <ul>
+        <li>
+          <a href="/en/guides/react/">Usage with React</a>
+        </li>
+        <li>
+          <a href="/en/reference/persist/">Persist</a>
+        </li>
+        <li>
+          <a href="/en/reference/sync/">Sync</a>
+        </li>
+        <li>
+          <a href="/en/ai/">AI Friendly</a>
+        </li>
+      </ul>
+    </ListCard>
+  </CardGrid>
+</div>
+
+<Cta>
+  <h2>Ready to get started?</h2>
+  <p>Read the getting started guide, or check out the source code on GitHub.</p>
+  <div class="action-group">
+    <LinkButton
+      href="/en/getting-started/"
+      variant="primary"
+      icon="right-arrow">
+      Getting Started
+    </LinkButton>
+    <LinkButton
+      href="https://github.com/zhuangtai-js/ZhuangTai"
+      variant="secondary"
+      icon="star">
+      Star on GitHub
+    </LinkButton>
+  </div>
+</Cta>
