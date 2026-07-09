@@ -5,6 +5,8 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/zhuangtai-js/ZhuangTai/ci.yml?branch=main&label=CI&style=flat&colorA=000000&colorB=000000)](https://github.com/zhuangtai-js/ZhuangTai/actions/workflows/ci.yml)
 [![License](https://img.shields.io/npm/l/@zhuangtai-js/core?style=flat&colorA=000000&colorB=000000)](./LICENSE)
 
+<p align="center">简体中文 | <a href="./docs/guide/README.en.md">English</a></p>
+
 # ZhuàngTài 状态
 
 简单、直接的 JavaScript 状态原语。
@@ -12,6 +14,18 @@
 文档站：https://zhuangtai.yojigen.cn · llms.txt：https://zhuangtai.yojigen.cn/llms.txt
 
 ZhuàngTài 是一个轻量的 TypeScript 状态库，核心与框架无关，也不会隐藏调度行为。
+
+## 设计理念
+
+ZhuàngTài 把 API 维持得很小，`atom`、`computed`、`createAtom` 这几件事就够了。每一行代码的行为都尽量能在脑中直接推演，不需要绕一圈才知道会发生什么。
+
+它不做魔法，`set` 立即生效，`watch` 同步执行，判等使用 `Object.is`，对象和数组更新都按引用处理。你只要按不可变的方式更新，就能得到稳定的结果。
+
+核心里不放隐藏调度，不做批处理、防抖或事务。复杂性留给插件和更上层的代码去组织，核心只保留最直接的语义。
+
+内核保持零依赖，`persist`、`freeze`、`immer`、`sync` 都是可选插件。框架适配器也放在独立包里，所以核心可以一直保持干净。
+
+语义越可预测，人和 AI 就越容易写对代码。更多说明见 [设计理念](https://zhuangtai.yojigen.cn/philosophy/)。
 
 ## 特性
 
@@ -35,6 +49,26 @@ ZhuàngTài 是一个轻量的 TypeScript 状态库，核心与框架无关，�
 
 - 需要内建批处理、异步调度或事务的场景。
 - 希望库内部替你隐藏调度细节的场景。
+
+## 用 AI 一键接入
+
+直接把下面这段提示词贴给 Claude Code、Codex、Cursor、OpenCode 等任意 AI 编码助手：
+
+```text
+请阅读 https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/guide/installation.md 并按其中的步骤在当前项目中安装并配置 ZhuàngTài。
+```
+
+安装 Agent Skills 时，可以直接运行：
+
+```bash
+npx skills add zhuangtai-js/ZhuangTai
+```
+
+这会把我们的 Agent Skills 安装到 Claude Code、Codex、OpenCode、Cursor 以及 70+ 个代理中。只装单个 skill 时，可以用：
+
+```bash
+npx skills add zhuangtai-js/ZhuangTai --skill zhuangtai
+```
 
 ## 包
 
@@ -62,7 +96,7 @@ double.get();
 double.watch((value, prevValue) => {});
 ```
 
-## API 一览 / API at a glance
+## API 一览
 
 | 导出 | TypeScript 形式 | 语义 |
 | --- | --- | --- |
@@ -153,160 +187,15 @@ theme.set("dark"); // 其他标签页里的同名 atom 也会更新为 "dark"。
 
 如果这个项目对你有帮助，欢迎在 GitHub 上点一个 ⭐：https://github.com/zhuangtai-js/ZhuangTai
 
+## AI 友好
+
+- 双语文档站。
+- llms.txt 入口：[https://zhuangtai.yojigen.cn/llms.txt](https://zhuangtai.yojigen.cn/llms.txt)，完整上下文：[https://zhuangtai.yojigen.cn/llms-full.txt](https://zhuangtai.yojigen.cn/llms-full.txt)，轻量上下文：[https://zhuangtai.yojigen.cn/llms-small.txt](https://zhuangtai.yojigen.cn/llms-small.txt)。
+- `skills/` 目录里提供 Agent Skills，可以通过 `npx skills` 安装。
+- MCP server：规划中。
+
+更多说明见 [AI 页面](https://zhuangtai.yojigen.cn/ai/)。
+
 ## 许可证
 
 ZhuàngTài 使用 [ISC 许可证](./LICENSE) 发布。你可以自由使用、复制、修改和分发，但需要在副本中保留版权声明和许可证声明。
-
----
-
-# ZhuàngTài
-
-Simple, direct state primitives for JavaScript.
-
-Docs: https://zhuangtai.yojigen.cn/en/ · llms.txt: https://zhuangtai.yojigen.cn/llms.txt
-
-ZhuàngTài is a tiny TypeScript state library with a framework-agnostic core and no hidden scheduling.
-
-## Highlights
-
-- Zero third-party runtime dependencies in the core.
-- Tiny core, see the bundle size badge above.
-- Synchronous, predictable semantics.
-- TypeScript first.
-- Bilingual documentation.
-- llms.txt support.
-
-## When to use ZhuàngTài
-
-Best for:
-
-- Small state with predictable synchronous semantics.
-- A framework-agnostic core.
-- Zero dependencies.
-- Composable plugins.
-
-Not for:
-
-- Cases that need built-in batching, async scheduling, or transactions.
-- Libraries that should hide scheduling details inside the core.
-
-## Packages
-
-- `@zhuangtai-js/core`: the zero-runtime-dependency state core.
-- `@zhuangtai-js/persist`: persistence plugin for atoms created with `createAtom()`.
-- `@zhuangtai-js/react`: React adapter with hooks for atoms and computeds.
-- `@zhuangtai-js/freeze`: development-time deep-freeze plugin that guards against accidental mutation of state internals.
-- `@zhuangtai-js/immer`: Immer plugin for writing immutable updates by "mutating a draft".
-- `@zhuangtai-js/sync`: cross-context sync plugin that syncs atom state across tabs through `BroadcastChannel`.
-
-## Core API
-
-```ts
-import { atom, computed } from "@zhuangtai-js/core";
-
-const count = atom(0);
-const double = computed(() => count.get() * 2);
-
-count.get();
-count.set(1);
-count.set((value) => value + 1);
-count.watch((value, prevValue) => {});
-
-double.get();
-double.watch((value, prevValue) => {});
-```
-
-## API at a glance / API 一览
-
-| Export | TypeScript shape | Meaning |
-| --- | --- | --- |
-| `atom` | `atom(initialValue: RejectFunctionValue<Value>): Atom<Value>` | Creates an atom whose initial value is immediately readable and writable. |
-| `computed` | `computed(derive: () => Value): Computed<Value>` | Auto-tracks synchronous dependencies and derives a value from them. |
-| `createAtom` | `createAtom(): AtomCreator` | Creates an atom creator that can be extended by plugins. |
-| `.use` | `use(plugin: AtomCreatorPlugin<Name, Options, PluginKind>): AtomCreator<OptionsByPlugin & { readonly [Key in Name]: Options }, PluginKind extends "default" ? Kind : PluginKind>` | Installs a plugin on the creator and returns a creator that accepts that plugin's per-atom options. |
-| `get()` | `get(): Value` | Reads the current value. |
-| `set()` | `set(nextValue: NextValue<Value>): void` | Writes a new value or updater and applies it immediately. |
-| `watch()` | `watch(watcher: Watcher<Value>): () => void` | Subscribes to changes and returns an unsubscribe function. |
-
-`@zhuangtai-js/core` intentionally has no third-party runtime dependencies. Framework adapters live in separate packages.
-
-Core semantics: `set` applies immediately, `watch` callbacks run synchronously, equality uses `Object.is`, object and array updates are reference-based, and throwing watchers are isolated from each other. See the [`@zhuangtai-js/core` README](./packages/core/README.md) for the full semantics list.
-
-## Persistence
-
-```ts
-import { createAtom } from "@zhuangtai-js/core";
-import { persist } from "@zhuangtai-js/persist";
-
-const atom = createAtom().use(persist);
-
-const theme = atom("light", {
-  persist: {
-    key: "theme",
-  },
-});
-
-theme.set("dark");
-```
-
-`@zhuangtai-js/persist` uses synchronous Web Storage-compatible storage. Pass a `storage` option explicitly, or it falls back to `globalThis.localStorage` when available. Custom `storage` objects need to implement `getItem`, `setItem`, and `removeItem`. Updates persist first: only after a successful storage write is the in-memory state committed and watchers notified; if encode or the write fails, the in-memory state stays unchanged. Its default JSON codec supports JSON-serializable values; use a custom codec for values such as `undefined`, functions, or symbols.
-
-## Freeze
-
-```ts
-import { createAtom } from "@zhuangtai-js/core";
-import { freeze } from "@zhuangtai-js/freeze";
-
-const atom = createAtom().use(freeze);
-
-const user = atom({ name: "Yuan" });
-
-user.get().name = "Renamed"; // Throws during development: the object is frozen.
-user.set((prev) => ({ ...prev, name: "Renamed" })); // The correct immutable update.
-```
-
-`@zhuangtai-js/freeze` deep-freezes every value during development. Core detects changes by reference equality, so mutating state internals in place is silently ignored; this plugin makes such accidental mutations throw immediately. It defaults to a no-op when `NODE_ENV === "production"`, and can be toggled explicitly with the `enabled` option.
-
-## Immer
-
-```ts
-import { createAtom } from "@zhuangtai-js/core";
-import { immer } from "@zhuangtai-js/immer";
-
-const atom = createAtom().use(immer);
-
-const todos = atom([{ text: "a", done: false }]);
-
-// Directly "mutate the draft"; Immer produces a new reference before committing.
-todos.set((draft) => {
-  draft[0].done = true;
-  draft.push({ text: "b", done: false });
-});
-```
-
-`@zhuangtai-js/immer` runs updater functions through Immer's `produce`, letting you write updates by directly "mutating a draft" while still producing a new reference and staying immutable. Concrete values passed directly bypass Immer and behave exactly as in core.
-
-## Sync
-
-```ts
-import { createAtom } from "@zhuangtai-js/core";
-import { sync } from "@zhuangtai-js/sync";
-
-const atom = createAtom().use(sync);
-
-const theme = atom("light", {
-  sync: {
-    key: "theme",
-  },
-});
-
-theme.set("dark"); // The same-named atom in other tabs updates to "dark" too.
-```
-
-`@zhuangtai-js/sync` synchronizes atom state across same-origin tabs, windows, or workers through `BroadcastChannel`: local updates broadcast after they commit, and incoming broadcasts write straight to the underlying state without re-broadcasting, avoiding echo loops. Pass a custom `channel` and `codec` if needed; under SSR or a runtime without `BroadcastChannel`, it silently degrades to a plain atom, and the default channel never blocks process exit on Node.
-
-If this project helps you, a ⭐ on GitHub is appreciated: https://github.com/zhuangtai-js/ZhuangTai
-
-## License
-
-ZhuàngTài is released under the [ISC License](./LICENSE). You may use, copy, modify, and distribute it freely, provided that the copyright notice and license notice are retained in copies.
