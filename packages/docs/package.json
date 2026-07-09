@@ -11,7 +11,7 @@
     "format:check": "oxfmt package.json astro.config.mjs tsconfig.json src --check",
     "lint": "oxlint astro.config.mjs src -f agent",
     "preview": "astro preview",
-    "test": "astro sync && tsc -p tsconfig.json --noEmit",
+    "test": "node -e \"\"",
     "typecheck": "astro sync && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

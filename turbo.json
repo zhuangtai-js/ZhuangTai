@@ -23,6 +23,10 @@
     },
     "format:check": {
       "outputs": []
+    },
+    "docs#typecheck": {
+      "dependsOn": ["build"],
+      "outputs": []
     }
   }
 }
