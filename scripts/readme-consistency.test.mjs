@@ -94,15 +94,17 @@ const publicDocumentationPaths = [
   ...new Set([...currentDocumentationPaths, ...packageDocumentationPaths]),
 ].toSorted((left, right) => left.localeCompare(right));
 
-function markdownContainerContent(line) {
+function blockquoteContent(line, maximumDepth = Number.POSITIVE_INFINITY) {
   let content = line;
+  let depth = 0;
   let marker;
 
-  while ((marker = /^ {0,3}>[ \t]?/u.exec(content)) !== null) {
+  while (depth < maximumDepth && (marker = /^ {0,3}>[ \t]?/u.exec(content)) !== null) {
     content = content.slice(marker[0].length);
+    depth += 1;
   }
 
-  return content;
+  return { content, depth };
 }
 
 function visibleMarkdownLines(markdown) {
@@ -110,23 +112,31 @@ function visibleMarkdownLines(markdown) {
   let fence;
 
   for (const line of markdown.split(/\r?\n/u)) {
-    const content = markdownContainerContent(line);
-    const opening = /^( {0,3})(`{3,}|~{3,})(.*)$/u.exec(content);
-
-    if (fence === undefined) {
-      if (opening !== null && !(opening[2][0] === "`" && opening[3].includes("`"))) {
-        fence = opening[2];
+    if (fence !== undefined) {
+      const container = blockquoteContent(line, fence.blockquoteDepth);
+      if (container.depth === fence.blockquoteDepth) {
+        const closing = /^( {0,3})(`{3,}|~{3,})\s*$/u.exec(container.content);
+        if (
+          closing !== null &&
+          closing[2][0] === fence.marker[0] &&
+          closing[2].length >= fence.marker.length
+        ) {
+          fence = undefined;
+        }
         continue;
       }
 
-      visibleLines.push(line);
+      fence = undefined;
+    }
+
+    const container = blockquoteContent(line);
+    const opening = /^( {0,3})(`{3,}|~{3,})(.*)$/u.exec(container.content);
+    if (opening !== null && !(opening[2][0] === "`" && opening[3].includes("`"))) {
+      fence = { marker: opening[2], blockquoteDepth: container.depth };
       continue;
     }
 
-    const closing = /^( {0,3})(`{3,}|~{3,})\s*$/u.exec(content);
-    if (closing !== null && closing[2][0] === fence[0] && closing[2].length >= fence.length) {
-      fence = undefined;
-    }
+    visibleLines.push(line);
   }
 
   return visibleLines;
@@ -443,6 +453,8 @@ describe("README consistency", () => {
   it("parses CommonMark fences without treating code examples as documentation", () => {
     const markdown = "# Title\n\n```sh\n# comment\n[example](./missing.md)\n```\n\n## Section";
     const blockquote = "> ```md\n> [example](./missing.md)\n> ````";
+    const blockquoteExit = "> ```md\n> [hidden](./missing.md)\n\n[visible](/missing-route/)";
+    const quotedFenceMarker = "````md\n> ````\n[hidden](./missing.md)\n````";
 
     assert.deepEqual(
       visibleMarkdownLines(markdown).filter((line) => /^#{1,6} /u.test(line)),
@@ -450,6 +462,8 @@ describe("README consistency", () => {
     );
     assert.deepEqual(localDocumentationTargets(markdown, "fixture.md"), []);
     assert.deepEqual(localDocumentationTargets(blockquote, "fixture.md"), []);
+    assert.deepEqual(localDocumentationTargets(blockquoteExit, "fixture.md"), ["/missing-route/"]);
+    assert.deepEqual(localDocumentationTargets(quotedFenceMarker, "fixture.md"), []);
     assert.deepEqual(visibleMarkdownLines("# Title\n\n```sh\ncommand"), ["# Title", ""]);
   });
 
