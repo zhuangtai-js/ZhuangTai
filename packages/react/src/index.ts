@@ -1,5 +1,5 @@
 import type { Atom, NextValue, ReadableAtom } from "@zhuangtai-js/core";
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 /**
  * Subscribe to a readable atom (an `Atom` or a `computed`) and re-render on change.
@@ -9,14 +9,18 @@ import { useCallback, useSyncExternalStore } from "react";
  * is used as the server snapshot.
  */
 export function useAtomValue<Value>(atom: ReadableAtom<Value>): Value {
-  const subscribe = useCallback(
-    (onStoreChange: () => void): (() => void) => {
-      // core's watch() invokes the watcher once synchronously with
-      // (currentValue, undefined) on subscribe. Skip that initial call; React
-      // already has the current snapshot, so only real changes should notify.
+  const store = useMemo(() => {
+    let snapshot = atom.get();
+
+    function subscribe(onStoreChange: () => void): () => void {
+      // Core invokes watch() once synchronously on subscribe. Use that value to
+      // close the render-to-subscribe gap, but let React's post-subscribe
+      // snapshot check detect it instead of notifying during subscription.
       let initialized = false;
 
-      return atom.watch(() => {
+      return atom.watch((value) => {
+        snapshot = value;
+
         if (!initialized) {
           initialized = true;
           return;
@@ -24,13 +28,16 @@ export function useAtomValue<Value>(atom: ReadableAtom<Value>): Value {
 
         onStoreChange();
       });
-    },
-    [atom],
-  );
+    }
 
-  const getSnapshot = useCallback((): Value => atom.get(), [atom]);
+    function getSnapshot(): Value {
+      return snapshot;
+    }
 
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+    return { getSnapshot, subscribe };
+  }, [atom]);
+
+  return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 }
 
 /**

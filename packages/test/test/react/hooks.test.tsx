@@ -58,6 +58,21 @@ describe("useAtomValue", () => {
     expect(result.current).toBe(6);
   });
 
+  it("stabilizes fresh object snapshots between computed notifications", () => {
+    const count = atom(1);
+    const freshObject = computed(() => ({ count: count.get() }));
+
+    const { result } = renderHook(() => useAtomValue(freshObject), { wrapper: StrictMode });
+
+    expect(result.current).toEqual({ count: 1 });
+
+    act(() => {
+      count.set(2);
+    });
+
+    expect(result.current).toEqual({ count: 2 });
+  });
+
   it("does not re-render on a set that keeps the same value", () => {
     const count = atom(1);
     const renders = vi.fn<() => void>();

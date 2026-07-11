@@ -70,6 +70,33 @@ describe("react hooks in a real browser", () => {
     expect(button.textContent).toBe("3:6");
   });
 
+  it("renders fresh object computed values without an update loop", () => {
+    const count = atom(1);
+    const freshObject = computed(() => ({ count: count.get() }));
+
+    function Widget(): React.JSX.Element {
+      const value = useAtomValue(freshObject);
+
+      return (
+        <button
+          type="button"
+          onClick={() => count.set(2)}>
+          {value.count}
+        </button>
+      );
+    }
+
+    render(<Widget />);
+
+    const button = screen.getByRole("button");
+
+    expect(button.textContent).toBe("1");
+
+    fireEvent.click(button);
+
+    expect(button.textContent).toBe("2");
+  });
+
   it("does not re-render a setter-only component when the value changes", () => {
     const count = atom(0);
     let readerRenders = 0;

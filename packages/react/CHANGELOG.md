@@ -1,5 +1,25 @@
 # react 更新日志 / Changelog
 
+## 0.1.1 - 2026-07-11
+
+### 修复
+
+- `useAtomValue` 现在会在 store 通知之间缓存 React snapshot。即使 computed 的 `get()` 每次都返回新的对象或数组引用，也不会再触发 `useSyncExternalStore` 的无限更新。
+- 订阅时仍会同步读取 core watcher 提供的最新值，以覆盖 render 与 subscribe 之间发生的更新；真正的后续变化仍立即通知 React。
+
+### 说明
+
+- 本次修复只稳定 React adapter 的 snapshot 身份，不改变 core 的同步通知、`Object.is` 相等性或 computed 求值语义。
+
+### Fixed
+
+- `useAtomValue` now caches the React snapshot between store notifications. A computed whose `get()` returns a fresh object or array reference on every call no longer causes an infinite `useSyncExternalStore` update loop.
+- Subscription still synchronizes from the latest value supplied by core's watcher, covering changes between render and subscribe; subsequent real changes continue to notify React immediately.
+
+### Notes
+
+- This fix only stabilizes snapshot identity in the React adapter. It does not change core's synchronous notifications, `Object.is` equality, or computed evaluation semantics.
+
 ## 0.1.0 - 2026-07-07
 
 ### 新增
