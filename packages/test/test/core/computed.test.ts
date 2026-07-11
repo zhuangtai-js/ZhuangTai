@@ -1,4 +1,10 @@
-import { atom, computed, type Watcher } from "@zhuangtai-js/core";
+import {
+  atom,
+  computed,
+  type ReadableAtom,
+  type StopWatch,
+  type Watcher,
+} from "@zhuangtai-js/core";
 import { describe, expect, it, vi } from "vitest";
 
 describe("computed", () => {
@@ -374,5 +380,95 @@ describe("computed", () => {
 
     expect(() => derived.watch(secondWatcher)).toThrow("derive failed");
     expect(secondWatcher).not.toHaveBeenCalled();
+  });
+
+  it("evaluates a watched linear chain once per computed", () => {
+    const source = atom(0);
+    let deriveCount = 0;
+    let current: ReadableAtom<number> = source;
+    const depth = 100;
+
+    for (let index = 0; index < depth; index += 1) {
+      const dependency = current;
+      current = computed(() => {
+        deriveCount += 1;
+        return dependency.get() + 1;
+      });
+    }
+
+    expect(deriveCount).toBe(depth);
+    const watcher = vi.fn<Watcher<number>>();
+    current.watch(watcher);
+    watcher.mockClear();
+    deriveCount = 0;
+
+    source.set(1);
+
+    expect(deriveCount).toBe(depth);
+    expect(watcher).toHaveBeenCalledWith(depth + 1, depth);
+  });
+
+  it("evaluates each computed in a watched diamond graph once per update", () => {
+    const source = atom(0);
+    let deriveCount = 0;
+    let current: ReadableAtom<number> = source;
+    const depth = 10;
+
+    for (let index = 0; index < depth; index += 1) {
+      const dependency = current;
+      const left = computed(() => {
+        deriveCount += 1;
+        return dependency.get() + 1;
+      });
+      const right = computed(() => {
+        deriveCount += 1;
+        return dependency.get() + 2;
+      });
+      current = computed(() => {
+        deriveCount += 1;
+        return left.get() + right.get();
+      });
+    }
+
+    expect(deriveCount).toBe(depth * 3);
+    current.watch(() => {});
+    deriveCount = 0;
+
+    source.set(1);
+
+    expect(deriveCount).toBe(depth * 3);
+  });
+
+  it("supports deep watched chains without overflowing the call stack", () => {
+    const source = atom(0);
+    let current: ReadableAtom<number> = source;
+    const depth = 2_000;
+
+    for (let index = 0; index < depth; index += 1) {
+      const dependency = current;
+      current = computed(() => dependency.get() + 1);
+    }
+
+    const watcher = vi.fn<Watcher<number>>();
+    let stop: StopWatch | undefined;
+    expect(() => {
+      stop = current.watch(watcher);
+    }).not.toThrow();
+    watcher.mockClear();
+
+    expect(() => source.set(1)).not.toThrow();
+    expect(watcher).toHaveBeenCalledWith(depth + 1, depth);
+    expect(() => stop?.()).not.toThrow();
+  });
+
+  it("keeps independent fresh-object reads referentially fresh", () => {
+    const source = atom(1);
+    const derived = computed(() => ({ value: source.get() }));
+
+    const first = derived.get();
+    const second = derived.get();
+
+    expect(second).toEqual(first);
+    expect(second).not.toBe(first);
   });
 });

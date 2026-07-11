@@ -1,25 +1,60 @@
+import {
+  enqueueNotification,
+  getCurrentEpoch,
+  registerReadableInternals,
+  subscribeToChanges,
+  throwErrors,
+} from "./internals.js";
 import type { Computed, ReadableAtom, StopWatch, Watcher } from "./types.js";
 import { collectDependencies, trackDependency, type DependencyCollection } from "./tracking.js";
 
 type Dependency = ReadableAtom<unknown>;
+type LifecycleJob = () => void;
 
-function throwNotificationErrors(errors: readonly unknown[]): void {
-  if (errors.length === 1) {
-    throw errors[0];
+const lifecycleQueue: LifecycleJob[] = [];
+let isFlushingLifecycle = false;
+let computedReadDepth = 0;
+
+function enqueueLifecycle(job: LifecycleJob): void {
+  lifecycleQueue.push(job);
+
+  if (isFlushingLifecycle) {
+    return;
   }
 
-  if (errors.length > 1) {
-    throw new AggregateError(errors, "[@zhuangtai-js/core] One or more computed watchers threw.");
+  isFlushingLifecycle = true;
+
+  try {
+    for (;;) {
+      const nextJob = lifecycleQueue.shift();
+
+      if (!nextJob) {
+        break;
+      }
+
+      nextJob();
+    }
+  } catch (error) {
+    lifecycleQueue.length = 0;
+    throw error;
+  } finally {
+    isFlushingLifecycle = false;
   }
 }
 
 export function computed<Value>(derive: () => Value): Computed<Value> {
   const watchers = new Set<Watcher<Value>>();
+  const changeListeners = new Set<() => void>();
   const dependencyStops = new Map<Dependency, StopWatch>();
   let isComputing = false;
-  let isNotifying = false;
-  let notificationPending = false;
+  let isActive = false;
+  let cachedEpoch = -1;
+  let cachedResult: DependencyCollection<Value> | undefined;
   let notifiedValue: Value;
+
+  function hasObservers(): boolean {
+    return watchers.size > 0 || changeListeners.size > 0;
+  }
 
   function readTracked(): DependencyCollection<Value> {
     if (isComputing) {
@@ -27,25 +62,14 @@ export function computed<Value>(derive: () => Value): Computed<Value> {
     }
 
     isComputing = true;
+    computedReadDepth += 1;
 
     try {
       return collectDependencies(derive);
     } finally {
+      computedReadDepth -= 1;
       isComputing = false;
     }
-  }
-
-  function subscribeToDependency(dependency: Dependency): StopWatch {
-    let skipInitialWatch = true;
-
-    return dependency.watch(() => {
-      if (skipInitialWatch) {
-        skipInitialWatch = false;
-        return;
-      }
-
-      notifyIfChanged();
-    });
   }
 
   function reconcileDependencies(nextDependencies: ReadonlySet<Dependency>): void {
@@ -58,7 +82,7 @@ export function computed<Value>(derive: () => Value): Computed<Value> {
     try {
       for (const dependency of nextDependencies) {
         if (!dependencyStops.has(dependency)) {
-          addedStops.set(dependency, subscribeToDependency(dependency));
+          addedStops.set(dependency, subscribeToChanges(dependency, enqueueSelfNotification));
         }
       }
     } catch (error) {
@@ -89,8 +113,58 @@ export function computed<Value>(derive: () => Value): Computed<Value> {
     dependencyStops.clear();
   }
 
-  function readCurrent(reconcile: boolean): Value {
-    const result = readTracked();
+  function activate(): void {
+    if (isActive || !hasObservers()) {
+      return;
+    }
+
+    isActive = true;
+
+    try {
+      const result = cachedResult;
+
+      if (result) {
+        reconcileDependencies(result.dependencies);
+      }
+    } catch (error) {
+      isActive = false;
+      stopWatchingDependencies();
+      throw error;
+    }
+  }
+
+  function deactivate(): void {
+    if (!isActive || hasObservers()) {
+      return;
+    }
+
+    isActive = false;
+    stopWatchingDependencies();
+  }
+
+  function updateActiveState(wasObserved: boolean): void {
+    const isObserved = hasObservers();
+
+    if (!wasObserved && isObserved) {
+      enqueueLifecycle(activate);
+    } else if (wasObserved && !isObserved) {
+      enqueueLifecycle(deactivate);
+    }
+  }
+
+  function readCurrent(force: boolean): Value {
+    const epoch = getCurrentEpoch();
+    let result = cachedResult;
+
+    if (force || !result || cachedEpoch !== epoch) {
+      result = readTracked();
+      cachedResult = result;
+      cachedEpoch = epoch;
+
+      if (isActive) {
+        reconcileDependencies(result.dependencies);
+      }
+    }
 
     if (result.dependencies.has(self)) {
       if (result.status === "failure") {
@@ -98,10 +172,6 @@ export function computed<Value>(derive: () => Value): Computed<Value> {
       }
 
       throw new Error("[@zhuangtai-js/core] A computed cannot depend on itself.");
-    }
-
-    if (reconcile) {
-      reconcileDependencies(result.dependencies);
     }
 
     if (result.status === "failure") {
@@ -112,55 +182,60 @@ export function computed<Value>(derive: () => Value): Computed<Value> {
   }
 
   function notifyIfChanged(): void {
-    notificationPending = true;
-
-    if (isNotifying) {
-      return;
-    }
-
-    isNotifying = true;
     const errors: unknown[] = [];
 
     try {
-      while (notificationPending) {
-        notificationPending = false;
+      const value = readCurrent(false);
+      const prevValue = notifiedValue;
 
+      if (Object.is(value, prevValue)) {
+        return;
+      }
+
+      notifiedValue = value;
+
+      for (const watcher of Array.from(watchers)) {
         try {
-          const value = readCurrent(true);
-          const prevValue = notifiedValue;
-
-          if (Object.is(value, prevValue)) {
-            continue;
-          }
-
-          notifiedValue = value;
-
-          for (const watcher of Array.from(watchers)) {
-            try {
-              watcher(value, prevValue);
-            } catch (error) {
-              errors.push(error);
-            }
-          }
+          watcher(value, prevValue);
         } catch (error) {
           errors.push(error);
         }
       }
-    } finally {
-      isNotifying = false;
+
+      for (const listener of Array.from(changeListeners)) {
+        try {
+          listener();
+        } catch (error) {
+          errors.push(error);
+        }
+      }
+    } catch (error) {
+      errors.push(error);
     }
 
-    throwNotificationErrors(errors);
+    throwErrors(errors, "[@zhuangtai-js/core] One or more computed watchers threw.");
+  }
+
+  function enqueueSelfNotification(): void {
+    enqueueNotification(notifyIfChanged);
   }
 
   function get(): Value {
     trackDependency(self);
-    return readCurrent(watchers.size > 0);
+
+    if (isComputing) {
+      throw new Error("[@zhuangtai-js/core] Cannot read a computed while it is deriving itself.");
+    }
+
+    const isTopLevelRead = computedReadDepth === 0;
+
+    return readCurrent(isTopLevelRead);
   }
 
   function watch(watcher: Watcher<Value>): StopWatch {
-    const isFirstWatcher = watchers.size === 0;
     const value = readCurrent(true);
+    const wasObserved = hasObservers();
+    const isFirstWatcher = watchers.size === 0;
 
     if (isFirstWatcher) {
       notifiedValue = value;
@@ -169,29 +244,47 @@ export function computed<Value>(derive: () => Value): Computed<Value> {
     watchers.add(watcher);
 
     try {
+      updateActiveState(wasObserved);
       watcher(value, undefined);
     } catch (error) {
+      const wasObservedBeforeRemoval = hasObservers();
       watchers.delete(watcher);
-
-      if (isFirstWatcher) {
-        stopWatchingDependencies();
-      }
-
+      updateActiveState(wasObservedBeforeRemoval);
       throw error;
     }
 
     return () => {
+      const wasObservedBeforeRemoval = hasObservers();
       watchers.delete(watcher);
-
-      if (watchers.size === 0) {
-        stopWatchingDependencies();
-      }
+      updateActiveState(wasObservedBeforeRemoval);
     };
   }
 
   const self: Computed<Value> = { get, watch };
 
-  notifiedValue = readCurrent(false);
+  registerReadableInternals(self, {
+    subscribe(listener) {
+      const wasObserved = hasObservers();
+      changeListeners.add(listener);
+
+      try {
+        updateActiveState(wasObserved);
+      } catch (error) {
+        const wasObservedBeforeRemoval = hasObservers();
+        changeListeners.delete(listener);
+        updateActiveState(wasObservedBeforeRemoval);
+        throw error;
+      }
+
+      return () => {
+        const wasObservedBeforeRemoval = hasObservers();
+        changeListeners.delete(listener);
+        updateActiveState(wasObservedBeforeRemoval);
+      };
+    },
+  });
+
+  notifiedValue = readCurrent(true);
 
   return self;
 }

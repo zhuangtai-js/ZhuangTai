@@ -99,7 +99,7 @@ describe("build artifacts", () => {
     const readme = readFileSync(join(rootPath, "README.md"), "utf8");
 
     // Then
-    assert.ok(gzippedSize < 2500, `Expected gzipped core runtime below 2.5 kB, got ${gzippedSize} B`);
+    assert.ok(gzippedSize < 3000, `Expected gzipped core runtime below 3 kB, got ${gzippedSize} B`);
     assert.ok(readme.includes(CORE_BUNDLE_BADGE_URL));
   });
 

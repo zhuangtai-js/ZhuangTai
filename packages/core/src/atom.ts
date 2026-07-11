@@ -8,6 +8,13 @@ import type {
   RejectFunctionValue,
   Watcher,
 } from "./types.js";
+import {
+  advanceEpoch,
+  beginChangeDispatch,
+  endChangeDispatch,
+  registerReadableInternals,
+  throwErrors,
+} from "./internals.js";
 import { trackDependency } from "./tracking.js";
 
 function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue: Value) => Value {
@@ -39,8 +46,10 @@ function createAtomState<Value>(initialValue: Value): Atom<Value> {
 
     const prevValue = currentValue;
     currentValue = value;
+    advanceEpoch();
 
     callbackDepth += 1;
+    beginChangeDispatch();
     const errors: unknown[] = [];
 
     try {
@@ -52,16 +61,16 @@ function createAtomState<Value>(initialValue: Value): Atom<Value> {
         }
       }
     } finally {
-      callbackDepth -= 1;
+      try {
+        endChangeDispatch();
+      } catch (error) {
+        errors.push(error);
+      } finally {
+        callbackDepth -= 1;
+      }
     }
 
-    if (errors.length === 1) {
-      throw errors[0];
-    }
-
-    if (errors.length > 1) {
-      throw new AggregateError(errors, "[@zhuangtai-js/core] One or more atom watchers threw.");
-    }
+    throwErrors(errors, "[@zhuangtai-js/core] One or more atom watchers threw.");
   }
 
   function watch(watcher: Watcher<Value>): () => void {
@@ -83,6 +92,21 @@ function createAtomState<Value>(initialValue: Value): Atom<Value> {
   }
 
   const self: Atom<Value> = { get, set, watch };
+
+  registerReadableInternals(self, {
+    subscribe(listener) {
+      let isInitialNotification = true;
+
+      return self.watch(() => {
+        if (isInitialNotification) {
+          isInitialNotification = false;
+          return;
+        }
+
+        listener();
+      });
+    },
+  });
 
   return self;
 }
