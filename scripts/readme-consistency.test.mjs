@@ -64,8 +64,25 @@ const publishablePackages = discoverPublishablePackages();
 const packageReadmePaths = publishablePackages.map(({ readmePath }) => readmePath);
 const readmePaths = [...rootReadmePaths, ...packageReadmePaths];
 const docsSitePaths = collectMarkdown("packages/docs/src/content/docs");
-const publicDocumentationPaths = [
+const packageDocumentationPaths = publishablePackages.flatMap(({ directory, readmePath }) => {
+  const paths = [readmePath];
+  const changelogPath = `packages/${directory}/CHANGELOG.md`;
+  const docsPath = `packages/${directory}/docs`;
+
+  if (existsSync(join(rootPath, changelogPath))) {
+    paths.push(changelogPath);
+  }
+  if (existsSync(join(rootPath, docsPath))) {
+    paths.push(...collectMarkdown(docsPath));
+  }
+
+  return paths;
+});
+const currentDocumentationPaths = [
   ...new Set([...readmePaths, ...collectMarkdown("docs/guide"), ...docsSitePaths]),
+].toSorted((left, right) => left.localeCompare(right));
+const publicDocumentationPaths = [
+  ...new Set([...currentDocumentationPaths, ...packageDocumentationPaths]),
 ].toSorted((left, right) => left.localeCompare(right));
 
 function visibleMarkdownLines(markdown, source = "Markdown") {
@@ -117,6 +134,54 @@ function commands(markdown, prefix) {
     .split(/\r?\n/u)
     .map((line) => line.trim())
     .filter((line) => line.startsWith(`${prefix} `));
+}
+
+function markdownSection(markdown, title, source) {
+  const lines = markdown.split(/\r?\n/u);
+  const matches = [];
+  let fence;
+  let start;
+  let level;
+
+  for (const [index, line] of lines.entries()) {
+    const opening = /^( {0,3})(`{3,}|~{3,})(.*)$/u.exec(line);
+    if (
+      fence === undefined &&
+      opening !== null &&
+      !(opening[2][0] === "`" && opening[3].includes("`"))
+    ) {
+      fence = opening[2];
+      continue;
+    }
+    if (fence !== undefined) {
+      const closing = /^( {0,3})(`{3,}|~{3,})\s*$/u.exec(line);
+      if (closing !== null && closing[2][0] === fence[0] && closing[2].length >= fence.length) {
+        fence = undefined;
+      }
+      continue;
+    }
+
+    const heading = /^(#{1,6})\s+(.+?)\s*#*\s*$/u.exec(line);
+    if (heading === null) {
+      continue;
+    }
+    if (start !== undefined && heading[1].length <= level) {
+      matches.push(lines.slice(start, index).join("\n"));
+      start = undefined;
+      level = undefined;
+    }
+    if (heading[2] === title) {
+      assert.equal(start, undefined, `${source} nests duplicate ${title} sections`);
+      start = index + 1;
+      level = heading[1].length;
+    }
+  }
+
+  if (start !== undefined) {
+    matches.push(lines.slice(start).join("\n"));
+  }
+  assert.equal(matches.length, 1, `${source} must contain exactly one ${title} section`);
+  return matches[0];
 }
 
 function assertInstallSection(section, manifest, source) {
@@ -301,9 +366,21 @@ function supportedReactMajors(range) {
 describe("README consistency", () => {
   it("discovers every publishable workspace package", () => {
     assert.ok(publishablePackages.length > 0);
-    for (const { manifest, readmePath } of publishablePackages) {
+    for (const { directory, manifest, readmePath } of publishablePackages) {
       assert.match(manifest.name, /^@zhuangtai-js\//u);
       assert.ok(existsSync(join(rootPath, readmePath)), `${manifest.name} is missing README.md`);
+
+      const changelogPath = `packages/${directory}/CHANGELOG.md`;
+      if (existsSync(join(rootPath, changelogPath))) {
+        assert.ok(publicDocumentationPaths.includes(changelogPath));
+      }
+
+      const docsPath = `packages/${directory}/docs`;
+      if (existsSync(join(rootPath, docsPath))) {
+        for (const documentationPath of collectMarkdown(docsPath)) {
+          assert.ok(publicDocumentationPaths.includes(documentationPath));
+        }
+      }
     }
   });
 
@@ -381,8 +458,16 @@ describe("README consistency", () => {
         sections[0].includes('<a href="#english">English</a>'),
         `${readmePath} lacks English navigation`,
       );
-      assertInstallSection(sections[0], manifest, `${readmePath} Chinese section`);
-      assertInstallSection(sections[1], manifest, `${readmePath} English section`);
+      assertInstallSection(
+        markdownSection(sections[0], "安装", `${readmePath} Chinese section`),
+        manifest,
+        `${readmePath} Chinese install section`,
+      );
+      assertInstallSection(
+        markdownSection(sections[1], "Install", `${readmePath} English section`),
+        manifest,
+        `${readmePath} English install section`,
+      );
     }
 
     const reactPackage = publishablePackages.find(
@@ -390,17 +475,32 @@ describe("README consistency", () => {
     );
     assert.notEqual(reactPackage, undefined);
     const sections = readText(reactPackage.readmePath).split('<a id="english"></a>');
+    const expectedNpm = "npm install @zhuangtai-js/core @zhuangtai-js/react react";
     const mutatedEnglish = sections[1].replace(
-      "npm install @zhuangtai-js/core @zhuangtai-js/react react",
+      expectedNpm,
       "npm install @zhuangtai-js/core @zhuangtai-js/react",
     );
     assert.notEqual(mutatedEnglish, sections[1]);
     assert.throws(
       () =>
         assertInstallSection(
-          mutatedEnglish,
+          markdownSection(mutatedEnglish, "Install", "mutated React README English section"),
           reactPackage.manifest,
-          "mutated React README English section",
+          "mutated React README English install section",
+        ),
+      /npm command drifted/u,
+    );
+
+    const commandOutsideInstall = sections[1]
+      .replace(expectedNpm, "")
+      .replace("## API", `## Unrelated example\n\n${expectedNpm}\n\n## API`);
+    assert.notEqual(commandOutsideInstall, sections[1]);
+    assert.throws(
+      () =>
+        assertInstallSection(
+          markdownSection(commandOutsideInstall, "Install", "relocated React README command"),
+          reactPackage.manifest,
+          "relocated React README English install section",
         ),
       /npm command drifted/u,
     );
@@ -489,7 +589,7 @@ describe("README consistency", () => {
 
     assert.ok(chineseGuide.includes(majors.map((major) => `React ${major}`).join(" 和 ")));
     assert.ok(englishGuide.includes(majors.map((major) => `React ${major}`).join(" and ")));
-    for (const relativePath of publicDocumentationPaths) {
+    for (const relativePath of currentDocumentationPaths) {
       const text = readText(relativePath);
       assert.equal(
         /React 18\+|React 18 (?:and|or) later|React 18\s*(?:及以上|或更高)/u.test(text),
