@@ -184,6 +184,15 @@ describe("validateChannel", () => {
     assert.doesNotThrow(() => validateChannel("dev", "0.2.0-dev.0"));
     assert.throws(() => validateChannel("dev", "0.2.0"), /dev/);
   });
+
+  it("rejects versions that are not valid release SemVer", () => {
+    for (const version of ["banana", "1.2", "01.2.3", "1.2.3.4", "1.2.3+build.1"]) {
+      assert.throws(() => validateChannel("stable", version), /valid release SemVer/);
+    }
+
+    assert.throws(() => validateChannel("beta", "1.2.3-beta.01"), /valid release SemVer/);
+    assert.throws(() => validateChannel("dev", "1.2.3-dev.01"), /valid release SemVer/);
+  });
 });
 
 describe("parseArgs", () => {
@@ -392,5 +401,92 @@ describe("publishWorkspaces", () => {
     );
 
     assert.equal(recorder.calls.length, 0);
+  });
+
+  it("validates every selected package before running any command", () => {
+    const recorder = commandRecorder();
+
+    assert.throws(
+      () =>
+        publishWorkspaces({
+          workspacePackages: [
+            { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
+            { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "banana" } },
+          ],
+          channel: "stable",
+          dryRun: false,
+          env: { GITHUB_ACTIONS: "true" },
+          runCommand: recorder.run,
+          log: () => {},
+          readReleaseNotes: releaseNotes,
+        }),
+      /valid release SemVer/,
+    );
+
+    assert.equal(recorder.calls.length, 0);
+  });
+
+  it("preflights every tarball before starting real publication", () => {
+    const recorder = commandRecorder([
+      { status: 1, stdout: "", stderr: "npm ERR! code E404" },
+      { status: 1, stdout: "", stderr: "npm ERR! code E404" },
+      { status: 0, stdout: "zhuangtai-js-core-0.1.0.tgz", stderr: "" },
+      { status: 0, stdout: "zhuangtai-js-persist-0.1.0.tgz", stderr: "" },
+      { status: 0, stdout: "", stderr: "" },
+      { status: 0, stdout: "", stderr: "" },
+      { status: 0, stdout: "", stderr: "" },
+      { status: 0, stdout: "", stderr: "" },
+    ]);
+
+    const summary = publishWorkspaces({
+      workspacePackages: [
+        { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
+        { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" } },
+      ],
+      channel: "stable",
+      dryRun: false,
+      env: { GITHUB_ACTIONS: "true" },
+      runCommand: recorder.run,
+      log: () => {},
+      readReleaseNotes: releaseNotes,
+    });
+
+    const publishCalls = recorder.calls.filter(({ command, args }) => command === "npm" && args[0] === "publish");
+    assert.deepEqual(
+      publishCalls.map(({ args }) => args.includes("--dry-run")),
+      [true, true, false, false],
+    );
+    assert.deepEqual(summary.published, ["@zhuangtai-js/core@0.1.0", "@zhuangtai-js/persist@0.1.0"]);
+  });
+
+  it("packs every unpublished package before publishing any package", () => {
+    const recorder = commandRecorder([
+      { status: 1, stdout: "", stderr: "npm ERR! code E404" },
+      { status: 1, stdout: "", stderr: "npm ERR! code E404" },
+      { status: 0, stdout: "", stderr: "zhuangtai-js-core-0.1.0.tgz" },
+      { status: 1, stdout: "", stderr: "pack failed" },
+    ]);
+
+    assert.throws(
+      () =>
+        publishWorkspaces({
+          workspacePackages: [
+            { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
+            { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" } },
+          ],
+          channel: "stable",
+          dryRun: false,
+          env: { GITHUB_ACTIONS: "true" },
+          runCommand: recorder.run,
+          log: () => {},
+          readReleaseNotes: releaseNotes,
+        }),
+      /Failed to pack @zhuangtai-js\/persist@0.1.0/,
+    );
+
+    assert.equal(
+      recorder.calls.filter(({ command, args }) => command === "npm" && args[0] === "publish").length,
+      0,
+    );
   });
 });

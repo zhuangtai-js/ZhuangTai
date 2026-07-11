@@ -6,21 +6,26 @@ import process from "node:process";
 
 const npmRegistry = "https://registry.npmjs.org";
 const packageScope = "@zhuangtai-js/";
+const stableVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u;
+const betaVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)-beta\.(?:0|[1-9]\d*)$/u;
+const devVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)-dev\.(?:0|[1-9]\d*)$/u;
+const releaseVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:beta|dev)\.(?:0|[1-9]\d*))?$/u;
+
 const channels = {
   beta: {
     npmTag: "beta",
     prerelease: true,
-    versionPattern: /-beta\.\d+$/u,
+    versionPattern: betaVersionPattern,
   },
   dev: {
     npmTag: "dev",
     prerelease: true,
-    versionPattern: /-dev\.\d+$/u,
+    versionPattern: devVersionPattern,
   },
   stable: {
     npmTag: "latest",
     prerelease: false,
-    versionPattern: /^[^-]+$/u,
+    versionPattern: stableVersionPattern,
   },
 };
 
@@ -116,6 +121,10 @@ function validateChannel(channel, version) {
     throw new Error(`Unknown release channel: ${channel}`);
   }
 
+  if (!releaseVersionPattern.test(version)) {
+    throw new Error(`Version ${version} is not a valid release SemVer`);
+  }
+
   if (!config.versionPattern.test(version)) {
     throw new Error(`Version ${version} does not match ${channel} channel requirements`);
   }
@@ -146,8 +155,7 @@ function isAlreadyPublished(workspacePackage, runCommand) {
   throw new Error(`Failed to check ${packageRef(workspacePackage.manifest)} on npm:\n${commandOutput(result)}`);
 }
 
-function publishPackage(workspacePackage, { channel, dryRun, runCommand, env }) {
-  validateChannel(channel, workspacePackage.manifest.version);
+function packPackage(workspacePackage, runCommand) {
   const tempDir = mkdtempSync(join(tmpdir(), "zhuangtai-publish-"));
 
   try {
@@ -159,33 +167,53 @@ function publishPackage(workspacePackage, { channel, dryRun, runCommand, env }) 
       throw new Error(`Failed to pack ${packageRef(workspacePackage.manifest)}:\n${commandOutput(packResult)}`);
     }
 
+    return {
+      tarballPath: join(tempDir, packedPackageName(workspacePackage.manifest)),
+      tempDir,
+      workspacePackage,
+    };
+  } catch (error) {
+    rmSync(tempDir, { force: true, recursive: true });
+    throw error;
+  }
+}
+
+function publishPackedPackage(packedPackage, { channel, dryRun, runCommand }) {
+  const { workspacePackage } = packedPackage;
+  const publishArgs = [
+    "publish",
+    packedPackage.tarballPath,
+    "--access",
+    "public",
+    "--tag",
+    channels[channel].npmTag,
+    "--registry",
+    npmRegistry,
+  ];
+
+  if (dryRun) {
+    publishArgs.push("--dry-run");
+  }
+
+  const publishResult = runCommand("npm", publishArgs, { cwd: workspacePackage.dir });
+
+  if (publishResult.status !== 0) {
+    throw new Error(`Failed to publish ${packageRef(workspacePackage.manifest)}:\n${commandOutput(publishResult)}`);
+  }
+}
+
+function publishPackage(workspacePackage, { channel, dryRun, runCommand, env }) {
+  validateChannel(channel, workspacePackage.manifest.version);
+  const packedPackage = packPackage(workspacePackage, runCommand);
+
+  try {
     if (!dryRun && env.GITHUB_ACTIONS !== "true") {
       throw new Error("Real publishing must run in GitHub Actions. Use --dry-run locally.");
     }
 
-    const tarballPath = join(tempDir, packedPackageName(workspacePackage.manifest));
-    const publishArgs = [
-      "publish",
-      tarballPath,
-      "--access",
-      "public",
-      "--tag",
-      channels[channel].npmTag,
-      "--registry",
-      npmRegistry,
-    ];
-
-    if (dryRun) {
-      publishArgs.push("--dry-run");
-    }
-
-    const publishResult = runCommand("npm", publishArgs, { cwd: workspacePackage.dir });
-
-    if (publishResult.status !== 0) {
-      throw new Error(`Failed to publish ${packageRef(workspacePackage.manifest)}:\n${commandOutput(publishResult)}`);
-    }
+    publishPackedPackage(packedPackage, { channel, dryRun, runCommand });
   } finally {
-    rmSync(tempDir, { force: true, recursive: true });
+    rmSync(packedPackage.tempDir, { force: true, recursive: true });
   }
 }
 
@@ -204,11 +232,10 @@ function publishWorkspaces({
     throw new Error("publishWorkspaces requires rootDir or workspacePackages");
   }
 
-  const packagesToPublish = workspacePackages ?? discoverWorkspacePackages(rootDir);
-  const summary = { releases: [], skipped: [], published: [] };
-  let foundRequestedPackage = packageName === undefined;
+  const workspacePackageList = workspacePackages ?? discoverWorkspacePackages(rootDir);
+  const selectedPackages = [];
 
-  for (const workspacePackage of packagesToPublish) {
+  for (const workspacePackage of workspacePackageList) {
     validatePackage(workspacePackage);
 
     if (workspacePackage.manifest.private === true) {
@@ -219,26 +246,62 @@ function publishWorkspaces({
       continue;
     }
 
-    foundRequestedPackage = true;
-
-    const ref = packageRef(workspacePackage.manifest);
     validateChannel(channel, workspacePackage.manifest.version);
+    selectedPackages.push({
+      release: githubReleaseForPackage(workspacePackage, channel, readReleaseNotes),
+      workspacePackage,
+    });
+  }
+
+  if (selectedPackages.length === 0 && packageName !== undefined) {
+    throw new Error(`No publishable workspace package found for ${packageName}`);
+  }
+
+  if (!dryRun && env.GITHUB_ACTIONS !== "true") {
+    throw new Error("Real publishing must run in GitHub Actions. Use --dry-run locally.");
+  }
+
+  const summary = {
+    releases: selectedPackages.map(({ release }) => release),
+    skipped: [],
+    published: [],
+  };
+  const unpublishedPackages = [];
+
+  for (const { workspacePackage } of selectedPackages) {
+    const ref = packageRef(workspacePackage.manifest);
 
     if (isAlreadyPublished(workspacePackage, runCommand)) {
       log(`skip: ${ref} already published`);
       summary.skipped.push(ref);
-      summary.releases.push(githubReleaseForPackage(workspacePackage, channel, readReleaseNotes));
-      continue;
+    } else {
+      unpublishedPackages.push(workspacePackage);
     }
-
-    publishPackage(workspacePackage, { channel, dryRun, runCommand, env });
-    log(`${dryRun ? "dry-run" : "publish"}: ${ref} tag=${channels[channel].npmTag}`);
-    summary.published.push(ref);
-    summary.releases.push(githubReleaseForPackage(workspacePackage, channel, readReleaseNotes));
   }
 
-  if (!foundRequestedPackage) {
-    throw new Error(`No publishable workspace package found for ${packageName}`);
+  const packedPackages = [];
+
+  try {
+    for (const workspacePackage of unpublishedPackages) {
+      packedPackages.push(packPackage(workspacePackage, runCommand));
+    }
+
+    if (!dryRun) {
+      for (const packedPackage of packedPackages) {
+        publishPackedPackage(packedPackage, { channel, dryRun: true, runCommand });
+      }
+    }
+
+    for (const packedPackage of packedPackages) {
+      publishPackedPackage(packedPackage, { channel, dryRun, runCommand });
+      const ref = packageRef(packedPackage.workspacePackage.manifest);
+      log(`${dryRun ? "dry-run" : "publish"}: ${ref} tag=${channels[channel].npmTag}`);
+      summary.published.push(ref);
+    }
+  } finally {
+    for (const packedPackage of packedPackages) {
+      rmSync(packedPackage.tempDir, { force: true, recursive: true });
+    }
   }
 
   log(`summary: ${summary.published.length} publishable, ${summary.skipped.length} skipped`);
