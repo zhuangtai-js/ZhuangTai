@@ -7,6 +7,8 @@
 - 修复 watched computed 的通知基线：主动调用 `.get()` 不再吞掉后续同步 watcher 通知，diamond 依赖图中的 sibling 也不会因订阅顺序而漏事件。
 - 修复 computed watcher 同步修改另一依赖时的重入通知顺序；每轮 watcher 都会收到稳定的当前值和前值，重入更新会在当前一轮结束后继续同步传播。
 - derive 抛错时保留本次已经读取的依赖，使依赖修复后可以自动恢复通知；derive 仍失败时，新增 watcher 会直接收到错误，而不是陈旧缓存值。
+- 修复插件组合的 atom 形态推导：最终 atom 现在采用最外层插件声明的 kind，避免普通 setter wrapper 错误暴露内层 Immer recipe 类型。
+- 重复安装同一 plugin ID 时现在会同步抛出 `TypeError`，不再静默保留旧实现却继续改变返回类型。
 
 ### 说明
 
@@ -18,6 +20,8 @@
 - Fixed the notification baseline for watched computed values: an explicit `.get()` no longer suppresses the following synchronous watcher notification, and sibling nodes in a diamond dependency graph no longer lose events based on subscription order.
 - Fixed reentrant notification ordering when a computed watcher synchronously changes another dependency. Every notification round now uses a stable current/previous pair, and reentrant updates continue synchronously after the current round finishes.
 - Preserved dependencies read by a failing derive so notifications can recover automatically after those dependencies are repaired. Adding a watcher while the derive still fails now throws the derive error instead of emitting a stale cached value.
+- Fixed atom-kind inference across plugin composition: the resulting atom now uses the outermost plugin's declared kind, preventing a plain setter wrapper from incorrectly exposing an inner Immer recipe type.
+- Installing the same plugin ID more than once now throws a synchronous `TypeError` instead of silently keeping the old implementation while changing the returned type.
 
 ### Notes
 

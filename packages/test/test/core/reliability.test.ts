@@ -279,7 +279,7 @@ describe("createAtom plugin reliability", () => {
     ]);
   });
 
-  it("deduplicates plugins by id even when plugin objects differ", () => {
+  it("rejects duplicate ids before either plugin creates an atom", () => {
     let firstCreateCalls = 0;
     let secondCreateCalls = 0;
     const first: AtomCreatorPlugin<"same", Record<never, never>> = {
@@ -297,9 +297,14 @@ describe("createAtom plugin reliability", () => {
       },
     };
 
-    createAtom().use(first).use(second)(1);
+    function installDuplicate() {
+      return createAtom().use(first).use(second);
+    }
 
-    expect(firstCreateCalls).toBe(1);
+    expect(installDuplicate).toThrowError(
+      '[@zhuangtai-js/core] Plugin id "same" is already installed.',
+    );
+    expect(firstCreateCalls).toBe(0);
     expect(secondCreateCalls).toBe(0);
   });
 

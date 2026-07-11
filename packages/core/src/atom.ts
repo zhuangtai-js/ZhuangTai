@@ -123,15 +123,12 @@ function createAtomWithFactory<
     PluginKind extends AtomKind = "default",
   >(
     plugin: AtomCreatorPlugin<Name, Options, PluginKind>,
-  ): AtomCreator<
-    OptionsByPlugin & { readonly [Key in Name]: Options },
-    PluginKind extends "default" ? Kind : PluginKind
-  > {
+  ): AtomCreator<OptionsByPlugin & { readonly [Key in Name]: Options }, PluginKind> {
     type NextOptions = OptionsByPlugin & { readonly [Key in Name]: Options };
-    type NextKind = PluginKind extends "default" ? Kind : PluginKind;
+    type NextKind = PluginKind;
 
     if (installedPluginIds.has(plugin.id)) {
-      return createAtomWithFactory<NextOptions, NextKind>(factory, installedPluginIds);
+      throw new TypeError(`[@zhuangtai-js/core] Plugin id "${plugin.id}" is already installed.`);
     }
 
     function nextFactory<Value>(

@@ -13,6 +13,7 @@ import {
 } from "@zhuangtai-js/core";
 import { freeze } from "@zhuangtai-js/freeze";
 import { immer, type ImmerAtom, type ImmerNextValue } from "@zhuangtai-js/immer";
+import { persist } from "@zhuangtai-js/persist";
 import { sync } from "@zhuangtai-js/sync";
 import { describe, expectTypeOf, it } from "vitest";
 
@@ -95,15 +96,27 @@ describe("atom kinds", () => {
     expectTypeOf<ImmerAtom<number>>().not.toEqualTypeOf<Atom<number>>();
   });
 
-  it("keeps the immer kind when a default-kind plugin follows immer", () => {
-    const createState = createAtom().use(immer).use(sync);
-
-    expectTypeOf(createState(0)).toEqualTypeOf<ImmerAtom<number>>();
+  it("uses the outer default-kind plugin shape when it follows immer", () => {
+    expectTypeOf(createAtom().use(immer).use(persist)({ count: 0 })).toEqualTypeOf<
+      Atom<{ count: number }>
+    >();
+    expectTypeOf(createAtom().use(immer).use(sync)({ count: 0 })).toEqualTypeOf<
+      Atom<{ count: number }>
+    >();
+    expectTypeOf(createAtom().use(immer).use(freeze)({ count: 0 })).toEqualTypeOf<
+      Atom<{ count: number }>
+    >();
   });
 
-  it("adopts the immer kind when immer follows a default-kind plugin", () => {
-    const createState = createAtom().use(sync).use(immer);
-
-    expectTypeOf(createState(0)).toEqualTypeOf<ImmerAtom<number>>();
+  it("uses the outer immer shape when immer follows a default-kind plugin", () => {
+    expectTypeOf(createAtom().use(persist).use(immer)({ count: 0 })).toEqualTypeOf<
+      ImmerAtom<{ count: number }>
+    >();
+    expectTypeOf(createAtom().use(sync).use(immer)({ count: 0 })).toEqualTypeOf<
+      ImmerAtom<{ count: number }>
+    >();
+    expectTypeOf(createAtom().use(freeze).use(immer)({ count: 0 })).toEqualTypeOf<
+      ImmerAtom<{ count: number }>
+    >();
   });
 });

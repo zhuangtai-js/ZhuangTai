@@ -83,7 +83,7 @@ describe("createAtom", () => {
     expect(state.get()).toBe(1);
   });
 
-  it("applies duplicate plugins once by id", () => {
+  it("rejects installing the same plugin id twice", () => {
     // Given
     let calls = 0;
     function create<Value>(state: Atom<Value>): Atom<Value> {
@@ -97,13 +97,42 @@ describe("createAtom", () => {
         return create(context.next(context.initialValue));
       },
     };
-    const createState = createAtom().use(tracking).use(tracking);
-
     // When
-    createState(1);
+    function installDuplicate() {
+      return createAtom().use(tracking).use(tracking);
+    }
 
     // Then
-    expect(calls).toBe(1);
+    expect(installDuplicate).toThrowError(
+      '[@zhuangtai-js/core] Plugin id "tracking" is already installed.',
+    );
+    expect(calls).toBe(0);
+  });
+
+  it("rejects a different plugin that reuses an installed id", () => {
+    // Given
+    const first: AtomCreatorPlugin<"duplicate", Record<never, never>> = {
+      id: "duplicate",
+      create(context) {
+        return context.next(context.initialValue);
+      },
+    };
+    const second: AtomCreatorPlugin<"duplicate", Record<never, never>> = {
+      id: "duplicate",
+      create(context) {
+        return context.next(context.initialValue);
+      },
+    };
+
+    // When
+    function installDuplicate() {
+      return createAtom().use(first).use(second);
+    }
+
+    // Then
+    expect(installDuplicate).toThrowError(
+      '[@zhuangtai-js/core] Plugin id "duplicate" is already installed.',
+    );
   });
 
   it("does not mutate previous creators when use is called", () => {

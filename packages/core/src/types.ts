@@ -64,10 +64,7 @@ export type AtomCreator<
     PluginKind extends AtomKind = "default",
   >(
     plugin: AtomCreatorPlugin<Name, Options, PluginKind>,
-  ) => AtomCreator<
-    OptionsByPlugin & { readonly [Key in Name]: Options },
-    PluginKind extends "default" ? Kind : PluginKind
-  >;
+  ) => AtomCreator<OptionsByPlugin & { readonly [Key in Name]: Options }, PluginKind>;
 };
 
 export type Computed<Value> = ReadableAtom<Value>;
