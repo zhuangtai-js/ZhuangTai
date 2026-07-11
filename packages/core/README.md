@@ -1,5 +1,7 @@
 # @zhuangtai-js/core
 
+<p align="center">简体中文 · <a href="#english">English</a></p>
+
 简单、直接的 JavaScript 状态原语。
 
 `@zhuangtai-js/core` 是 ZhuàngTài 的框架无关核心。它没有第三方运行时依赖，也不会隐藏调度行为。
@@ -7,6 +9,8 @@
 ## 安装
 
 ```sh
+npm install @zhuangtai-js/core
+# 或
 pnpm add @zhuangtai-js/core
 ```
 
@@ -71,6 +75,8 @@ const count = atom(0, {
 
 ---
 
+<a id="english"></a>
+
 # @zhuangtai-js/core
 
 Simple, direct state primitives for JavaScript.
@@ -80,6 +86,8 @@ Simple, direct state primitives for JavaScript.
 ## Install
 
 ```sh
+npm install @zhuangtai-js/core
+# or
 pnpm add @zhuangtai-js/core
 ```
 

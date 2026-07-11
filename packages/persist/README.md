@@ -1,5 +1,7 @@
 # @zhuangtai-js/persist
 
+<p align="center">简体中文 · <a href="#english">English</a></p>
+
 ZhuàngTài atom 的持久化插件。
 
 `@zhuangtai-js/persist` 扩展来自 `@zhuangtai-js/core` 的 atom creator。它会在 atom 创建前恢复已存储的值，并在每次更新时先写入 storage、成功后再提交内存状态。
@@ -7,6 +9,8 @@ ZhuàngTài atom 的持久化插件。
 ## 安装
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/persist
+# 或
 pnpm add @zhuangtai-js/core @zhuangtai-js/persist
 ```
 
@@ -87,6 +91,8 @@ const count = atom(0, {
 
 ---
 
+<a id="english"></a>
+
 # @zhuangtai-js/persist
 
 Persistence plugin for ZhuàngTài atoms.
@@ -96,6 +102,8 @@ Persistence plugin for ZhuàngTài atoms.
 ## Install
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/persist
+# or
 pnpm add @zhuangtai-js/core @zhuangtai-js/persist
 ```
 

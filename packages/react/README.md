@@ -1,5 +1,7 @@
 # @zhuangtai-js/react
 
+<p align="center">简体中文 · <a href="#english">English</a></p>
+
 ZhuàngTài atom 的 React 适配器。
 
 `@zhuangtai-js/react` 把 `@zhuangtai-js/core` 的 atom 和 computed 桥接到 React。它基于 `useSyncExternalStore`，直接复用 core 同步的 `watch`/`get`，不引入额外的调度。
@@ -7,6 +9,8 @@ ZhuàngTài atom 的 React 适配器。
 ## 安装
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/react react
+# 或
 pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
@@ -92,6 +96,8 @@ function Double() {
 
 ---
 
+<a id="english"></a>
+
 # @zhuangtai-js/react
 
 React adapter for ZhuàngTài atoms.
@@ -101,6 +107,8 @@ React adapter for ZhuàngTài atoms.
 ## Install
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/react react
+# or
 pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 

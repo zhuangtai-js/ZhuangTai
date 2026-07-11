@@ -1,5 +1,7 @@
 # @zhuangtai-js/sync
 
+<p align="center">简体中文 · <a href="#english">English</a></p>
+
 ZhuàngTài atom 的跨上下文同步插件。
 
 `@zhuangtai-js/sync` 扩展来自 `@zhuangtai-js/core` 的 atom creator。它通过 `BroadcastChannel` 在同源的多个标签页、窗口或 worker 之间同步 atom 状态：本地更新提交后广播出去，收到远端广播时直接写入底层状态而不再二次广播，从而避免回环。
@@ -7,6 +9,8 @@ ZhuàngTài atom 的跨上下文同步插件。
 ## 安装
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/sync
+# 或
 pnpm add @zhuangtai-js/core @zhuangtai-js/sync
 ```
 
@@ -79,6 +83,8 @@ const count = atom(0, {
 
 ---
 
+<a id="english"></a>
+
 # @zhuangtai-js/sync
 
 Cross-context sync plugin for ZhuàngTài atoms.
@@ -88,6 +94,8 @@ Cross-context sync plugin for ZhuàngTài atoms.
 ## Install
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/sync
+# or
 pnpm add @zhuangtai-js/core @zhuangtai-js/sync
 ```
 
