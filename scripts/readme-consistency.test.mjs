@@ -248,16 +248,21 @@ function assertCompatibilityMatrix(markdown, source) {
     const extraPeers = Object.entries(manifest.peerDependencies ?? {}).filter(
       ([name]) => name !== "@zhuangtai-js/core",
     );
-    for (const [name, range] of extraPeers) {
-      assert.ok(
-        row.otherPeers.toLowerCase().includes(name.toLowerCase()),
-        `${source} omits peer ${name} for ${manifest.name}`,
-      );
-      assert.ok(
-        row.otherPeers.includes(`\`${range}\``),
-        `${source} has a stale ${name} peer for ${manifest.name}`,
-      );
+    let expectedOtherPeers = "—";
+    if (extraPeers.length > 0) {
+      expectedOtherPeers = extraPeers
+        .map(([name, range]) => `${name[0].toUpperCase()}${name.slice(1)} \`${range}\``)
+        .join(", ");
+    } else if (manifest.name === "@zhuangtai-js/immer") {
+      expectedOtherPeers = source.includes("README.en.md")
+        ? "— (Immer is a regular dependency)"
+        : "—（Immer 是普通 dependency）";
     }
+    assert.equal(
+      row.otherPeers,
+      expectedOtherPeers,
+      `${source} has stale or extra peers for ${manifest.name}`,
+    );
   }
 }
 
@@ -445,6 +450,13 @@ describe("README consistency", () => {
       () => assertCompatibilityMatrix(mutated, "mutated README.md"),
       /stale core peer/u,
     );
+
+    const extraPeer = original.replace("React `>=18 <20`", "React `>=18 <20`, Vue `^3.0.0`");
+    assert.notEqual(extraPeer, original);
+    assert.throws(
+      () => assertCompatibilityMatrix(extraPeer, "README.md with an extra peer"),
+      /stale or extra peers/u,
+    );
   });
 
   it("keeps both languages of every package README installable", () => {
@@ -599,8 +611,8 @@ describe("README consistency", () => {
     }
   });
 
-  it("keeps README local paths and fragments resolvable", () => {
-    for (const relativePath of readmePaths) {
+  it("keeps public documentation local paths and fragments resolvable", () => {
+    for (const relativePath of publicDocumentationPaths) {
       const markdown = readText(relativePath);
       for (const target of localDocumentationTargets(markdown, relativePath)) {
         assertLocalTarget(relativePath, target);
