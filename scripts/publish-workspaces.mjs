@@ -108,9 +108,12 @@ function githubReleaseForPackage(workspacePackage, channel, readReleaseNotes = c
 
   return {
     notes: readReleaseNotes(workspacePackage),
+    npmTag: channels[channel].npmTag,
+    packageName: manifest.name,
     prerelease: channels[channel].prerelease,
     tag: `${packageShortName(manifest)}-v${manifest.version}`,
     title: `${packageShortName(manifest)} v${manifest.version}`,
+    version: manifest.version,
   };
 }
 

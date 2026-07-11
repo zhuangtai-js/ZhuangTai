@@ -32,17 +32,53 @@ on:
         default: true
 
 permissions:
-  contents: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: npm-publish
   cancel-in-progress: false
 
+env:
+  NPM_VERSION: 11.13.0
+
 jobs:
-  npm:
+  verify:
     runs-on: ubuntu-latest
-    environment: npm-production
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install supported npm CLI
+        run: npm install --global "npm@${NPM_VERSION}"
+
+      - name: Report toolchain
+        run: |
+          node --version
+          npm --version
+          pnpm --version
+
+      - name: Reject real publishing outside main
+        if: ${{ !inputs.dry_run && github.ref != 'refs/heads/main' }}
+        run: |
+          echo "Real npm publishing is only allowed from refs/heads/main; received ${GITHUB_REF}." >&2
+          exit 1
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm release:test
+
+  dry-run:
+    if: ${{ inputs.dry_run }}
+    needs: verify
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
@@ -57,23 +93,64 @@ jobs:
           registry-url: https://registry.npmjs.org
           scope: "@zhuangtai-js"
 
+      - name: Install supported npm CLI
+        run: npm install --global "npm@${NPM_VERSION}"
+
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: pnpm release:test
+      - run: pnpm build
 
       - name: Dry-run publish
-        if: ${{ inputs.dry_run }}
         run: pnpm release:dry-run -- --channel ${{ inputs.channel }} --package ${{ inputs.package_name }}
 
-      - name: Publish
-        if: ${{ !inputs.dry_run }}
-        run: pnpm release:publish -- --channel ${{ inputs.channel }} --package ${{ inputs.package_name }} --summary-file release-summary.json
+  publish:
+    if: ${{ !inputs.dry_run && github.ref == 'refs/heads/main' }}
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: npm-production
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      release_summary: ${{ steps.publish.outputs.release_summary }}
+    steps:
+      - uses: actions/checkout@v7
 
+      - uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+          scope: "@zhuangtai-js"
+
+      - name: Install supported npm CLI
+        run: npm install --global "npm@${NPM_VERSION}"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Publish
+        id: publish
+        run: |
+          pnpm release:publish -- --channel ${{ inputs.channel }} --package ${{ inputs.package_name }} --summary-file release-summary.json
+          pnpm release:verify -- --summary-file release-summary.json
+          echo "release_summary=$(base64 < release-summary.json | tr -d '\n')" >> "${GITHUB_OUTPUT}"
+
+  github-release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
       - name: Create GitHub Releases
-        if: ${{ !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_SUMMARY: ${{ needs.publish.outputs.release_summary }}
         run: |
+          printf '%s' "${RELEASE_SUMMARY}" | base64 --decode > release-summary.json
           node - <<'NODE'
           const { execFileSync } = require("node:child_process");
           const { readFileSync, writeFileSync } = require("node:fs");
@@ -82,7 +159,9 @@ jobs:
 
           for (const release of summary.releases) {
             try {
-              execFileSync("gh", ["release", "view", release.tag], { stdio: "ignore" });
+              execFileSync("gh", ["release", "view", release.tag, "--repo", process.env.GITHUB_REPOSITORY], {
+                stdio: "ignore",
+              });
               console.log(`skip: GitHub Release ${release.tag} already exists`);
               continue;
             } catch {}
@@ -90,7 +169,19 @@ jobs:
             const notesFile = `${release.tag}-notes.md`;
             writeFileSync(notesFile, `${release.notes}\n`);
 
-            const args = ["release", "create", release.tag, "--title", release.title, "--notes-file", notesFile];
+            const args = [
+              "release",
+              "create",
+              release.tag,
+              "--repo",
+              process.env.GITHUB_REPOSITORY,
+              "--target",
+              process.env.GITHUB_SHA,
+              "--title",
+              release.title,
+              "--notes-file",
+              notesFile,
+            ];
 
             if (release.prerelease) {
               args.push("--prerelease");

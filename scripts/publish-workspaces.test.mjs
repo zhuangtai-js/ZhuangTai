@@ -300,16 +300,22 @@ describe("publishWorkspaces", () => {
     assert.deepEqual(summary.published, ["@zhuangtai-js/persist@0.1.0"]);
     assert.deepEqual(summary.releases, [
       {
+        npmTag: "latest",
+        packageName: "@zhuangtai-js/core",
         prerelease: false,
         tag: "core-v0.1.0",
         notes: "@zhuangtai-js/core 0.1.0 notes",
         title: "core v0.1.0",
+        version: "0.1.0",
       },
       {
+        npmTag: "latest",
+        packageName: "@zhuangtai-js/persist",
         prerelease: false,
         tag: "persist-v0.1.0",
         notes: "@zhuangtai-js/persist 0.1.0 notes",
         title: "persist v0.1.0",
+        version: "0.1.0",
       },
     ]);
     assert.ok(logs.some((line) => line.startsWith("summary:")));
@@ -360,10 +366,13 @@ describe("publishWorkspaces", () => {
     assert.deepEqual(summary.published, ["@zhuangtai-js/core@0.3.1"]);
     assert.deepEqual(summary.releases, [
       {
+        npmTag: "latest",
+        packageName: "@zhuangtai-js/core",
         prerelease: false,
         tag: "core-v0.3.1",
         notes: "@zhuangtai-js/core 0.3.1 notes",
         title: "core v0.3.1",
+        version: "0.3.1",
       },
     ]);
   });
