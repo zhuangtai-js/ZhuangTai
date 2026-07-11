@@ -64,6 +64,7 @@ const publishablePackages = discoverPublishablePackages();
 const packageReadmePaths = publishablePackages.map(({ readmePath }) => readmePath);
 const readmePaths = [...rootReadmePaths, ...packageReadmePaths];
 const docsSitePaths = collectMarkdown("packages/docs/src/content/docs");
+const skillDocumentationPaths = collectMarkdown("skills");
 const packageDocumentationPaths = publishablePackages.flatMap(({ directory, readmePath }) => {
   const paths = [readmePath];
   const changelogPath = `packages/${directory}/CHANGELOG.md`;
@@ -79,7 +80,12 @@ const packageDocumentationPaths = publishablePackages.flatMap(({ directory, read
   return paths;
 });
 const currentDocumentationPaths = [
-  ...new Set([...readmePaths, ...collectMarkdown("docs/guide"), ...docsSitePaths]),
+  ...new Set([
+    ...readmePaths,
+    ...collectMarkdown("docs/guide"),
+    ...docsSitePaths,
+    ...skillDocumentationPaths,
+  ]),
 ].toSorted((left, right) => left.localeCompare(right));
 const publicDocumentationPaths = [
   ...new Set([...currentDocumentationPaths, ...packageDocumentationPaths]),
@@ -387,6 +393,10 @@ describe("README consistency", () => {
         }
       }
     }
+
+    for (const documentationPath of skillDocumentationPaths) {
+      assert.ok(publicDocumentationPaths.includes(documentationPath));
+    }
   });
 
   it("parses CommonMark fences without treating code examples as documentation", () => {
@@ -598,9 +608,12 @@ describe("README consistency", () => {
     const majors = supportedReactMajors(range);
     const chineseGuide = readText("packages/docs/src/content/docs/guides/react.md");
     const englishGuide = readText("packages/docs/src/content/docs/en/guides/react.md");
+    const reactSkill = readText("skills/zhuangtai-react/SKILL.md");
 
     assert.ok(chineseGuide.includes(majors.map((major) => `React ${major}`).join(" 和 ")));
-    assert.ok(englishGuide.includes(majors.map((major) => `React ${major}`).join(" and ")));
+    const englishSupport = majors.map((major) => `React ${major}`).join(" and ");
+    assert.ok(englishGuide.includes(englishSupport));
+    assert.ok(reactSkill.includes(englishSupport));
     for (const relativePath of currentDocumentationPaths) {
       const text = readText(relativePath);
       assert.equal(
