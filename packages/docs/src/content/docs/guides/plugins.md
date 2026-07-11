@@ -84,6 +84,8 @@ theme.set("dark");
 - 最外层插件的 `kind` 决定最终公共类型。
 - plugin ID 必须唯一，重复安装会同步失败。
 - `sync` 的远端更新写入其内层 state；它会经过内层插件，但会绕过 `sync` 自己和外层插件的 `set` wrapper。
+- 需要同时持久化并跨 tab 同步时，使用 `createAtom().use(persist).use(sync)`（`persist` 在内、`sync` 在外）。反过来时远端更新不会写 storage。
+- 需要 Immer recipe 且开发期冻结时，使用 `createAtom().use(freeze).use(immer)`（`immer` 在外）。`use(immer).use(freeze)` 会把函数当成普通 updater 作用在已冻结值上。
 
 这也是为什么 `createAtom()` 值得单独拿出来。它让你先定好这条状态线要经过哪些能力，再把 atom 实例创建出来。
 

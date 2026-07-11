@@ -59,7 +59,7 @@ const count = atom(0, {
 
 ## 配置 codec
 
-默认 codec 使用 `JSON.stringify` 和 `JSON.parse`。默认 codec 只支持 `JSON.stringify` 返回字符串的值，`undefined`、函数和 symbol 会在 encode 时抛错，而不是发送到 channel。
+默认 codec 使用 `JSON.stringify` 和 `JSON.parse`，并在 encode 前拒绝 `NaN`、`±Infinity` 和无效 `Date`（它们在 JSON 里会静默变成 `null`）。顶层 `undefined`、函数和 symbol 也会在 encode 时抛错，而不是发送到 channel。
 
 ```ts
 const count = atom(0, {
@@ -76,10 +76,11 @@ const count = atom(0, {
 ## 语义
 
 - 省略 `sync` 选项时，atom 保持不变。
-- 更新会先在本地同步提交，提交成功后再把具体值广播给其他上下文。
+- 本地更新会先 encode，成功后再同步提交内存并广播已编码载荷；encode 失败时内存不变、不广播。
 - 收到远端广播时，会 decode 后直接写入底层状态，不会再次广播，从而避免回环。
+- 远端 decode 失败会被隔离：不更新本地状态，不把异常抛出事件回调，并 `console.error` 诊断信息。
 - `Object.is` 判定为无变化的更新不会广播。
-- 收到的广播直接写入底层状态，因此会跳过其他包裹在 `sync` 之上的插件的 `set` 逻辑。
+- 收到的广播直接写入底层状态，因此会跳过其他包裹在 `sync` 之上的插件的 `set` 逻辑。推荐 `createAtom().use(persist).use(sync)`。
 - SSR 或没有 `BroadcastChannel` 的运行时会静默降级为普通 atom。
 - 默认创建的 `BroadcastChannel` 在 Node 等支持 `unref` 的运行时中不会阻止进程退出，进程存活期间同步照常工作。显式传入的 `channel` 由调用方自行管理。
 - `BroadcastChannel` 只在同源上下文间工作，不跨设备，不做持久化。需要持久化时请搭配 `@zhuangtai-js/persist`。

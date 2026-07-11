@@ -67,6 +67,7 @@ const state = atom(
 - Already-frozen values are skipped and not reprocessed.
 - When freezing is disabled, the atom behaves exactly as if the plugin were not used.
 - Freezing relies on `Object.freeze`, which only throws on writes in strict mode; in non-strict mode writes are silently ignored, which is inherent JavaScript behavior.
+- Known limitation: content mutations on built-ins such as `Map` / `Set` / `Date` are not own-property writes, so methods may still change content after the container is frozen. freeze is a development guard for plain objects and arrays.
 
 ## Types
 

@@ -1,5 +1,15 @@
 # persist 更新日志 / Changelog
 
+## 0.3.1 - 2026-07-12
+
+### 修复
+
+- 默认 JSON codec 在 encode 前拒绝 `NaN`、`±Infinity` 和无效 `Date`，避免 JSON 把它们静默写成 `null`。需要这些值时请使用自定义 codec。
+
+### Fixed
+
+- The default JSON codec now rejects `NaN`, `±Infinity`, and invalid `Date` values before encode, so JSON cannot silently store them as `null`. Use a custom codec when you need those values.
+
 ## 0.3.0 - 2026-07-11
 
 ### 修复

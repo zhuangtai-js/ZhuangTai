@@ -122,4 +122,24 @@ describe("freeze", () => {
     expect(state.get()).toBe(frozen);
     expect(Object.isFrozen(state.get())).toBe(true);
   });
+
+  it("does not prevent Map content mutation (known limitation)", () => {
+    // freeze uses Object.freeze + ownKeys. Map entries are not own properties,
+    // so .set on the map still mutates content after the container is frozen.
+    const createState = createAtom().use(freeze);
+    const state = createState(new Map<string, number>([["a", 1]]), { freeze: { enabled: true } });
+
+    expect(Object.isFrozen(state.get())).toBe(true);
+    state.get().set("b", 2);
+    expect(state.get().get("b")).toBe(2);
+  });
+
+  it("does not prevent Date field mutation (known limitation)", () => {
+    const createState = createAtom().use(freeze);
+    const state = createState(new Date("2020-01-01T00:00:00.000Z"), { freeze: { enabled: true } });
+
+    expect(Object.isFrozen(state.get())).toBe(true);
+    state.get().setUTCFullYear(2021);
+    expect(state.get().getUTCFullYear()).toBe(2021);
+  });
 });

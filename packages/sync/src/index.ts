@@ -5,6 +5,8 @@ import type {
   NextValue,
 } from "@zhuangtai-js/core";
 
+const PACKAGE_NAME = "@zhuangtai-js/sync";
+
 export type SyncCodec = {
   readonly encode: (value: unknown) => string;
   readonly decode: <Value>(rawValue: string, initialValue: Value) => Value;
@@ -69,7 +71,20 @@ function syncAtom<Value>({ state, channel, codec }: SyncAtomParams<Value>): Atom
     // never re-broadcast it. Re-broadcasting would echo the value back and
     // forth between contexts. A concrete value is passed, so core never treats
     // it as an updater.
-    state.set(codec.decode(event.data, state.get()));
+    //
+    // Decode failures (malformed payload, custom codec errors) are isolated so
+    // a bad message cannot surface as an uncaught event-handler exception or
+    // corrupt local state. Watcher errors from a successful set still propagate.
+    let nextValue: Value;
+
+    try {
+      nextValue = codec.decode(event.data, state.get());
+    } catch (error) {
+      reportIgnoredRemoteMessage(error);
+      return;
+    }
+
+    state.set(nextValue);
   });
 
   function set(nextValue: NextValue<Value>): void {
@@ -80,14 +95,28 @@ function syncAtom<Value>({ state, channel, codec }: SyncAtomParams<Value>): Atom
       return;
     }
 
-    // Commit locally first (synchronously, matching core), then broadcast the
-    // concrete value to other contexts. A concrete value is passed, so core
-    // never treats it as an updater.
+    // Encode before committing so non-serializable values fail closed: memory
+    // stays unchanged and nothing is broadcast. After a successful encode,
+    // commit locally (synchronously, matching core), then post the already
+    // encoded payload. A concrete value is passed, so core never treats it as
+    // an updater.
+    const encoded = codec.encode(value);
     state.set(value);
-    channel.postMessage(codec.encode(value));
+    channel.postMessage(encoded);
   }
 
   return { get: state.get, set, watch: state.watch };
+}
+
+function reportIgnoredRemoteMessage(error: unknown): void {
+  const detail = error instanceof Error ? error.message : String(error);
+  // Intentional diagnostics for operators: remote decode failures must not throw
+  // from the event handler, but they should still be visible in development consoles.
+  // oxlint-disable-next-line eslint/no-console -- package-prefixed remote-decode diagnostics
+  console.error(
+    `[@zhuangtai-js/sync] Ignored a remote message that failed to decode: ${detail}`,
+    error,
+  );
 }
 
 function resolveChannel(channel: SyncChannel | undefined, key: string): SyncChannel | undefined {
@@ -143,15 +172,71 @@ function toSyncChannel(broadcast: BroadcastChannel): SyncChannel {
 
 const jsonCodec: SyncCodec = {
   encode(value) {
-    const encodedValue = JSON.stringify(value);
-
-    if (typeof encodedValue !== "string") {
-      throw new TypeError("The default sync JSON codec can only encode JSON-serializable values.");
-    }
-
-    return encodedValue;
+    return encodeDefaultJson(value, PACKAGE_NAME);
   },
   decode(rawValue) {
     return JSON.parse(rawValue);
   },
 };
+
+function encodeDefaultJson(value: unknown, packageName: string): string {
+  assertDefaultJsonEncodable(value, packageName);
+
+  const encodedValue = JSON.stringify(value);
+
+  if (typeof encodedValue !== "string") {
+    throw new TypeError(
+      `[${packageName}] The default JSON codec can only encode JSON-serializable values.`,
+    );
+  }
+
+  return encodedValue;
+}
+
+function assertDefaultJsonEncodable(
+  value: unknown,
+  packageName: string,
+  seen: Set<object> = new Set(),
+): void {
+  if (typeof value === "number" && !Number.isFinite(value)) {
+    throw new TypeError(
+      `[${packageName}] The default JSON codec cannot encode non-finite numbers (NaN or ±Infinity). Use a custom codec if you need those values.`,
+    );
+  }
+
+  if (value === null || typeof value !== "object") {
+    return;
+  }
+
+  if (value instanceof Date) {
+    if (!Number.isFinite(value.getTime())) {
+      throw new TypeError(
+        `[${packageName}] The default JSON codec cannot encode invalid Date values. Use a custom codec if you need those values.`,
+      );
+    }
+
+    return;
+  }
+
+  if (seen.has(value)) {
+    return;
+  }
+
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      assertDefaultJsonEncodable(item, packageName, seen);
+    }
+
+    return;
+  }
+
+  for (const key of Reflect.ownKeys(value)) {
+    if (typeof key === "symbol") {
+      continue;
+    }
+
+    assertDefaultJsonEncodable(Reflect.get(value, key), packageName, seen);
+  }
+}

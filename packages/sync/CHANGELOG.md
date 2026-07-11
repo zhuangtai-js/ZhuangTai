@@ -1,5 +1,19 @@
 # sync 更新日志 / Changelog
 
+## 0.2.1 - 2026-07-12
+
+### 修复
+
+- 默认 JSON codec 在 encode 前拒绝 `NaN`、`±Infinity` 和无效 `Date`，避免 JSON 把它们静默变成 `null` 再广播。
+- 本地更新改为先 encode，成功后再提交内存并广播；encode 失败时内存保持不变。
+- 远端 decode 失败会被隔离：不更新本地状态，不把异常抛出事件回调，并通过 `console.error` 输出诊断信息。
+
+### Fixed
+
+- The default JSON codec now rejects `NaN`, `±Infinity`, and invalid `Date` values before encode, so JSON cannot silently turn them into `null` before broadcast.
+- Local updates encode first, then commit memory and broadcast; if encode fails, memory stays unchanged.
+- Remote decode failures are isolated: local state is unchanged, the error does not escape the message handler, and a diagnostic is written with `console.error`.
+
 ## 0.2.0 - 2026-07-11
 
 ### 变更
