@@ -1,6 +1,6 @@
 {
   "name": "@zhuangtai-js/sync",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Cross-context sync plugin for ZhuangTai atoms.",
   "keywords": [
     "broadcastchannel",
@@ -58,6 +58,6 @@
     "typescript": "rc"
   },
   "peerDependencies": {
-    "@zhuangtai-js/core": "^0.4.0"
+    "@zhuangtai-js/core": "^0.5.0"
   }
 }

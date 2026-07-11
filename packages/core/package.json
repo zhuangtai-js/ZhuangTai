@@ -1,6 +1,6 @@
 {
   "name": "@zhuangtai-js/core",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Simple, direct state primitives for JavaScript.",
   "keywords": [
     "javascript",

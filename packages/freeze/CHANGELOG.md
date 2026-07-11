@@ -1,10 +1,10 @@
 # freeze 更新日志 / Changelog
 
-## 0.1.1 - 2026-07-11
+## 0.2.0 - 2026-07-11
 
 ### 变更
 
-- 将 `@zhuangtai-js/core` peer dependency 收紧为 `^0.4.0`，只声明已经验证的 core 0.4.x 兼容范围。
+- 将 `@zhuangtai-js/core` peer dependency 更新为 `^0.5.0`，声明与本次 core 0.5.x 发布线的兼容范围。
 
 ### 说明
 
@@ -12,7 +12,7 @@
 
 ### Changed
 
-- Narrowed the `@zhuangtai-js/core` peer dependency to `^0.4.0`, declaring only the verified core 0.4.x compatibility range.
+- Updated the `@zhuangtai-js/core` peer dependency to `^0.5.0`, declaring compatibility with the core 0.5.x release line.
 
 ### Notes
 
