@@ -94,14 +94,14 @@ describe("build artifacts", () => {
   it("declares only the verified peer compatibility ranges", () => {
     // Given
     const expectedPeerDependencies = {
-      "packages/freeze": { "@zhuangtai-js/core": "^0.4.0" },
-      "packages/immer": { "@zhuangtai-js/core": "^0.4.0" },
-      "packages/persist": { "@zhuangtai-js/core": "^0.4.0" },
+      "packages/freeze": { "@zhuangtai-js/core": "^0.5.0" },
+      "packages/immer": { "@zhuangtai-js/core": "^0.5.0" },
+      "packages/persist": { "@zhuangtai-js/core": "^0.5.0" },
       "packages/react": {
-        "@zhuangtai-js/core": "^0.4.0",
+        "@zhuangtai-js/core": "^0.5.0",
         react: ">=18 <20",
       },
-      "packages/sync": { "@zhuangtai-js/core": "^0.4.0" },
+      "packages/sync": { "@zhuangtai-js/core": "^0.5.0" },
     };
 
     // When / Then

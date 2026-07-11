@@ -1,42 +1,32 @@
 # persist 更新日志 / Changelog
 
-## 0.2.3 - 2026-07-11
-
-### 变更
-
-- 将 `@zhuangtai-js/core` peer dependency 收紧为 `^0.4.0`，只声明已经验证的 core 0.4.x 兼容范围。
-
-### 说明
-
-- 本次更新只修正安装兼容声明，不改变持久化、storage-first 初始化或 codec 语义。
-
-### Changed
-
-- Narrowed the `@zhuangtai-js/core` peer dependency to `^0.4.0`, declaring only the verified core 0.4.x compatibility range.
-
-### Notes
-
-- This update only corrects installation compatibility metadata. It does not change persistence, storage-first initialization, or codec semantics.
-
-## 0.2.2 - 2026-07-11
+## 0.3.0 - 2026-07-11
 
 ### 修复
 
 - 持久化更新现在先完成编码和 `storage.setItem`，成功后才提交内存 atom。编码或 storage 写入失败时，内存值保持不变，避免内存与持久化数据分叉。
-- 为上述 storage-first 行为分配新的可发布版本。npm 上已发布的 `0.2.1` 仍是旧的 memory-first 产物，无法用同一版本覆盖；请升级到 `0.2.2`。
+
+### 变更
+
+- 将 `@zhuangtai-js/core` peer dependency 更新为 `^0.5.0`，声明与本次 core 0.5.x 发布线的兼容范围。
 
 ### 说明
 
 - `set` 仍然同步执行；storage 写入、内存提交和 watcher 通知都在同一次调用中完成。
+- 除安装兼容声明外，本次版本不改变 codec 语义。
 
 ### Fixed
 
 - Persistence updates now complete encoding and `storage.setItem` before committing the in-memory atom. If encoding or storage writing fails, the in-memory value remains unchanged, preventing memory and persisted data from diverging.
-- Assigned a new publishable version to the storage-first behavior above. The already-published npm `0.2.1` artifact still uses the old memory-first ordering and cannot be overwritten; upgrade to `0.2.2`.
+
+### Changed
+
+- Updated the `@zhuangtai-js/core` peer dependency to `^0.5.0`, declaring compatibility with the core 0.5.x release line.
 
 ### Notes
 
 - `set` remains synchronous; the storage write, in-memory commit, and watcher notification all complete within the same call.
+- Apart from the installation compatibility declaration, this release does not change codec semantics.
 
 ## 0.2.1 - 2026-07-02
 

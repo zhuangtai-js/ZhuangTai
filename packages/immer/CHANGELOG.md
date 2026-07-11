@@ -1,10 +1,10 @@
 # immer 更新日志 / Changelog
 
-## 0.1.1 - 2026-07-11
+## 0.2.0 - 2026-07-11
 
 ### 变更
 
-- 将 `@zhuangtai-js/core` peer dependency 收紧为 `^0.4.0`，与插件所使用的 core 0.4 atom kind 类型扩展保持一致。
+- 将 `@zhuangtai-js/core` peer dependency 更新为 `^0.5.0`，与插件使用的 core 0.5 atom kind 类型扩展保持一致。
 
 ### 说明
 
@@ -12,7 +12,7 @@
 
 ### Changed
 
-- Narrowed the `@zhuangtai-js/core` peer dependency to `^0.4.0`, matching the core 0.4 atom-kind type extension used by the plugin.
+- Updated the `@zhuangtai-js/core` peer dependency to `^0.5.0`, matching the core 0.5 atom-kind type extension used by the plugin.
 
 ### Notes
 
