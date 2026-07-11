@@ -19,7 +19,7 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 # yarn add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
-`react` is a peer dependency and requires React 18 or later.
+`react` is a peer dependency and supports React 18 and React 19.
 
 ## What it covers
 
@@ -85,7 +85,7 @@ const useDouble = createComputedHook(computed(() => countAtom.get() * 2));
 - `subscribe` skips the initial synchronous watcher callback from core and only notifies React on real changes.
 - Setter and subscription identities stay stable for the same atom reference.
 - The setter calls `atom.set` directly, so it accepts both concrete values and updater functions.
-- Because the adapter uses `useSyncExternalStore`, it matches React 18+ external-store patterns and is safe for StrictMode-style subscription lifecycles.
+- Because the adapter uses `useSyncExternalStore`, it follows the external-store patterns supported by React 18 and React 19 and is safe for StrictMode-style subscription lifecycles.
 - `@zhuangtai-js/core` stays framework-agnostic, and the React adapter lives in a separate package.
 
 ## Common mistakes
