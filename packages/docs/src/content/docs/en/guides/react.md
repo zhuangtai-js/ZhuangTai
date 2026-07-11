@@ -84,9 +84,9 @@ This adapter is built on `useSyncExternalStore`. It reuses core's synchronous `g
 
 That also means `useSetAtom()` does not subscribe to the value, so a button that only calls the setter will not re-render on value changes. `useAtomValue()` works for both atoms and computeds, and React does not need to know which one it is.
 
-## Works with React 18+ StrictMode
+## Works with React 18/19 StrictMode
 
-`@zhuangtai-js/react` is designed for React 18 and later, including StrictMode. Because the core is synchronous, React only handles subscription management around it. It does not change when the atom updates happen.
+`@zhuangtai-js/react` is designed for React 18 and React 19, including StrictMode. Because the core is synchronous, React only handles subscription management around it. It does not change when the atom updates happen.
 
 ## Next steps
 

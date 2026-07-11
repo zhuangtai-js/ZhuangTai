@@ -88,7 +88,7 @@ const useDouble = createComputedHook(computed(() => countAtom.get() * 2));
 
 ## StrictMode 也能正常工作
 
-`@zhuangtai-js/react` 适配 React 18+，在 StrictMode 下也能正常工作。因为核心语义是同步的，React 只是在外层做订阅管理，不会改变 atom 的更新时机。
+`@zhuangtai-js/react` 适配 React 18 和 React 19，在 StrictMode 下也能正常工作。因为核心语义是同步的，React 只是在外层做订阅管理，不会改变 atom 的更新时机。
 
 ## 下一步
 
