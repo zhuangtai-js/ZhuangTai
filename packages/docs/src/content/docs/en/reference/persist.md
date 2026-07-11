@@ -69,7 +69,7 @@ If no `storage` is provided and `globalThis.localStorage` is unavailable, atom c
 
 ## Configure codecs
 
-The default codec uses `JSON.stringify` and `JSON.parse`.
+The default codec uses `JSON.stringify` and `JSON.parse`, and rejects `NaN`, `±Infinity`, and invalid `Date` values before encode (JSON would otherwise silently turn them into `null`). Top-level `undefined`, functions, and symbols also throw during encode. Pass a custom codec when you need those special values.
 
 ```ts
 const count = atom(0, {
@@ -83,7 +83,7 @@ const count = atom(0, {
 });
 ```
 
-The default codec only supports values that `JSON.stringify` returns as a string. `undefined`, functions, and symbols throw during encode instead of being passed to storage.
+Top-level `undefined`, functions, and symbols throw during encode instead of being passed to storage. `undefined` fields inside objects still follow JSON semantics (keys are omitted).
 
 ## Error semantics
 

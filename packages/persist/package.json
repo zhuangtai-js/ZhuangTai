@@ -1,6 +1,6 @@
 {
   "name": "@zhuangtai-js/persist",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Persistence plugin for ZhuangTai atoms.",
   "keywords": [
     "javascript",

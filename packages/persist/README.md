@@ -59,7 +59,14 @@ const count = atom(0, {
 
 ## Codec
 
-默认 codec 使用 `JSON.stringify` 和 `JSON.parse`。默认 codec 只支持 `JSON.stringify` 返回字符串的值；`undefined`、函数和 symbol 会在 encode 时抛错，而不是传给 storage。需要不同存储表示时，请传入自定义 codec。
+默认 codec 使用 `JSON.stringify` 和 `JSON.parse`，并在 encode 前做 fail-fast 校验：
+
+- `NaN`、`±Infinity` 以及嵌套中的非有限数字会同步抛错，而不会静默写成 `null`。
+- 无效 `Date`（`getTime()` 非有限）会同步抛错，而不会静默写成 `null`。
+- 顶层 `undefined`、函数和 symbol 会在 encode 时抛错，而不是传给 storage。
+- 对象字段里的 `undefined` 仍遵循 JSON 语义（键会被省略）；需要保留时请用自定义 codec。
+
+需要不同存储表示时，请传入自定义 codec。
 
 ```ts
 const count = atom(0, {
@@ -79,6 +86,7 @@ const count = atom(0, {
 - 已存储的值会在第一次 `get()` 前恢复。
 - 更新会先持久化：先用 codec 编码并写入 storage，成功后才提交内存状态并同步通知 watcher。
 - 如果 encode 或 storage 写入失败，内存状态保持不变，并抛出错误。
+- 默认 JSON codec 拒绝非有限数字和无效 `Date`，避免 JSON 把它们静默变成 `null`。
 - watcher 在提交阶段抛错时，值已经持久化且内存状态已更新（仅通知失败，不回滚）。
 - `Object.is` 判定为无变化的更新不会写入 storage。
 - 恢复已存储值时，若 codec decode 抛错，会包装成带出错 key 的错误（原错误保留在 `cause`），而不会静默回退到初始值。
@@ -152,7 +160,14 @@ If `storage` is omitted, the plugin uses `globalThis.localStorage`. If neither i
 
 ## Codec
 
-Values are encoded with `JSON.stringify` and decoded with `JSON.parse` by default. The default codec only supports values that `JSON.stringify` returns as a string; `undefined`, functions, and symbols throw during encode instead of being passed to storage. Pass a custom codec when your stored representation needs different behavior.
+Values are encoded with `JSON.stringify` and decoded with `JSON.parse` by default, with fail-fast checks before encode:
+
+- `NaN`, `±Infinity`, and nested non-finite numbers throw synchronously instead of being silently stored as `null`.
+- Invalid `Date` values (`getTime()` is non-finite) throw synchronously instead of being silently stored as `null`.
+- Top-level `undefined`, functions, and symbols throw during encode instead of being passed to storage.
+- `undefined` fields inside objects still follow JSON semantics (keys are omitted); use a custom codec when you need to preserve them.
+
+Pass a custom codec when your stored representation needs different behavior.
 
 ```ts
 const count = atom(0, {
@@ -172,6 +187,7 @@ const count = atom(0, {
 - Stored values are restored before the first `get()`.
 - Updates persist first: the value is encoded and written to storage, and only after a successful write is the in-memory state committed and watchers notified synchronously.
 - If encode or the storage write fails, the in-memory state stays unchanged and the error is thrown.
+- The default JSON codec rejects non-finite numbers and invalid `Date` values so JSON cannot silently turn them into `null`.
 - If a watcher throws during the commit phase, the value has already been persisted and the in-memory state has already been updated (only notification failed; there is no rollback).
 - `Object.is` no-op updates do not write to storage.
 - If the codec's decode throws while restoring a stored value, the failure is wrapped in an error that includes the offending key (the original error is preserved as `cause`); it does not silently fall back to the initial value.

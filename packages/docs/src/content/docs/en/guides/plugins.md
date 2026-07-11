@@ -84,6 +84,8 @@ If your main worry is accidental mutation, start with `freeze`. If immutable upd
 - The outermost plugin's `kind` determines the final public type.
 - Plugin IDs must be unique; duplicate installation fails synchronously.
 - Remote `sync` updates write its inner state: inner plugins still run, but `sync` itself and outer plugin `set` wrappers are bypassed.
+- When you need both persistence and cross-tab sync, use `createAtom().use(persist).use(sync)` (`persist` inside, `sync` outside). The reverse order does not write storage for remote updates.
+- When you need Immer recipes plus development freezes, use `createAtom().use(freeze).use(immer)` (`immer` outside). `use(immer).use(freeze)` treats functions as plain updaters against already-frozen values.
 
 That is why `createAtom()` matters. It lets you decide which behaviors belong in the state line before you create the atom instance itself.
 

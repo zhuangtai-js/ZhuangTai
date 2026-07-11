@@ -67,6 +67,7 @@ const state = atom(
 - 已冻结的值会被跳过，不重复处理。
 - 关闭冻结时，atom 行为与未使用插件完全一致。
 - 冻结基于 `Object.freeze`，只在严格模式下对写入抛错，非严格模式下写入会被静默忽略，这是 JavaScript 的固有行为。
+- 已知边界：`Map` / `Set` / `Date` 等内容突变不是 own property 写入，容器冻结后仍可能通过方法改内容。freeze 面向 plain object / array 的开发期护栏。
 
 ## 类型
 

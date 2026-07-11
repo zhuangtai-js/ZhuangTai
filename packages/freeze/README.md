@@ -55,6 +55,7 @@ const state = atom(
 - 已冻结的值会被跳过，不重复处理。
 - 关闭冻结时（生产环境或 `enabled: false`），atom 行为与未使用插件完全一致。
 - 冻结基于 `Object.freeze`，只在严格模式下对写入抛错；非严格模式下写入会被静默忽略，这是 JavaScript 的固有行为。
+- 已知边界：`Map` / `Set` / `Date` 等内置对象的“内容突变”不是 own property 写入，容器被 `Object.freeze` 后仍可能通过 `.set()` / `setFullYear()` 等方法改内容。freeze 面向 plain object / array 的开发期护栏，不保证锁住全部内置类型语义。
 
 ## 许可证
 
@@ -119,6 +120,7 @@ const state = atom(
 - Already-frozen values are skipped and not reprocessed.
 - When freezing is disabled (in production or with `enabled: false`), the atom behaves exactly as if the plugin were not used.
 - Freezing relies on `Object.freeze`, which only throws on writes in strict mode; in non-strict mode writes are silently ignored, which is inherent JavaScript behavior.
+- Known limitation: content mutations on built-ins such as `Map` / `Set` / `Date` are not own-property writes. After `Object.freeze` freezes the container, `.set()` / `setFullYear()` and similar methods may still change content. freeze is a development guard for plain objects and arrays; it does not lock down every built-in type.
 
 ## License
 

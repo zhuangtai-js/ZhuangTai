@@ -59,7 +59,7 @@ If `channel` is omitted, the plugin uses `new BroadcastChannel(key)`. Under SSR 
 
 ## Configure a codec
 
-The default codec uses `JSON.stringify` and `JSON.parse`. It only supports values that `JSON.stringify` returns as a string, and `undefined`, functions, and symbols throw during encode instead of being sent to the channel.
+The default codec uses `JSON.stringify` and `JSON.parse`, and rejects `NaN`, `±Infinity`, and invalid `Date` values before encode (JSON would otherwise silently turn them into `null`). Top-level `undefined`, functions, and symbols also throw during encode instead of being sent to the channel.
 
 ```ts
 const count = atom(0, {
@@ -76,10 +76,11 @@ const count = atom(0, {
 ## Semantics
 
 - Omitting `sync` options leaves the atom unchanged.
-- Updates commit locally and synchronously first, and only after a successful commit is the concrete value broadcast to other contexts.
+- Local updates encode first; only after a successful encode does the value commit locally and get broadcast as the already-encoded payload. If encode fails, memory stays unchanged and nothing is broadcast.
 - Incoming broadcasts are decoded and written straight to the underlying state, so they are not re-broadcast and echo loops are avoided.
+- Remote decode failures are isolated: local state is unchanged, the error does not escape the message handler, and a diagnostic is written with `console.error`.
 - `Object.is` no-op updates are not broadcast.
-- Because received broadcasts write straight to the underlying state, they bypass the `set` logic of any other plugin wrapped above `sync`.
+- Because received broadcasts write straight to the underlying state, they bypass the `set` logic of any other plugin wrapped above `sync`. Prefer `createAtom().use(persist).use(sync)`.
 - SSR or runtimes without `BroadcastChannel` silently degrade to a plain atom.
 - The default `BroadcastChannel` is unref'ed on runtimes that support it, such as Node, so a synced atom never blocks process exit. Sync keeps working for the lifetime of the process, and an explicitly passed `channel` is managed by the caller.
 - `BroadcastChannel` only works across same-origin contexts. It does not cross devices and does not persist. Combine it with `@zhuangtai-js/persist` when you need persistence.

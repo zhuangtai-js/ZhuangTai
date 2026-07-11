@@ -5,6 +5,8 @@ import type {
   NextValue,
 } from "@zhuangtai-js/core";
 
+const PACKAGE_NAME = "@zhuangtai-js/persist";
+
 export type PersistStorage = {
   readonly getItem: (key: string) => string | null;
   readonly setItem: (key: string, value: string) => void;
@@ -57,7 +59,7 @@ function decodeStored<Value>(
   try {
     return codec.decode(rawValue, initialValue);
   } catch (error) {
-    throw new Error(`[@zhuangtai-js/persist] Failed to decode the stored value for key "${key}".`, {
+    throw new Error(`[${PACKAGE_NAME}] Failed to decode the stored value for key "${key}".`, {
       cause: error,
     });
   }
@@ -104,14 +106,14 @@ function resolveStorage(storage: PersistStorage | undefined): PersistStorage {
     localStorage = globalThis.localStorage;
   } catch (error) {
     throw new Error(
-      "[@zhuangtai-js/persist] Reading globalThis.localStorage threw. Pass an explicit storage option instead.",
+      `[${PACKAGE_NAME}] Reading globalThis.localStorage threw. Pass an explicit storage option instead.`,
       { cause: error },
     );
   }
 
   if (localStorage === undefined) {
     throw new Error(
-      "[@zhuangtai-js/persist] No persist storage was provided, and globalThis.localStorage is unavailable.",
+      `[${PACKAGE_NAME}] No persist storage was provided, and globalThis.localStorage is unavailable.`,
     );
   }
 
@@ -120,17 +122,71 @@ function resolveStorage(storage: PersistStorage | undefined): PersistStorage {
 
 const jsonCodec: PersistCodec = {
   encode(value) {
-    const encodedValue = JSON.stringify(value);
-
-    if (typeof encodedValue !== "string") {
-      throw new TypeError(
-        "The default persist JSON codec can only encode JSON-serializable values.",
-      );
-    }
-
-    return encodedValue;
+    return encodeDefaultJson(value, PACKAGE_NAME);
   },
   decode(rawValue) {
     return JSON.parse(rawValue);
   },
 };
+
+function encodeDefaultJson(value: unknown, packageName: string): string {
+  assertDefaultJsonEncodable(value, packageName);
+
+  const encodedValue = JSON.stringify(value);
+
+  if (typeof encodedValue !== "string") {
+    throw new TypeError(
+      `[${packageName}] The default JSON codec can only encode JSON-serializable values.`,
+    );
+  }
+
+  return encodedValue;
+}
+
+function assertDefaultJsonEncodable(
+  value: unknown,
+  packageName: string,
+  seen: Set<object> = new Set(),
+): void {
+  if (typeof value === "number" && !Number.isFinite(value)) {
+    throw new TypeError(
+      `[${packageName}] The default JSON codec cannot encode non-finite numbers (NaN or ±Infinity). Use a custom codec if you need those values.`,
+    );
+  }
+
+  if (value === null || typeof value !== "object") {
+    return;
+  }
+
+  if (value instanceof Date) {
+    if (!Number.isFinite(value.getTime())) {
+      throw new TypeError(
+        `[${packageName}] The default JSON codec cannot encode invalid Date values. Use a custom codec if you need those values.`,
+      );
+    }
+
+    return;
+  }
+
+  if (seen.has(value)) {
+    return;
+  }
+
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      assertDefaultJsonEncodable(item, packageName, seen);
+    }
+
+    return;
+  }
+
+  for (const key of Reflect.ownKeys(value)) {
+    if (typeof key === "symbol") {
+      continue;
+    }
+
+    assertDefaultJsonEncodable(Reflect.get(value, key), packageName, seen);
+  }
+}

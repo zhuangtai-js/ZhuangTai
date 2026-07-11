@@ -69,7 +69,7 @@ const count = atom(0, {
 
 ## 配置 codec
 
-默认 codec 使用 `JSON.stringify` 和 `JSON.parse`。
+默认 codec 使用 `JSON.stringify` 和 `JSON.parse`，并在 encode 前拒绝 `NaN`、`±Infinity` 和无效 `Date`（它们在 JSON 里会静默变成 `null`）。顶层 `undefined`、函数和 symbol 也会在 encode 时抛错。需要特殊值时请传入自定义 codec。
 
 ```ts
 const count = atom(0, {
@@ -83,7 +83,7 @@ const count = atom(0, {
 });
 ```
 
-默认 codec 只支持 `JSON.stringify` 返回字符串的值。`undefined`、函数和 symbol 会在 encode 时抛错，而不是传给 storage。
+顶层 `undefined`、函数和 symbol 会在 encode 时抛错，而不是传给 storage。对象字段中的 `undefined` 仍遵循 JSON 语义（键会被省略）。
 
 ## 错误语义
 

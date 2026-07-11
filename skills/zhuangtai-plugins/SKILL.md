@@ -59,7 +59,7 @@ const theme = atom("light", {
 - `Object.is` no-op updates do not write to storage.
 - If `storage` is omitted, it uses `globalThis.localStorage` when available.
 - Custom `storage` must provide `getItem`, `setItem`, and `removeItem`.
-- The default codec uses `JSON.stringify` and `JSON.parse`.
+- The default codec uses `JSON.stringify` and `JSON.parse`, and rejects `NaN`, `±Infinity`, and invalid `Date` values before encode (they would otherwise become `null`).
 
 ## `freeze`
 
@@ -122,9 +122,11 @@ const theme = atom("light", {
 });
 ```
 
-- Local updates commit first, then broadcast the concrete value.
+- Local updates encode first, then commit memory and broadcast; encode failure leaves memory unchanged.
 - Incoming broadcasts decode and write straight to the underlying state.
 - That direct write prevents echo loops.
+- Remote decode failures are isolated (no state change, no thrown event-handler error; `console.error` diagnostic).
+- The default JSON codec rejects non-finite numbers and invalid `Date` values.
 - `Object.is` no-op updates are not broadcast.
 - If `channel` is omitted, it uses `new BroadcastChannel(key)`.
 - Under SSR or in runtimes without `BroadcastChannel`, it silently degrades to a plain atom.
@@ -137,3 +139,7 @@ const theme = atom("light", {
 - Mutating values in place before `persist`, `freeze`, or `sync` can see them. Core still uses reference equality.
 - Expecting async storage or async channels. These plugins only support synchronous mechanisms.
 - Expecting `sync` to persist state across devices. It only works across same-origin contexts.
+- Using `createAtom().use(sync).use(persist)` and expecting remote updates to hit storage. Prefer `use(persist).use(sync)`.
+- Using `createAtom().use(immer).use(freeze)` and expecting Immer recipes. Prefer `use(freeze).use(immer)`.
+- Storing `NaN` / `Infinity` with the default JSON codec. Use a custom codec instead.
+- Expecting `freeze` to lock `Map` / `Set` / `Date` content mutations. It guards plain objects and arrays.
