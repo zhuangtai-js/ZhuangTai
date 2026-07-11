@@ -81,15 +81,15 @@ npx skills add zhuangtai-js/ZhuangTai --skill zhuangtai
 
 ### Current compatibility
 
-Extension packages declare only verified peer versions. `^0.4.0` supports the core 0.4.x line without automatically accepting 0.5.0, which may contain breaking API changes.
+Extension packages declare only verified peer versions. The current release lines target core 0.5.x; because minor releases in the 0.x range may contain breaking changes, the peer ranges do not automatically accept a future core 0.6.0.
 
 | Package release line | `@zhuangtai-js/core` | Other peers |
 | --- | --- | --- |
-| `@zhuangtai-js/freeze@0.1.x` | `^0.4.0` | — |
-| `@zhuangtai-js/immer@0.1.x` | `^0.4.0` | — (Immer is a regular dependency) |
-| `@zhuangtai-js/persist@0.2.x` | `^0.4.0` | — |
-| `@zhuangtai-js/react@0.1.x` | `^0.4.0` | React `>=18 <20` |
-| `@zhuangtai-js/sync@0.1.x` | `^0.4.0` | — |
+| `@zhuangtai-js/freeze@0.2.x` | `^0.5.0` | — |
+| `@zhuangtai-js/immer@0.2.x` | `^0.5.0` | — (Immer is a regular dependency) |
+| `@zhuangtai-js/persist@0.3.x` | `^0.5.0` | — |
+| `@zhuangtai-js/react@0.2.x` | `^0.5.0` | React `>=18 <20` |
+| `@zhuangtai-js/sync@0.2.x` | `^0.5.0` | — |
 
 ## Core API
 
@@ -176,7 +176,7 @@ todos.set((draft) => {
 });
 ```
 
-`@zhuangtai-js/immer` runs updater functions through Immer's `produce`, letting you write updates by directly "mutating a draft" while still producing a new reference and staying immutable. Concrete values passed directly bypass Immer and behave exactly as in core.
+`@zhuangtai-js/immer` runs updater functions through Immer's `produce`, letting you write immutable updates by directly "mutating a draft"; actual changes produce a new reference, while no-op recipes may reuse the previous reference. Concrete values passed directly bypass Immer and behave exactly as in core.
 
 ## Sync
 

@@ -8,10 +8,10 @@ description: "Draft updates, recipe semantics, and public types from @zhuangtai-
 ## Install
 
 ```sh
-pnpm add @zhuangtai-js/core @zhuangtai-js/immer immer
+pnpm add @zhuangtai-js/core @zhuangtai-js/immer
 ```
 
-Install `@zhuangtai-js/core` and `immer` alongside it, because they are the peer dependency and runtime dependency for `@zhuangtai-js/immer`.
+`@zhuangtai-js/core` is a peer dependency and must be installed by the application. `immer` is a regular runtime dependency and is installed automatically with `@zhuangtai-js/immer`.
 
 ## Install the plugin
 
@@ -53,7 +53,7 @@ todos.set([{ text: "only", done: true }]);
 
 - Updater functions inside `set(fn)` run as Immer recipes, so they can mutate the draft and return it, or return a new value directly.
 - Concrete values passed directly (`set(value)`) bypass Immer and are committed as-is, matching core.
-- Immer always produces a brand-new immutable reference, and the previous state is never mutated in place.
+- Immer never mutates the previous state in place; actual changes produce a new reference, while no-op recipes may reuse the previous reference.
 - The value committed to the underlying state via `set(value)` is always concrete, so core never re-invokes it as an updater.
 - `createAtom().use(immer)` yields an atom type distinct from a plain atom, and its `set` accepts a recipe that directly mutates the draft and may return `void`.
 - An Immer recipe that returns `undefined` is treated as no change. To produce `undefined`, use Immer's `nothing` token.

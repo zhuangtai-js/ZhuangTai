@@ -81,15 +81,15 @@ npx skills add zhuangtai-js/ZhuangTai --skill zhuangtai
 
 ### 当前兼容范围
 
-扩展包只声明已经验证的 peer 版本。`^0.4.0` 表示支持 core 0.4.x，不会自动接受可能包含破坏性 API 变化的 0.5.0。
+扩展包只声明已经验证的 peer 版本。当前发布线统一基于 core 0.5.x；由于 0.x 版本的 minor 更新可能包含破坏性变化，peer 范围不会自动接受未来的 core 0.6.0。
 
 | 包发布线 | `@zhuangtai-js/core` | 其他 peer |
 | --- | --- | --- |
-| `@zhuangtai-js/freeze@0.1.x` | `^0.4.0` | — |
-| `@zhuangtai-js/immer@0.1.x` | `^0.4.0` | —（Immer 是普通 dependency） |
-| `@zhuangtai-js/persist@0.2.x` | `^0.4.0` | — |
-| `@zhuangtai-js/react@0.1.x` | `^0.4.0` | React `>=18 <20` |
-| `@zhuangtai-js/sync@0.1.x` | `^0.4.0` | — |
+| `@zhuangtai-js/freeze@0.2.x` | `^0.5.0` | — |
+| `@zhuangtai-js/immer@0.2.x` | `^0.5.0` | —（Immer 是普通 dependency） |
+| `@zhuangtai-js/persist@0.3.x` | `^0.5.0` | — |
+| `@zhuangtai-js/react@0.2.x` | `^0.5.0` | React `>=18 <20` |
+| `@zhuangtai-js/sync@0.2.x` | `^0.5.0` | — |
 
 ## Core API
 
@@ -176,7 +176,7 @@ todos.set((draft) => {
 });
 ```
 
-`@zhuangtai-js/immer` 把 updater 函数交给 Immer 的 `produce` 执行，让你用直观的“修改草稿”写法完成更新，同时仍产出新引用、保持不可变。直接传入的具体值不经过 Immer，行为与 core 一致。
+`@zhuangtai-js/immer` 把 updater 函数交给 Immer 的 `produce` 执行，让你用直观的“修改草稿”写法完成不可变更新；实际发生修改时会产出新引用，无变化时可能复用原引用。直接传入的具体值不经过 Immer，行为与 core 一致。
 
 ## 同步
 

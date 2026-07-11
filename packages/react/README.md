@@ -10,7 +10,7 @@ ZhuàngTài atom 的 React 适配器。
 pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
-`react` 是 peer dependency，需要 React 18 或更高版本。
+`react` 是 peer dependency，支持 React 18 和 React 19。
 
 ## 使用
 
@@ -104,7 +104,7 @@ React adapter for ZhuàngTài atoms.
 pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
-`react` is a peer dependency and requires React 18 or later.
+`react` is a peer dependency and supports React 18 and React 19.
 
 ## Usage
 

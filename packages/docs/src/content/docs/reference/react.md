@@ -11,7 +11,7 @@ description: "@zhuangtai-js/react 的 hooks 与绑定 hook 工厂。"
 pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
-`react` 是 peer dependency，需要 React 18 或更高版本。
+`react` 是 peer dependency，支持 React 18 和 React 19。
 
 ## Hooks
 

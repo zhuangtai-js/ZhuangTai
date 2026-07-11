@@ -63,7 +63,7 @@ const count = atom(0, {
 });
 ```
 
-插件安装在 creator 上，而不是安装在 atom 实例上。重复安装同一个插件会返回行为相同的 creator。
+插件安装在 creator 上，而不是安装在 atom 实例上。在同一个 creator 链上重复安装相同的 plugin ID 会同步抛出 `TypeError`。
 
 ## 许可证
 
@@ -136,7 +136,7 @@ const count = atom(0, {
 });
 ```
 
-Plugins are installed on creators, not atom instances. Installing the same plugin more than once returns a creator with the same behavior.
+Plugins are installed on creators, not atom instances. Installing the same plugin ID more than once on a creator chain throws a synchronous `TypeError`.
 
 ## License
 
