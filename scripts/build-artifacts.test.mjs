@@ -91,6 +91,28 @@ describe("build artifacts", () => {
     packages.forEach(assertPackageManifest);
   });
 
+  it("declares only the verified peer compatibility ranges", () => {
+    // Given
+    const expectedPeerDependencies = {
+      "packages/freeze": { "@zhuangtai-js/core": "^0.4.0" },
+      "packages/immer": { "@zhuangtai-js/core": "^0.4.0" },
+      "packages/persist": { "@zhuangtai-js/core": "^0.4.0" },
+      "packages/react": {
+        "@zhuangtai-js/core": "^0.4.0",
+        react: ">=18 <20",
+      },
+      "packages/sync": { "@zhuangtai-js/core": "^0.4.0" },
+    };
+
+    // When / Then
+    for (const [packagePath, expectedPeers] of Object.entries(expectedPeerDependencies)) {
+      const manifest = readManifest(packagePath);
+
+      assert.deepEqual(manifest.peerDependencies, expectedPeers);
+      assert.equal(Object.values(manifest.peerDependencies).includes("*"), false);
+    }
+  });
+
   it("keeps the core runtime small and the README bundle-size badge present", () => {
     // Given: the runtime ships unminified (consumers' bundlers minify), so the
     // size guard measures gzipped transfer cost, matching the README badge.

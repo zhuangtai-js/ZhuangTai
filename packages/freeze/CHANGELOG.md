@@ -1,5 +1,23 @@
 # freeze 更新日志 / Changelog
 
+## 0.1.1 - 2026-07-11
+
+### 变更
+
+- 将 `@zhuangtai-js/core` peer dependency 收紧为 `^0.4.0`，只声明已经验证的 core 0.4.x 兼容范围。
+
+### 说明
+
+- 本次更新只修正安装兼容声明，不改变 freeze 的运行时语义。
+
+### Changed
+
+- Narrowed the `@zhuangtai-js/core` peer dependency to `^0.4.0`, declaring only the verified core 0.4.x compatibility range.
+
+### Notes
+
+- This update only corrects installation compatibility metadata. It does not change freeze runtime semantics.
+
 ## 0.1.0 - 2026-07-08
 
 ### 新增

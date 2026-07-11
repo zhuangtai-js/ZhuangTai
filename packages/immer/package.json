@@ -1,6 +1,6 @@
 {
   "name": "@zhuangtai-js/immer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Immer plugin for ZhuangTai atoms.",
   "keywords": [
     "immer",
@@ -60,6 +60,6 @@
     "typescript": "rc"
   },
   "peerDependencies": {
-    "@zhuangtai-js/core": "*"
+    "@zhuangtai-js/core": "^0.4.0"
   }
 }

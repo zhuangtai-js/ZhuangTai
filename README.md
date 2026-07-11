@@ -79,6 +79,18 @@ npx skills add zhuangtai-js/ZhuangTai --skill zhuangtai
 - `@zhuangtai-js/immer`：Immer 插件，用“修改草稿”的写法完成不可变更新。
 - `@zhuangtai-js/sync`：跨上下文同步插件，基于 `BroadcastChannel` 在多个标签页间同步 atom 状态。
 
+### 当前兼容范围
+
+扩展包只声明已经验证的 peer 版本。`^0.4.0` 表示支持 core 0.4.x，不会自动接受可能包含破坏性 API 变化的 0.5.0。
+
+| 包发布线 | `@zhuangtai-js/core` | 其他 peer |
+| --- | --- | --- |
+| `@zhuangtai-js/freeze@0.1.x` | `^0.4.0` | — |
+| `@zhuangtai-js/immer@0.1.x` | `^0.4.0` | —（Immer 是普通 dependency） |
+| `@zhuangtai-js/persist@0.2.x` | `^0.4.0` | — |
+| `@zhuangtai-js/react@0.1.x` | `^0.4.0` | React `>=18 <20` |
+| `@zhuangtai-js/sync@0.1.x` | `^0.4.0` | — |
+
 ## Core API
 
 ```ts

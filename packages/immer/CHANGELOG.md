@@ -1,5 +1,23 @@
 # immer 更新日志 / Changelog
 
+## 0.1.1 - 2026-07-11
+
+### 变更
+
+- 将 `@zhuangtai-js/core` peer dependency 收紧为 `^0.4.0`，与插件所使用的 core 0.4 atom kind 类型扩展保持一致。
+
+### 说明
+
+- 本次更新只修正安装兼容声明，不改变 Immer recipe setter 或运行时语义。
+
+### Changed
+
+- Narrowed the `@zhuangtai-js/core` peer dependency to `^0.4.0`, matching the core 0.4 atom-kind type extension used by the plugin.
+
+### Notes
+
+- This update only corrects installation compatibility metadata. It does not change the Immer recipe setter or runtime semantics.
+
 ## 0.1.0 - 2026-07-08
 
 ### 新增

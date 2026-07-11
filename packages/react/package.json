@@ -1,6 +1,6 @@
 {
   "name": "@zhuangtai-js/react",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "React adapter for ZhuangTai atoms.",
   "keywords": [
     "javascript",
@@ -58,7 +58,7 @@
     "typescript": "rc"
   },
   "peerDependencies": {
-    "@zhuangtai-js/core": "*",
-    "react": ">=18"
+    "@zhuangtai-js/core": "^0.4.0",
+    "react": ">=18 <20"
   }
 }

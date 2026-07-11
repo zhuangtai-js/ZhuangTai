@@ -79,6 +79,18 @@ npx skills add zhuangtai-js/ZhuangTai --skill zhuangtai
 - `@zhuangtai-js/immer`: Immer plugin for writing immutable updates by "mutating a draft".
 - `@zhuangtai-js/sync`: cross-context sync plugin that syncs atom state across tabs through `BroadcastChannel`.
 
+### Current compatibility
+
+Extension packages declare only verified peer versions. `^0.4.0` supports the core 0.4.x line without automatically accepting 0.5.0, which may contain breaking API changes.
+
+| Package release line | `@zhuangtai-js/core` | Other peers |
+| --- | --- | --- |
+| `@zhuangtai-js/freeze@0.1.x` | `^0.4.0` | — |
+| `@zhuangtai-js/immer@0.1.x` | `^0.4.0` | — (Immer is a regular dependency) |
+| `@zhuangtai-js/persist@0.2.x` | `^0.4.0` | — |
+| `@zhuangtai-js/react@0.1.x` | `^0.4.0` | React `>=18 <20` |
+| `@zhuangtai-js/sync@0.1.x` | `^0.4.0` | — |
+
 ## Core API
 
 ```ts

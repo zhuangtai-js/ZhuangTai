@@ -1,5 +1,25 @@
 # react 更新日志 / Changelog
 
+## 0.1.2 - 2026-07-11
+
+### 变更
+
+- 将 `@zhuangtai-js/core` peer dependency 收紧为 `^0.4.0`。
+- 将 React peer dependency 明确限定为 `>=18 <20`，覆盖已经支持和验证的 React 18、19，而不再默许未知的未来主版本。
+
+### 说明
+
+- 本次更新只修正安装兼容声明，不改变 hooks、snapshot 或订阅语义。
+
+### Changed
+
+- Narrowed the `@zhuangtai-js/core` peer dependency to `^0.4.0`.
+- Bounded the React peer dependency to `>=18 <20`, covering the supported and verified React 18 and 19 lines without claiming compatibility with unknown future majors.
+
+### Notes
+
+- This update only corrects installation compatibility metadata. It does not change hook, snapshot, or subscription semantics.
+
 ## 0.1.1 - 2026-07-11
 
 ### 修复

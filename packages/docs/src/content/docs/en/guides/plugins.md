@@ -41,7 +41,13 @@ const theme = atom("light", {
 });
 ```
 
-Local `set()` calls flow through the composed creator behavior. Remote `sync` broadcasts are different. They write straight to the underlying state, which means they bypass the `set` logic of plugins wrapped above `sync`.
+`.use()` builds creator layers from left to right, and each later plugin becomes the outer layer. In this example, `sync` is outermost and `persist` is inside it. A local `theme.set("dark")` enters the `sync` wrapper first, then flows inward through `context.next()` to `persist`, and finally reaches the underlying atom.
+
+Layer order also determines the public TypeScript shape. The outermost plugin's declared `kind` determines the final creator and atom type. For example, `createAtom().use(immer).use(freeze)` ends with freeze's default kind, so it does not incorrectly expose the Immer recipe setter.
+
+A plugin ID may only be installed once. Repeating `.use()` with the same ID on one creator throws a `TypeError` synchronously, preventing ambiguous options and wrapper behavior.
+
+Remote `sync` broadcasts are different. They write to the inner state captured when `sync` is created. The update still passes through plugins installed before and inside `sync` (`persist` in this example), but it bypasses `sync`'s broadcasting `set` and wrappers installed later outside it. This is why layer order and responsibility boundaries matter.
 
 ## A realistic combination: persisted, synced theme state
 
@@ -71,11 +77,19 @@ This is a good fit for preferences like theme, language, or panel state. `persis
 
 If your main worry is accidental mutation, start with `freeze`. If immutable updates feel too verbose, start with `immer`. If you need values after reload, use `persist`. If you want same-origin tabs to stay aligned, use `sync`.
 
-## Two things to remember
+## Composition boundaries to remember
 
-First, each plugin only affects the creator it is installed on. Second, updates coming from `sync` bypass outer `set` logic, so do not depend on a plugin wrapper to intercept those incoming broadcasts.
+- A plugin only affects the creator it is installed on.
+- Later `.use()` calls create outer wrapper layers; local `set()` flows from outer to inner.
+- The outermost plugin's `kind` determines the final public type.
+- Plugin IDs must be unique; duplicate installation fails synchronously.
+- Remote `sync` updates write its inner state: inner plugins still run, but `sync` itself and outer plugin `set` wrappers are bypassed.
 
 That is why `createAtom()` matters. It lets you decide which behaviors belong in the state line before you create the atom instance itself.
+
+## Current support range
+
+The current `freeze@0.1.x`, `immer@0.1.x`, `persist@0.2.x`, `react@0.1.x`, and `sync@0.1.x` lines all support `@zhuangtai-js/core@^0.4.0`. The React adapter additionally supports React `>=18 <20`. These are verified compatibility declarations, not promises for unknown future major versions.
 
 ## Next steps
 
