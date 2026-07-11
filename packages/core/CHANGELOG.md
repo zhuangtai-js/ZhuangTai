@@ -1,5 +1,29 @@
 # core 更新日志 / Changelog
 
+## 0.4.1 - 2026-07-11
+
+### 修复
+
+- 修复 watched computed 的通知基线：主动调用 `.get()` 不再吞掉后续同步 watcher 通知，diamond 依赖图中的 sibling 也不会因订阅顺序而漏事件。
+- 修复 computed watcher 同步修改另一依赖时的重入通知顺序；每轮 watcher 都会收到稳定的当前值和前值，重入更新会在当前一轮结束后继续同步传播。
+- derive 抛错时保留本次已经读取的依赖，使依赖修复后可以自动恢复通知；derive 仍失败时，新增 watcher 会直接收到错误，而不是陈旧缓存值。
+
+### 说明
+
+- `computed` 仍然同步传播，不引入异步调度、批处理或事务。
+- 相等性仍使用 `Object.is`。
+
+### Fixed
+
+- Fixed the notification baseline for watched computed values: an explicit `.get()` no longer suppresses the following synchronous watcher notification, and sibling nodes in a diamond dependency graph no longer lose events based on subscription order.
+- Fixed reentrant notification ordering when a computed watcher synchronously changes another dependency. Every notification round now uses a stable current/previous pair, and reentrant updates continue synchronously after the current round finishes.
+- Preserved dependencies read by a failing derive so notifications can recover automatically after those dependencies are repaired. Adding a watcher while the derive still fails now throws the derive error instead of emitting a stale cached value.
+
+### Notes
+
+- `computed` propagation remains synchronous and does not introduce asynchronous scheduling, batching, or transactions.
+- Equality continues to use `Object.is`.
+
 ## 0.4.0 - 2026-07-09
 
 ### 新增

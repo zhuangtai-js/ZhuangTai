@@ -1,18 +1,27 @@
 import type { Computed, ReadableAtom, StopWatch, Watcher } from "./types.js";
-import { collectDependencies, trackDependency } from "./tracking.js";
+import { collectDependencies, trackDependency, type DependencyCollection } from "./tracking.js";
 
 type Dependency = ReadableAtom<unknown>;
+
+function throwNotificationErrors(errors: readonly unknown[]): void {
+  if (errors.length === 1) {
+    throw errors[0];
+  }
+
+  if (errors.length > 1) {
+    throw new AggregateError(errors, "[@zhuangtai-js/core] One or more computed watchers threw.");
+  }
+}
 
 export function computed<Value>(derive: () => Value): Computed<Value> {
   const watchers = new Set<Watcher<Value>>();
   const dependencyStops = new Map<Dependency, StopWatch>();
   let isComputing = false;
-  let currentValue: Value;
+  let isNotifying = false;
+  let notificationPending = false;
+  let notifiedValue: Value;
 
-  function readTracked(): {
-    readonly value: Value;
-    readonly dependencies: ReadonlySet<Dependency>;
-  } {
+  function readTracked(): DependencyCollection<Value> {
     if (isComputing) {
       throw new Error("[@zhuangtai-js/core] Cannot read a computed while it is deriving itself.");
     }
@@ -80,61 +89,87 @@ export function computed<Value>(derive: () => Value): Computed<Value> {
     dependencyStops.clear();
   }
 
-  function notifyIfChanged(): void {
-    const prevValue = currentValue;
+  function readCurrent(reconcile: boolean): Value {
     const result = readTracked();
 
-    reconcileDependencies(result.dependencies);
+    if (result.dependencies.has(self)) {
+      if (result.status === "failure") {
+        throw result.error;
+      }
 
-    if (Object.is(result.value, prevValue)) {
+      throw new Error("[@zhuangtai-js/core] A computed cannot depend on itself.");
+    }
+
+    if (reconcile) {
+      reconcileDependencies(result.dependencies);
+    }
+
+    if (result.status === "failure") {
+      throw result.error;
+    }
+
+    return result.value;
+  }
+
+  function notifyIfChanged(): void {
+    notificationPending = true;
+
+    if (isNotifying) {
       return;
     }
 
-    currentValue = result.value;
+    isNotifying = true;
     const errors: unknown[] = [];
 
-    for (const watcher of Array.from(watchers)) {
-      try {
-        watcher(currentValue, prevValue);
-      } catch (error) {
-        errors.push(error);
+    try {
+      while (notificationPending) {
+        notificationPending = false;
+
+        try {
+          const value = readCurrent(true);
+          const prevValue = notifiedValue;
+
+          if (Object.is(value, prevValue)) {
+            continue;
+          }
+
+          notifiedValue = value;
+
+          for (const watcher of Array.from(watchers)) {
+            try {
+              watcher(value, prevValue);
+            } catch (error) {
+              errors.push(error);
+            }
+          }
+        } catch (error) {
+          errors.push(error);
+        }
       }
+    } finally {
+      isNotifying = false;
     }
 
-    if (errors.length === 1) {
-      throw errors[0];
-    }
-
-    if (errors.length > 1) {
-      throw new AggregateError(errors, "[@zhuangtai-js/core] One or more computed watchers threw.");
-    }
+    throwNotificationErrors(errors);
   }
 
   function get(): Value {
     trackDependency(self);
-    const result = readTracked();
-
-    if (watchers.size > 0) {
-      reconcileDependencies(result.dependencies);
-    }
-
-    currentValue = result.value;
-    return currentValue;
+    return readCurrent(watchers.size > 0);
   }
 
   function watch(watcher: Watcher<Value>): StopWatch {
     const isFirstWatcher = watchers.size === 0;
+    const value = readCurrent(true);
 
     if (isFirstWatcher) {
-      const result = readTracked();
-      reconcileDependencies(result.dependencies);
-      currentValue = result.value;
+      notifiedValue = value;
     }
 
     watchers.add(watcher);
 
     try {
-      watcher(currentValue, undefined);
+      watcher(value, undefined);
     } catch (error) {
       watchers.delete(watcher);
 
@@ -156,7 +191,7 @@ export function computed<Value>(derive: () => Value): Computed<Value> {
 
   const self: Computed<Value> = { get, watch };
 
-  currentValue = readTracked().value;
+  notifiedValue = readCurrent(false);
 
   return self;
 }

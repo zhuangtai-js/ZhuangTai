@@ -267,4 +267,112 @@ describe("computed", () => {
     // Then: reading it surfaces a clear cycle error rather than a stack overflow
     expect(() => recursive.get()).toThrow("Cannot read a computed while it is deriving itself");
   });
+
+  it("does not let an earlier source watcher suppress a computed notification", () => {
+    const source = atom(0);
+    const doubled = computed(() => source.get() * 2);
+    const watcher = vi.fn<Watcher<number>>();
+
+    source.watch(() => doubled.get());
+    doubled.watch(watcher);
+    watcher.mockClear();
+
+    source.set(1);
+
+    expect(watcher).toHaveBeenCalledOnce();
+    expect(watcher).toHaveBeenCalledWith(2, 0);
+  });
+
+  it("notifies both computed siblings in a diamond regardless of pull order", () => {
+    const source = atom(0);
+    const left = computed(() => source.get() + 1);
+    const right = computed(() => source.get() + 2);
+    const total = computed(() => left.get() + right.get());
+    const leftWatcher = vi.fn<Watcher<number>>();
+    const rightWatcher = vi.fn<Watcher<number>>();
+    const totalWatcher = vi.fn<Watcher<number>>();
+
+    left.watch(leftWatcher);
+    right.watch(rightWatcher);
+    total.watch(totalWatcher);
+    leftWatcher.mockClear();
+    rightWatcher.mockClear();
+    totalWatcher.mockClear();
+
+    source.set(1);
+
+    expect(leftWatcher).toHaveBeenCalledOnce();
+    expect(leftWatcher).toHaveBeenCalledWith(2, 1);
+    expect(rightWatcher).toHaveBeenCalledOnce();
+    expect(rightWatcher).toHaveBeenCalledWith(3, 2);
+    expect(totalWatcher).toHaveBeenCalledOnce();
+    expect(totalWatcher).toHaveBeenCalledWith(5, 3);
+  });
+
+  it("serializes synchronous dependency changes from computed watchers", () => {
+    const first = atom(0);
+    const second = atom(0);
+    const sum = computed(() => first.get() + second.get());
+    const laterWatcher = vi.fn<Watcher<number>>();
+
+    sum.watch((value) => {
+      if (value === 1) {
+        second.set(1);
+      }
+    });
+    sum.watch(laterWatcher);
+    laterWatcher.mockClear();
+
+    first.set(1);
+
+    expect(laterWatcher.mock.calls).toEqual([
+      [1, 0],
+      [2, 1],
+    ]);
+  });
+
+  it("recovers when a dependency read during a failed derive changes", () => {
+    const useFallback = atom(false);
+    const primary = atom(1);
+    const fallback = atom(-1);
+    const selected = computed(() => {
+      const value = useFallback.get() ? fallback.get() : primary.get();
+
+      if (value < 0) {
+        throw new Error("derive failed");
+      }
+
+      return value;
+    });
+    const watcher = vi.fn<Watcher<number>>();
+
+    selected.watch(watcher);
+    watcher.mockClear();
+
+    expect(() => useFallback.set(true)).toThrow("derive failed");
+    fallback.set(2);
+
+    expect(watcher).toHaveBeenCalledOnce();
+    expect(watcher).toHaveBeenCalledWith(2, 1);
+  });
+
+  it("does not initialize a new watcher from stale state while derive is failing", () => {
+    const source = atom(1);
+    const shouldFail = atom(false);
+    const derived = computed(() => {
+      if (shouldFail.get()) {
+        throw new Error("derive failed");
+      }
+
+      return source.get() * 2;
+    });
+    const firstWatcher = vi.fn<Watcher<number>>();
+    const secondWatcher = vi.fn<Watcher<number>>();
+
+    derived.watch(firstWatcher);
+    expect(() => shouldFail.set(true)).toThrow("derive failed");
+
+    expect(() => derived.watch(secondWatcher)).toThrow("derive failed");
+    expect(secondWatcher).not.toHaveBeenCalled();
+  });
 });
