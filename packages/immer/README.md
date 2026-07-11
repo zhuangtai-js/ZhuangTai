@@ -1,5 +1,7 @@
 # @zhuangtai-js/immer
 
+<p align="center">简体中文 · <a href="#english">English</a></p>
+
 ZhuàngTài atom 的 Immer 插件。
 
 `@zhuangtai-js/immer` 扩展来自 `@zhuangtai-js/core` 的 atom creator。core 的对象和数组更新基于引用，需要你手写不可变更新。这个插件把 updater 函数交给 Immer 的 `produce` 执行，让你用直接“修改草稿”的直观写法完成不可变更新。实际发生修改时会产出新引用，无变化时可能复用原引用。
@@ -7,6 +9,8 @@ ZhuàngTài atom 的 Immer 插件。
 ## 安装
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/immer
+# 或
 pnpm add @zhuangtai-js/core @zhuangtai-js/immer
 ```
 
@@ -45,6 +49,8 @@ todos.set((draft) => draft.filter((todo) => !todo.done));
 
 ---
 
+<a id="english"></a>
+
 # @zhuangtai-js/immer
 
 Immer plugin for ZhuàngTài atoms.
@@ -54,6 +60,8 @@ Immer plugin for ZhuàngTài atoms.
 ## Install
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/immer
+# or
 pnpm add @zhuangtai-js/core @zhuangtai-js/immer
 ```
 

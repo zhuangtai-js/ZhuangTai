@@ -1,5 +1,7 @@
 # @zhuangtai-js/freeze
 
+<p align="center">简体中文 · <a href="#english">English</a></p>
+
 ZhuàngTài atom 的开发期深冻结插件。
 
 `@zhuangtai-js/freeze` 扩展来自 `@zhuangtai-js/core` 的 atom creator。core 使用引用相等（`Object.is`）判断变化，因此如果你直接改动状态对象的内部字段，`set` 会认为“没有变化”而静默不通知 watcher。这个插件在开发期对每个值执行深冻结，让这类误改立即抛错，把隐藏的 bug 暴露在最早的位置。
@@ -7,6 +9,8 @@ ZhuàngTài atom 的开发期深冻结插件。
 ## 安装
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/freeze
+# 或
 pnpm add @zhuangtai-js/core @zhuangtai-js/freeze
 ```
 
@@ -28,7 +32,7 @@ user.set((prev) => ({ ...prev, name: "改名" }));
 
 ## 生产门控
 
-默认情况下，插件只在非生产环境冻结。当 `NODE_ENV === "production"` 时，它降级为无操作，不产生任何运行时开销。你也可以用 `enabled` 选项显式控制：
+默认情况下，插件只在非生产环境冻结。当 `NODE_ENV === "production"` 时，它不会执行深冻结，也不会为 atom 的 `set` 增加冻结包装。你也可以用 `enabled` 选项显式控制：
 
 ```ts
 const atom = createAtom().use(freeze);
@@ -58,6 +62,8 @@ const state = atom(
 
 ---
 
+<a id="english"></a>
+
 # @zhuangtai-js/freeze
 
 Development-time deep-freeze plugin for ZhuàngTài atoms.
@@ -67,6 +73,8 @@ Development-time deep-freeze plugin for ZhuàngTài atoms.
 ## Install
 
 ```sh
+npm install @zhuangtai-js/core @zhuangtai-js/freeze
+# or
 pnpm add @zhuangtai-js/core @zhuangtai-js/freeze
 ```
 
@@ -88,7 +96,7 @@ user.set((prev) => ({ ...prev, name: "Renamed" }));
 
 ## Production gating
 
-By default the plugin freezes only outside production. When `NODE_ENV === "production"`, it becomes a no-op with no runtime overhead. You can also control it explicitly with the `enabled` option:
+By default the plugin freezes only outside production. When `NODE_ENV === "production"`, it skips deep freezing and adds no freeze wrapper to the atom's `set`. You can also control it explicitly with the `enabled` option:
 
 ```ts
 const atom = createAtom().use(freeze);
