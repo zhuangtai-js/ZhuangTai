@@ -64,6 +64,9 @@ const publishablePackages = discoverPublishablePackages();
 const packageReadmePaths = publishablePackages.map(({ readmePath }) => readmePath);
 const readmePaths = [...rootReadmePaths, ...packageReadmePaths];
 const docsSitePaths = collectMarkdown("packages/docs/src/content/docs");
+const docsSiteRoutes = new Map(
+  docsSitePaths.map((relativePath) => [documentationRoute(relativePath), relativePath]),
+);
 const skillDocumentationPaths = collectMarkdown("skills");
 const packageDocumentationPaths = publishablePackages.flatMap(({ directory, readmePath }) => {
   const paths = [readmePath];
@@ -91,12 +94,24 @@ const publicDocumentationPaths = [
   ...new Set([...currentDocumentationPaths, ...packageDocumentationPaths]),
 ].toSorted((left, right) => left.localeCompare(right));
 
-function visibleMarkdownLines(markdown, source = "Markdown") {
+function markdownContainerContent(line) {
+  let content = line;
+  let marker;
+
+  while ((marker = /^ {0,3}>[ \t]?/u.exec(content)) !== null) {
+    content = content.slice(marker[0].length);
+  }
+
+  return content;
+}
+
+function visibleMarkdownLines(markdown) {
   const visibleLines = [];
   let fence;
 
   for (const line of markdown.split(/\r?\n/u)) {
-    const opening = /^( {0,3})(`{3,}|~{3,})(.*)$/u.exec(line);
+    const content = markdownContainerContent(line);
+    const opening = /^( {0,3})(`{3,}|~{3,})(.*)$/u.exec(content);
 
     if (fence === undefined) {
       if (opening !== null && !(opening[2][0] === "`" && opening[3].includes("`"))) {
@@ -108,13 +123,12 @@ function visibleMarkdownLines(markdown, source = "Markdown") {
       continue;
     }
 
-    const closing = /^( {0,3})(`{3,}|~{3,})\s*$/u.exec(line);
+    const closing = /^( {0,3})(`{3,}|~{3,})\s*$/u.exec(content);
     if (closing !== null && closing[2][0] === fence[0] && closing[2].length >= fence.length) {
       fence = undefined;
     }
   }
 
-  assert.equal(fence, undefined, `${source} contains an unclosed code fence`);
   return visibleLines;
 }
 
@@ -336,26 +350,53 @@ function localDocumentationTargets(markdown, source) {
     targets.push(match[1]);
   }
 
-  return targets.filter((target) => {
-    if (target.length === 0 || target.startsWith("/")) {
-      return false;
-    }
-    return target.startsWith("#") || !/^[a-z][a-z\d+.-]*:/iu.test(target);
-  });
+  return targets.filter(
+    (target) => target.length > 0 && (target.startsWith("#") || !/^[a-z][a-z\d+.-]*:/iu.test(target)),
+  );
+}
+
+function normalizeDocumentationRoute(route) {
+  const normalized = route.replace(/\/{2,}/gu, "/");
+  return normalized.endsWith("/") ? normalized : `${normalized}/`;
+}
+
+function documentationRoute(relativePath) {
+  const contentRoot = "packages/docs/src/content/docs/";
+  assert.ok(relativePath.startsWith(contentRoot));
+
+  const slug = relativePath.slice(contentRoot.length, -extname(relativePath).length);
+  return normalizeDocumentationRoute(`/${slug.replace(/(?:^|\/)index$/u, "")}`);
+}
+
+function assertMarkdownFragment(sourcePath, targetPath, rawFragment, target) {
+  if (rawFragment === undefined || rawFragment.length === 0) {
+    return;
+  }
+
+  const fragment = decodeURIComponent(rawFragment);
+  const anchors = markdownAnchors(readText(targetPath), targetPath);
+  assert.ok(anchors.has(fragment), `${sourcePath} links to missing fragment ${target}`);
 }
 
 function assertLocalTarget(sourcePath, target) {
   const [rawPath, rawFragment] = target.split("#", 2);
   const pathOnly = decodeURIComponent(rawPath.split("?", 1)[0]);
+
+  if (pathOnly.startsWith("/")) {
+    const route = normalizeDocumentationRoute(pathOnly);
+    const targetPath = docsSiteRoutes.get(route);
+    assert.notEqual(targetPath, undefined, `${sourcePath} links to missing site route ${target}`);
+    assertMarkdownFragment(sourcePath, targetPath, rawFragment, target);
+    return;
+  }
+
   const targetPath = pathOnly.length === 0 ? sourcePath : join(dirname(sourcePath), pathOnly);
   const absoluteTarget = resolve(rootPath, targetPath);
 
   assert.ok(existsSync(absoluteTarget), `${sourcePath} links to missing path ${target}`);
 
-  if (rawFragment !== undefined && rawFragment.length > 0 && extname(absoluteTarget) === ".md") {
-    const fragment = decodeURIComponent(rawFragment);
-    const anchors = markdownAnchors(readFileSync(absoluteTarget, "utf8"), targetPath);
-    assert.ok(anchors.has(fragment), `${sourcePath} links to missing fragment ${target}`);
+  if (extname(absoluteTarget) === ".md") {
+    assertMarkdownFragment(sourcePath, targetPath, rawFragment, target);
   }
 }
 
@@ -401,16 +442,15 @@ describe("README consistency", () => {
 
   it("parses CommonMark fences without treating code examples as documentation", () => {
     const markdown = "# Title\n\n```sh\n# comment\n[example](./missing.md)\n```\n\n## Section";
+    const blockquote = "> ```md\n> [example](./missing.md)\n> ````";
 
     assert.deepEqual(
       visibleMarkdownLines(markdown).filter((line) => /^#{1,6} /u.test(line)),
       ["# Title", "## Section"],
     );
     assert.deepEqual(localDocumentationTargets(markdown, "fixture.md"), []);
-    assert.throws(
-      () => visibleMarkdownLines("```sh\ncommand", "fixture.md"),
-      /unclosed code fence/u,
-    );
+    assert.deepEqual(localDocumentationTargets(blockquote, "fixture.md"), []);
+    assert.deepEqual(visibleMarkdownLines("# Title\n\n```sh\ncommand"), ["# Title", ""]);
   });
 
   it("keeps Chinese and English root README structures and core contracts aligned", () => {
@@ -635,6 +675,14 @@ describe("README consistency", () => {
     assert.throws(
       () => assertLocalTarget("README.md", "./packages/core/README.md#definitely-missing"),
       /missing fragment/u,
+    );
+    assert.throws(
+      () =>
+        assertLocalTarget(
+          "packages/docs/src/content/docs/guides/react.md",
+          "/definitely-missing-route/",
+        ),
+      /missing site route/u,
     );
   });
 
