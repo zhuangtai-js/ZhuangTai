@@ -10,6 +10,7 @@
   "scripts": {
     "build": "turbo run build",
     "build:test": "node --test scripts/build-artifacts.test.mjs",
+    "docs:test": "node --test scripts/readme-consistency.test.mjs",
     "browser:test": "pnpm --filter @zhuangtai-js/test browser:test",
     "pack:test": "pnpm build && node --test scripts/pack-consumer.test.mjs",
     "api:test": "tsc -p scripts/tsconfig.api-tests.json",
@@ -18,7 +19,7 @@
     "lint": "turbo run lint",
     "format": "turbo run format",
     "format:check": "turbo run format:check",
-    "check": "turbo run format:check lint typecheck test build && pnpm build:test && pnpm api:test && pnpm browser:test && pnpm pack:test",
+    "check": "turbo run format:check lint typecheck test build && pnpm docs:test && pnpm build:test && pnpm api:test && pnpm browser:test && pnpm pack:test",
     "release:test": "node --test scripts/publish-workspaces.test.mjs scripts/verify-published-workspaces.test.mjs && pnpm pack:test",
     "release:verify": "node scripts/verify-published-workspaces.mjs",
     "release:dry-run": "node scripts/publish-workspaces.mjs --dry-run",
