@@ -11,7 +11,7 @@ description: "Hooks and bound-hook factories for @zhuangtai-js/react."
 pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
-`react` is a peer dependency and requires React 18 or later.
+`react` is a peer dependency and supports React 18 and React 19.
 
 ## Hooks
 

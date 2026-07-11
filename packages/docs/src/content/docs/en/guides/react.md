@@ -11,7 +11,7 @@ description: Connect ZhuàngTài atoms to React components, hooks, and StrictMod
 pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
-`react` is a peer dependency and requires React 18 or later.
+`react` is a peer dependency and supports React 18 and React 19.
 
 ## The three basic hooks
 

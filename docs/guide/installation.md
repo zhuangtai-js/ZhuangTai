@@ -14,7 +14,7 @@ Start here, then choose the packages you actually need.
 | `@zhuangtai-js/react` | React hooks 适配器 / React hooks adapter | `pnpm add @zhuangtai-js/core @zhuangtai-js/react react` |
 | `@zhuangtai-js/persist` | 持久化插件 / persistence plugin | `pnpm add @zhuangtai-js/core @zhuangtai-js/persist` |
 | `@zhuangtai-js/freeze` | 开发期深冻结插件 / dev time deep freeze plugin | `pnpm add @zhuangtai-js/core @zhuangtai-js/freeze` |
-| `@zhuangtai-js/immer` | Immer 草稿更新插件 / Immer draft updates plugin | `pnpm add @zhuangtai-js/core @zhuangtai-js/immer immer` |
+| `@zhuangtai-js/immer` | Immer 草稿更新插件 / Immer draft updates plugin | `pnpm add @zhuangtai-js/core @zhuangtai-js/immer` |
 | `@zhuangtai-js/sync` | BroadcastChannel 跨标签页同步插件 / BroadcastChannel cross-tab sync plugin | `pnpm add @zhuangtai-js/core @zhuangtai-js/sync` |
 
 把上面的 `pnpm` 换成你的项目实际包管理器即可。
@@ -40,8 +40,7 @@ Please read https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/g
 2. Ask the user which capabilities they need if the choice is not already obvious from the project.
    Offer these options: core only, React, persistence, cross-tab sync, Immer updates, or dev-time freeze guard.
    Install `@zhuangtai-js/core` plus only the needed adapter or plugins with the detected package manager.
-   If you install `@zhuangtai-js/immer`, install `immer` too because it is a peer dependency.
-   If the project uses React and you install `@zhuangtai-js/react`, install `react` as well, because it is a peer dependency and needs React 18 or later.
+   If the project uses React and you install `@zhuangtai-js/react`, install `react` as well, because it is a peer dependency and supports React 18 and React 19.
 
 3. Write a minimal verification snippet that matches the project.
    Use the core API below as the baseline, because it reflects the actual `@zhuangtai-js/core` README and its semantics.

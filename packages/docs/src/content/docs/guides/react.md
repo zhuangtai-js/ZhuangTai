@@ -11,7 +11,7 @@ description: 把 ZhuàngTài 的 atom 接到 React 组件、hook 和 StrictMode 
 pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
-`react` 是 peer dependency，需要 React 18 或更高版本。
+`react` 是 peer dependency，支持 React 18 和 React 19。
 
 ## 三个基础 hook
 

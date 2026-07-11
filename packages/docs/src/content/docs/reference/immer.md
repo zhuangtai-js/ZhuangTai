@@ -8,10 +8,10 @@ description: "@zhuangtai-js/immer 的草稿更新、recipe 语义和公开类型
 ## 安装
 
 ```sh
-pnpm add @zhuangtai-js/core @zhuangtai-js/immer immer
+pnpm add @zhuangtai-js/core @zhuangtai-js/immer
 ```
 
-这里把 `@zhuangtai-js/core` 和 `immer` 一起安装，因为它们分别是 `@zhuangtai-js/immer` 的 peer dependency 和运行时依赖。
+`@zhuangtai-js/core` 是 peer dependency，需要由应用显式安装；`immer` 是普通运行时 dependency，会随 `@zhuangtai-js/immer` 自动安装。
 
 ## 安装插件
 
@@ -53,7 +53,7 @@ todos.set([{ text: "only", done: true }]);
 
 - `set(fn)` 里的 updater 函数会作为 Immer recipe 执行，既可以修改草稿并返回，也可以直接返回新值。
 - 直接传入的具体值（`set(value)`）不经过 Immer，直接提交，行为与 core 一致。
-- Immer 产出的都是全新的不可变引用，原有状态不会被就地修改。
+- Immer 不会就地修改原有状态；实际发生修改时会产出新引用，无变化时可能复用原引用。
 - 通过 `set(value)` 提交给底层状态的始终是具体值，因此 core 不会把它再当成 updater 重复执行。
 - `createAtom().use(immer)` 产出的 atom 类型与普通 atom 不同，它的 `set` 接受直接“修改草稿”的 recipe，且可以返回 `void`。
 - Immer 的 recipe 返回 `undefined` 会被视为“未修改”；如需产出 `undefined`，请使用 Immer 的 `nothing` token。

@@ -89,7 +89,7 @@ That is why `createAtom()` matters. It lets you decide which behaviors belong in
 
 ## Current support range
 
-The current `freeze@0.1.x`, `immer@0.1.x`, `persist@0.2.x`, `react@0.1.x`, and `sync@0.1.x` lines all support `@zhuangtai-js/core@^0.4.0`. The React adapter additionally supports React `>=18 <20`. These are verified compatibility declarations, not promises for unknown future major versions.
+The current `freeze@0.2.x`, `immer@0.2.x`, `persist@0.3.x`, `react@0.2.x`, and `sync@0.2.x` lines all support `@zhuangtai-js/core@^0.5.0`. The React adapter additionally supports React `>=18 <20`. These are verified compatibility declarations, not promises for unknown future major versions.
 
 ## Next steps
 
