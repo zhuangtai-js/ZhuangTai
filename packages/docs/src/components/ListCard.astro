@@ -1,69 +1,13 @@
 ---
-import { Card } from '@astrojs/starlight/components';
+import { Card } from "@astrojs/starlight/components";
 
 const { title, icon } = Astro.props;
 ---
 
-<div class="list-card">
+<div
+  class="flex h-full flex-col [&>.card]:flex-1 [&_ul]:m-0! [&_ul]:list-none [&_ul]:p-0 [&_li]:m-0! [&_li]:border-b [&_li]:border-[var(--sl-color-hairline)] [&_li:last-child]:border-b-0 [&_a]:flex [&_a]:items-center [&_a]:justify-between [&_a]:py-3 [&_a]:text-[var(--sl-color-text)] [&_a]:no-underline [&_a]:transition-colors [&_a]:duration-200 [&_a]:after:ml-3 [&_a]:after:inline-block [&_a]:after:text-xl [&_a]:after:leading-none [&_a]:after:transition-transform [&_a]:after:duration-200 [&_a]:after:content-['→'] [&_a:hover]:text-[var(--sl-color-accent)] [&_a:hover]:after:translate-x-1"
+>
   <Card title={title} icon={icon}>
     <slot />
   </Card>
 </div>
-
-<style>
-  .list-card {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .list-card > :global(.card) {
-    flex: 1;
-  }
-
-  :global(.list-card ul) {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  :global(.list-card li) {
-    margin: 0;
-    border-bottom: 1px solid var(--sl-color-hairline);
-  }
-
-  :global(.list-card li:last-child) {
-    border-bottom: none;
-  }
-
-  :global(.list-card a) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 0;
-    color: var(--sl-color-text);
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  :global(.list-card a:hover) {
-    color: var(--sl-color-accent);
-  }
-
-  :global(.list-card a::after) {
-    content: '';
-    display: inline-block;
-    width: 1.25rem;
-    height: 1.25rem;
-    background-color: currentColor;
-    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>');
-    mask-size: contain;
-    mask-repeat: no-repeat;
-    mask-position: center;
-    transition: transform 0.2s ease;
-  }
-
-  :global(.list-card a:hover::after) {
-    transform: translateX(4px);
-  }
-</style>

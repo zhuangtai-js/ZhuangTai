@@ -1,0 +1,44 @@
+---
+import { InteractiveExamples as ReactInteractiveExamples } from "./interactive-examples/InteractiveExamplesIsland";
+
+type Props = {
+  locale?: "zh" | "en";
+};
+
+const { locale = "zh" } = Astro.props;
+const isLlmsOutput = Astro.url.pathname.startsWith("/llms-");
+const llmsCopy =
+  locale === "en"
+    ? {
+        title: "Interactive React examples",
+        intro: "The documentation includes three live examples powered by @zhuangtai-js/react:",
+        examples: [
+          "Counter: an atom stores the value and computed derives the doubled value.",
+          "Task list: immutable list updates, filters, and derived completion statistics.",
+          "Preferences: a persisted atom stores theme and density choices in the browser.",
+        ],
+      }
+    : {
+        title: "React 交互示例",
+        intro: "文档站提供三个由 @zhuangtai-js/react 驱动的实时示例：",
+        examples: [
+          "计数器：atom 保存数值，computed 派生双倍值。",
+          "任务清单：不可变列表更新、筛选和完成统计。",
+          "偏好设置：persist atom 在浏览器中保存主题与密度选择。",
+        ],
+      };
+---
+
+{
+  isLlmsOutput ? (
+    <section aria-labelledby="interactive-examples-static-title">
+      <h2 id="interactive-examples-static-title">{llmsCopy.title}</h2>
+      <p>{llmsCopy.intro}</p>
+      <ul>
+        {llmsCopy.examples.map((example) => <li>{example}</li>)}
+      </ul>
+    </section>
+  ) : (
+    <ReactInteractiveExamples client:load locale={locale} />
+  )
+}

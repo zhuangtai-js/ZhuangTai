@@ -1,40 +1,8 @@
 ---
 ---
 
-<div class="cta-section">
+<div
+  class="mt-16! flex flex-col items-center gap-6 rounded-2xl border border-[var(--sl-color-hairline)] bg-[var(--sl-color-gray-6)] px-4 py-12 text-center [&_h2]:m-0! [&_h2]:text-[var(--sl-text-h2)] [&>p]:m-0! [&>p]:max-w-[40ch] [&>p]:text-[var(--sl-color-gray-3)] [&_.action-group]:mt-2! [&_.action-group]:flex [&_.action-group]:flex-wrap [&_.action-group]:justify-center [&_.action-group]:gap-4"
+>
   <slot />
 </div>
-
-<style>
-  .cta-section {
-    margin-top: 4rem;
-    padding: 3rem 1rem;
-    text-align: center;
-    background: var(--sl-color-gray-6);
-    border-radius: 1rem;
-    border: 1px solid var(--sl-color-hairline);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  :global(.cta-section h2) {
-    margin: 0;
-    font-size: var(--sl-text-h2);
-  }
-
-  :global(.cta-section > p) {
-    margin: 0;
-    color: var(--sl-color-gray-3);
-    max-width: 40ch;
-  }
-
-  :global(.cta-section .action-group) {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 0.5rem;
-  }
-</style>

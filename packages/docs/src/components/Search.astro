@@ -1,0 +1,29 @@
+---
+import StarlightSearch from "@astrojs/starlight/components/Search.astro";
+---
+
+<StarlightSearch {...Astro.props} />
+
+<script>
+  function syncSearchButtonLabel(): void {
+    const button = document.querySelector("site-search button[data-open-modal]");
+    if (!(button instanceof HTMLButtonElement)) return;
+
+    const visibleLabel = button.querySelector("span")?.textContent?.trim();
+    const shortcut = button.querySelector("kbd");
+    const visibleShortcut =
+      shortcut instanceof HTMLElement && getComputedStyle(shortcut).display !== "none"
+        ? shortcut.textContent?.replaceAll(/\s+/g, " ").trim()
+        : undefined;
+
+    if (visibleLabel) {
+      button.setAttribute(
+        "aria-label",
+        visibleShortcut ? `${visibleLabel} ${visibleShortcut}` : visibleLabel,
+      );
+    }
+  }
+
+  syncSearchButtonLabel();
+  document.addEventListener("astro:page-load", syncSearchButtonLabel);
+</script>
