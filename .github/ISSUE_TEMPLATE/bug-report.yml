@@ -1,0 +1,61 @@
+name: Bug 报告 / Bug report
+description: 报告可复现的问题 / Report a reproducible problem
+title: "[Bug]: "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你帮助改进 ZhuàngTài。请提供最小复现，并避免粘贴敏感信息。
+        Thank you for helping improve ZhuàngTài. Please provide a minimal reproduction and do not include sensitive information.
+  - type: input
+    id: package
+    attributes:
+      label: 包与版本 / Package and version
+      placeholder: "@zhuangtai-js/core@0.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: 运行环境 / Runtime
+      options:
+        - Browser / 浏览器
+        - Node.js
+        - React
+        - Other / 其他
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 最小复现 / Minimal reproduction
+      description: 请提供仓库、StackBlitz 链接或可直接运行的代码。 / Provide a repository, StackBlitz link, or runnable code.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为 / Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为 / Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: 其他信息 / Additional context
+      description: 操作系统、浏览器、Node.js 版本与相关日志。 / OS, browser, Node.js version, and relevant logs.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前检查 / Pre-submission checks
+      options:
+        - label: 我已搜索现有 Issue 和 Discussion。 / I searched existing issues and discussions.
+          required: true
+        - label: 复现不依赖私有代码或凭据。 / The reproduction does not depend on private code or credentials.
+          required: true

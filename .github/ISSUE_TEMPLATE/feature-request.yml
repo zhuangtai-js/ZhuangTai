@@ -1,0 +1,39 @@
+name: 功能建议 / Feature request
+description: 提议新的能力或改进 / Propose a capability or improvement
+title: "[Feature]: "
+labels: [enhancement, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Core 坚持同步、直接、无隐藏调度。新增 batching、transaction、debounce 或 scheduler 的建议，请先说明为什么不能通过插件或应用层组合解决。
+        Core stays synchronous and direct, without hidden scheduling. For batching, transactions, debouncing, or scheduling, explain why composition at the plugin or application layer is insufficient.
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决的问题 / Problem to solve
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案 / Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 已考虑的替代方案 / Alternatives considered
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: 影响范围 / Intended scope
+      options:
+        - Core primitive / Core 原语
+        - Existing package / 现有包
+        - New adapter or plugin / 新适配器或插件
+        - Documentation or example / 文档或示例
+    validations:
+      required: true

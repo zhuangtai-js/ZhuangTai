@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 问答与想法 / Questions and ideas
+    url: https://github.com/zhuangtai-js/ZhuangTai/discussions
+    about: 使用问题、设计讨论和案例分享请优先使用 Discussions。 / Use Discussions for usage questions, design conversations, and showcases.
+  - name: 安全问题 / Security issue
+    url: https://github.com/zhuangtai-js/ZhuangTai/security/advisories/new
+    about: 请私下报告安全漏洞。 / Please report vulnerabilities privately.
