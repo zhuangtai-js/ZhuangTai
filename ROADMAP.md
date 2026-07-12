@@ -2,48 +2,52 @@
 
 ## 中文
 
-路线图表达当前优先级，不是发布日期承诺。Core 的同步语义保持稳定：不会为了追逐功能数量而加入隐藏调度、batching、transaction、debounce 或 scheduler。
+路线图表达产品方向，不承诺具体发布日期。我们会优先保持 Core 简单、同步和可预测，再围绕真实使用场景扩展生态。
 
-### 当前：采用基础
+### 现在可以使用
 
-- 完善 Vite Vanilla 与 React 可运行示例。
-- 发布 State Lab、诚实对比、集成支持等级和可复现 benchmark。
-- 建立 Discussions、Issue/PR 模板、贡献与安全入口。
+- 稳定、框架无关的 Core：`atom`、`computed`、`watch` 与显式更新。
+- React 18 / 19 adapter，以及可直接操作的[在线示例](https://zhuangtai.yojigen.cn/playground/)。
+- Persist、Sync、Freeze 与 Immer 等按需组合能力。
+- 中英文指南、API 参考、状态模型对比和可复现基准。
 
-### 下一步：经过验证的集成
+### 接下来
 
-- Next.js App Router fixture：hydration、请求隔离、streaming SSR 边界。
-- Astro fixture 与库作者/SDK 示例。
-- Node.js 版本矩阵，以及 Bun、Deno 的探索性验证。
+- 补充 Next.js、Astro、SSR 与请求级状态隔离指南。
+- 增加更多可以直接复制到应用中的完整示例。
+- 改善 Playground，让常见状态模式更容易比较和学习。
+- 收集采用反馈，继续打磨错误信息、类型体验和文档导航。
 
-### 后续：由真实需求驱动
+### 由需求决定的方向
 
-- 根据早期用户反馈评估 Vue、Svelte、Solid 或 React Native adapter。
-- 收集真实项目案例并建立 Showcase。
-- 评估调试工具；只有在真实采用阻碍明确时才投入 DevTools。
+- 根据实际项目需求评估 Vue、Svelte、Solid 或 React Native adapter。
+- 建立真实项目 [Showcase](https://zhuangtai.yojigen.cn/showcase/) 和迁移案例。
+- 只有在调试体验成为明确阻碍时，再评估 DevTools。
 
-建议和用例请在 [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions) 中提出。
+欢迎在 [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions) 分享使用场景和建议。它们会直接影响后续优先级。
 
 ## English
 
-This roadmap communicates current priorities, not release-date commitments. Core's synchronous semantics remain stable: hidden scheduling, batching, transactions, debouncing, or a scheduler will not be added merely to increase feature count.
+The roadmap communicates product direction, not release-date commitments. We will keep Core simple, synchronous, and predictable first, then grow the ecosystem around real use cases.
 
-### Current: adoption foundation
+### Available today
 
-- Maintain runnable Vite Vanilla and React examples.
-- Publish the State Lab, honest comparison, integration support levels, and reproducible benchmarks.
-- Establish Discussions, issue and PR templates, contribution guidance, and a security entry point.
+- A stable, framework-independent Core with `atom`, `computed`, `watch`, and explicit updates.
+- A React 18 / 19 adapter and [interactive examples](https://zhuangtai.yojigen.cn/en/playground/) you can use directly.
+- Optional Persist, Sync, Freeze, and Immer composition.
+- Chinese and English guides, API reference, state-model comparisons, and reproducible benchmarks.
 
-### Next: verified integrations
+### Next
 
-- Next.js App Router fixture covering hydration, request isolation, and streaming SSR boundaries.
-- Astro fixture and a library-author or SDK example.
-- Node.js version matrix plus exploratory Bun and Deno verification.
+- Add focused guidance for Next.js, Astro, SSR, and request-scoped state.
+- Publish more complete examples that can be copied into applications.
+- Expand the Playground so common state patterns are easier to compare and learn.
+- Use adoption feedback to improve errors, types, and documentation navigation.
 
-### Later: driven by real demand
+### Demand-driven directions
 
-- Evaluate Vue, Svelte, Solid, or React Native adapters from early-user feedback.
-- Collect real-world projects and build a Showcase.
-- Evaluate debugging tools; invest in DevTools only when a concrete adoption blocker exists.
+- Evaluate Vue, Svelte, Solid, or React Native adapters when real projects need them.
+- Build a real-project [Showcase](https://zhuangtai.yojigen.cn/en/showcase/) and publish migration stories.
+- Consider DevTools only when debugging experience becomes a concrete adoption blocker.
 
-Share proposals and use cases in [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions).
+Share use cases and proposals in [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions). They directly influence future priorities.

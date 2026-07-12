@@ -52,4 +52,4 @@ pnpm build
 pnpm --filter @zhuangtai-js/benchmarks benchmark
 ```
 
-程序和最新 JSON 位于仓库的 [`benchmarks/`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/benchmarks)。CI 只验证程序可运行和结果结构，不使用性能阈值阻塞提交。
+程序和最新 JSON 位于仓库的 [`benchmarks/`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/benchmarks)。这些数据用于理解不同状态模型的取舍，不代表所有应用负载下的绝对排名。

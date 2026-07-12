@@ -3,39 +3,69 @@ title: Complete Examples
 sidebar:
   label: Complete Examples
   order: 4
-description: Start ZhuàngTài with runnable Vite Vanilla and React projects.
+description: Start with Vanilla JavaScript or React examples and bring ZhuàngTài into a real interface.
 ---
 
-Examples are not snippets copied into documentation. They are real projects in the workspace: dependencies install, type checking runs, and CI produces production builds.
+You do not need to clone the repository just to feel the API. Open the [interactive examples](/en/playground/) and use the counter, task list, and persisted preferences directly.
 
-## Vite Vanilla
+## Vanilla JavaScript
 
-Start here to understand Core: a counter, a `computed` value, and a synchronous `watch` timeline.
+Start here for Core's smallest model: `atom` stores state, `computed` derives state, and `watch` responds synchronously.
 
-```sh
-pnpm install
-pnpm --filter @zhuangtai-js/example-vite-vanilla dev
+```ts
+import { atom, computed } from "@zhuangtai-js/core";
+
+const count = atom(0);
+const doubled = computed(() => count.get() * 2);
+
+count.watch((value) => {
+  console.log(value, doubled.get());
+});
+
+count.set((value) => value + 1);
 ```
 
-The source is in [`examples/vite-vanilla`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-vanilla). Production build:
+Install Core:
 
 ```sh
-pnpm --filter @zhuangtai-js/example-vite-vanilla build
+npm install @zhuangtai-js/core
 ```
 
-## Vite React
+The complete Vite Vanilla project is available in [`examples/vite-vanilla`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-vanilla).
 
-Shows Core atoms staying outside components while `useAtom`, `useAtomValue`, and `useSetAtom` connect them to React 18/19.
+## React
+
+The React adapter keeps atoms outside components while providing a component experience close to `useState`.
+
+```tsx
+import { atom, computed } from "@zhuangtai-js/core";
+import { useAtom, useAtomValue } from "@zhuangtai-js/react";
+
+const count = atom(0);
+const doubled = computed(() => count.get() * 2);
+
+export function Counter() {
+  const [value, setValue] = useAtom(count);
+  const doubledValue = useAtomValue(doubled);
+
+  return (
+    <button onClick={() => setValue((current) => current + 1)}>
+      {value} · doubled {doubledValue}
+    </button>
+  );
+}
+```
+
+Install the React packages:
 
 ```sh
-pnpm install
-pnpm --filter @zhuangtai-js/example-vite-react dev
+npm install @zhuangtai-js/core @zhuangtai-js/react
 ```
 
-The source is in [`examples/vite-react`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-react).
+The complete Vite React project is available in [`examples/vite-react`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-react).
 
-## Why these two come first
+## Next steps
 
-They cover the shortest adoption path: Vanilla proves Core does not depend on a UI framework, while the React example proves the adapter can provide a familiar component experience. SSR frameworks such as Next.js need additional hydration and request-isolation verification, so they will only be marked verified after a dedicated fixture exists.
-
-For a quick semantic experiment, open the [State Lab](/en/playground/). For environment support levels, see [integrations and compatibility](/en/integrations/).
+- Want to click and type first? Open the [interactive examples](/en/playground/).
+- Want the complete hooks guide? Read [Using with React](/en/guides/react/).
+- Need environment-specific guidance? See [Integrations and Compatibility](/en/integrations/).

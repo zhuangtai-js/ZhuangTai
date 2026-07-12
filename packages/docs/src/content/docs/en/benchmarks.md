@@ -52,4 +52,4 @@ pnpm build
 pnpm --filter @zhuangtai-js/benchmarks benchmark
 ```
 
-The program and latest JSON live in [`benchmarks/`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/benchmarks). CI verifies executability and result shape without performance thresholds.
+The program and latest JSON live in [`benchmarks/`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/benchmarks). Use these numbers to understand state-model tradeoffs rather than as an absolute ranking for every application workload.
