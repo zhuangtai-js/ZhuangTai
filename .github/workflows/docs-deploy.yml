@@ -42,7 +42,7 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter docs build
+      - run: pnpm --filter "docs..." build
 
       - name: Prepare SSH
         run: |
