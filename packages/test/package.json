@@ -33,7 +33,7 @@
     "playwright": "^1.61.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "typescript": "rc",
+    "typescript": "7.0.2",
     "vitest": "^4.1.10"
   }
 }

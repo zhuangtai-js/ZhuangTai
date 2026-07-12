@@ -55,7 +55,7 @@
     "oxlint": "^1.73.0",
     "oxlint-tsgolint": "^0.24.0",
     "react": "^19.2.0",
-    "typescript": "rc"
+    "typescript": "7.0.2"
   },
   "peerDependencies": {
     "@zhuangtai-js/core": "^0.5.0",
