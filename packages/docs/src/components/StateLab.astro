@@ -1,0 +1,481 @@
+---
+type Props = {
+  locale?: "zh" | "en";
+};
+
+const { locale = "zh" } = Astro.props;
+const copy =
+  locale === "en"
+    ? {
+        title: "ZhuàngTài State Lab",
+        intro: "Run focused scenarios against the real workspace packages and inspect the synchronous timeline.",
+        run: "Run again",
+        copy: "Copy code",
+        copied: "Copied",
+        timeline: "Timeline",
+        result: "Result",
+        tabsLabel: "State Lab scenarios",
+        scenarios: [
+          ["order", "Synchronous order"],
+          ["object-is", "Object.is"],
+          ["computed", "Dynamic dependencies"],
+          ["persist", "Persistence failure"],
+          ["sync", "Cross-context sync"],
+        ] as const,
+      }
+    : {
+        title: "ZhuàngTài State Lab",
+        intro: "直接运行工作区里的真实包，用同步时间线观察每一个场景。",
+        run: "再次运行",
+        copy: "复制代码",
+        copied: "已复制",
+        timeline: "调用时间线",
+        result: "运行结果",
+        tabsLabel: "State Lab 场景",
+        scenarios: [
+          ["order", "同步顺序"],
+          ["object-is", "Object.is"],
+          ["computed", "动态依赖"],
+          ["persist", "Persist 失败"],
+          ["sync", "跨上下文同步"],
+        ] as const,
+      };
+---
+
+<section class="state-lab" data-state-lab data-locale={locale}>
+  <header class="lab-header">
+    <div>
+      <p class="lab-kicker">Interactive playground</p>
+      <h2>{copy.title}</h2>
+      <p>{copy.intro}</p>
+    </div>
+    <div class="lab-actions">
+      <button type="button" data-run>{copy.run}</button>
+      <button type="button" class="secondary" data-copy data-copied-label={copy.copied}>{copy.copy}</button>
+    </div>
+  </header>
+
+  <div class="scenario-tabs" role="tablist" aria-label={copy.tabsLabel}>
+    {
+      copy.scenarios.map(([name, label], index) => (
+        <button
+          type="button"
+          id={`state-lab-${locale}-${name}-tab`}
+          role="tab"
+          aria-controls={`state-lab-${locale}-panel`}
+          aria-selected={index === 0 ? "true" : "false"}
+          tabindex={index === 0 ? 0 : -1}
+          data-scenario={name}>
+          {label}
+        </button>
+      ))
+    }
+  </div>
+
+  <div
+    class="lab-grid"
+    id={`state-lab-${locale}-panel`}
+    role="tabpanel"
+    aria-labelledby={`state-lab-${locale}-order-tab`}
+    data-panel>
+    <div class="code-panel">
+      <div class="panel-label">Code</div>
+      <pre><code data-code></code></pre>
+    </div>
+    <div class="output-panel" aria-live="polite">
+      <div>
+        <div class="panel-label">{copy.result}</div>
+        <p class="result" data-result></p>
+      </div>
+      <div>
+        <div class="panel-label">{copy.timeline}</div>
+        <ol data-timeline></ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { atom, computed, createAtom } from "@zhuangtai-js/core";
+  import { persist } from "@zhuangtai-js/persist";
+  import { sync } from "@zhuangtai-js/sync";
+
+  function initializeLab(lab: HTMLElement): void {
+    const code = requireElement<HTMLElement>(lab, "[data-code]");
+    const result = requireElement<HTMLElement>(lab, "[data-result]");
+    const timeline = requireElement<HTMLOListElement>(lab, "[data-timeline]");
+    const runButton = requireElement<HTMLButtonElement>(lab, "[data-run]");
+    const copyButton = requireElement<HTMLButtonElement>(lab, "[data-copy]");
+    const panel = requireElement<HTMLElement>(lab, "[data-panel]");
+    const scenarioButtons = Array.from(lab.querySelectorAll<HTMLButtonElement>("[data-scenario]"));
+    const locale = lab.dataset.locale === "en" ? "en" : "zh";
+    let activeScenario: ScenarioName = "order";
+
+    function run(): void {
+      const scenario = scenarios[activeScenario];
+      code.textContent = scenario.code;
+      timeline.replaceChildren();
+      const output = scenario.execute((message) => {
+        const item = document.createElement("li");
+        item.textContent = message;
+        timeline.append(item);
+      });
+      result.textContent = output[locale];
+    }
+
+    function activateScenario(button: HTMLButtonElement): void {
+      const scenario = button.dataset.scenario;
+      if (!isScenarioName(scenario)) {
+        return;
+      }
+      activeScenario = scenario;
+      for (const candidate of scenarioButtons) {
+        const isActive = candidate === button;
+        candidate.setAttribute("aria-selected", String(isActive));
+        candidate.tabIndex = isActive ? 0 : -1;
+      }
+      panel.setAttribute("aria-labelledby", button.id);
+      run();
+    }
+
+    for (const [index, button] of scenarioButtons.entries()) {
+      button.addEventListener("click", () => activateScenario(button));
+      button.addEventListener("keydown", (event) => {
+        const lastIndex = scenarioButtons.length - 1;
+        const nextIndex =
+          event.key === "ArrowRight"
+            ? (index + 1) % scenarioButtons.length
+            : event.key === "ArrowLeft"
+              ? (index + lastIndex) % scenarioButtons.length
+              : event.key === "Home"
+                ? 0
+                : event.key === "End"
+                  ? lastIndex
+                  : undefined;
+        if (nextIndex === undefined) {
+          return;
+        }
+        event.preventDefault();
+        const nextButton = scenarioButtons[nextIndex];
+        if (nextButton !== undefined) {
+          activateScenario(nextButton);
+          nextButton.focus();
+        }
+      });
+    }
+
+    runButton.addEventListener("click", run);
+    copyButton.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(scenarios[activeScenario].code);
+      const original = copyButton.textContent;
+      copyButton.textContent = copyButton.dataset.copiedLabel ?? (locale === "en" ? "Copied" : "已复制");
+      window.setTimeout(() => {
+        copyButton.textContent = original;
+      }, 1200);
+    });
+
+    run();
+  }
+
+  const scenarios = {
+    order: {
+      code: `const count = atom(0);\n\ncount.watch((value, prev) => {\n  log(\`watch: \${prev} → \${value}\`);\n});\n\nlog("before set");\ncount.set(1);\nlog("after set");`,
+      execute(log: Log): LocalizedResult {
+        const count = atom(0);
+        count.watch((value, prevValue) => log(`watch: ${String(prevValue)} → ${value}`));
+        log("before set");
+        count.set(1);
+        log("after set");
+        return {
+          zh: "watch 在注册时立即执行；set(1) 返回前，更新通知已经完成。",
+          en: "watch runs immediately on registration; notification completes before set(1) returns.",
+        };
+      },
+    },
+    "object-is": {
+      code: `const value = atom(0);\n\nvalue.watch((next) => log(String(next)));\nvalue.set(NaN);\nvalue.set(NaN); // Object.is(NaN, NaN)`,
+      execute(log: Log): LocalizedResult {
+        const value = atom(0);
+        value.watch((nextValue) => log(String(nextValue)));
+        value.set(Number.NaN);
+        value.set(Number.NaN);
+        return {
+          zh: "第二次 set(NaN) 没有产生通知，因为相等判断使用 Object.is。",
+          en: "The second set(NaN) does not notify because equality uses Object.is.",
+        };
+      },
+    },
+    computed: {
+      code: `const useA = atom(true);\nconst a = atom(2);\nconst b = atom(10);\nconst selected = computed(() =>\n  useA.get() ? a.get() : b.get(),\n);\n\nb.set(11);      // inactive dependency\nuseA.set(false); // dependency switches to b`,
+      execute(log: Log): LocalizedResult {
+        const useA = atom(true);
+        const a = atom(2);
+        const b = atom(10);
+        const selected = computed(() => (useA.get() ? a.get() : b.get()));
+        selected.watch((value, prevValue) => log(`${String(prevValue)} → ${value}`));
+        b.set(11);
+        log("b.set(11): no computed notification");
+        useA.set(false);
+        return {
+          zh: `切换分支后结果是 ${selected.get()}；computed 只追踪本次求值实际读取的依赖。`,
+          en: `The result is ${selected.get()} after switching branches; computed tracks only dependencies read by the current evaluation.`,
+        };
+      },
+    },
+    persist: {
+      code: `const state = createAtom().use(persist)(0, {\n  persist: {\n    key: "count",\n    storage: {\n      getItem: () => null,\n      removeItem: () => {},\n      setItem: () => { throw new Error("disk full"); },\n    },\n  },\n});\n\ntry { state.set(1); } catch {}\nstate.get(); // 0`,
+      execute(log: Log): LocalizedResult {
+        const state = createAtom().use(persist)(0, {
+          persist: {
+            key: "count",
+            storage: {
+              getItem: () => null,
+              removeItem: () => {},
+              setItem: () => {
+                throw new Error("disk full");
+              },
+            },
+          },
+        });
+        try {
+          state.set(1);
+        } catch (error) {
+          log(error instanceof Error ? `throw: ${error.message}` : "throw");
+        }
+        log(`memory: ${state.get()}`);
+        return {
+          zh: "写入失败时内存仍为 0。Persist 先写存储，成功后才提交内存。",
+          en: "Memory remains 0 after the write fails. Persist writes storage before committing memory.",
+        };
+      },
+    },
+    sync: {
+      code: `const [leftChannel, rightChannel] = channelPair();\nconst makeAtom = createAtom().use(sync);\nconst left = makeAtom("light", {\n  sync: { key: "theme", channel: leftChannel },\n});\nconst right = makeAtom("light", {\n  sync: { key: "theme", channel: rightChannel },\n});\n\nleft.set("dark");\nright.get(); // "dark"`,
+      execute(log: Log): LocalizedResult {
+        const [leftChannel, rightChannel] = channelPair();
+        const makeAtom = createAtom().use(sync);
+        const left = makeAtom("light", { sync: { key: "theme", channel: leftChannel } });
+        const right = makeAtom("light", { sync: { key: "theme", channel: rightChannel } });
+        right.watch((value) => log(`right: ${value}`));
+        left.set("dark");
+        log(`left: ${left.get()}`);
+        return {
+          zh: `右侧上下文同步为 ${right.get()}，远端更新不会回环广播。`,
+          en: `The right context synchronizes to ${right.get()} without echo broadcasting the remote update.`,
+        };
+      },
+    },
+  } satisfies Record<ScenarioName, Scenario>;
+
+  type Log = (message: string) => void;
+  type LocalizedResult = { readonly zh: string; readonly en: string };
+  type Scenario = { readonly code: string; readonly execute: (log: Log) => LocalizedResult };
+  type ScenarioName = "order" | "object-is" | "computed" | "persist" | "sync";
+  type LabChannel = {
+    readonly postMessage: (message: string) => void;
+    readonly addEventListener: (type: "message", listener: (event: { data: string }) => void) => void;
+  };
+
+  function channelPair(): readonly [LabChannel, LabChannel] {
+    const leftListeners = new Set<(event: { data: string }) => void>();
+    const rightListeners = new Set<(event: { data: string }) => void>();
+    return [createChannel(rightListeners, leftListeners), createChannel(leftListeners, rightListeners)];
+  }
+
+  function createChannel(
+    outgoing: ReadonlySet<(event: { data: string }) => void>,
+    incoming: Set<(event: { data: string }) => void>,
+  ): LabChannel {
+    return {
+      postMessage(message) {
+        for (const listener of outgoing) {
+          listener({ data: message });
+        }
+      },
+      addEventListener(_type, listener) {
+        incoming.add(listener);
+      },
+    };
+  }
+
+  function isScenarioName(value: string | undefined): value is ScenarioName {
+    return value !== undefined && Object.hasOwn(scenarios, value);
+  }
+
+  function requireElement<ElementType extends Element>(root: ParentNode, selector: string): ElementType {
+    const element = root.querySelector<ElementType>(selector);
+    if (element === null) {
+      throw new Error(`Missing State Lab element ${selector}`);
+    }
+    return element;
+  }
+
+  const labs = document.querySelectorAll<HTMLElement>("[data-state-lab]");
+
+  for (const lab of labs) {
+    initializeLab(lab);
+  }
+</script>
+
+<style>
+  .state-lab {
+    overflow: hidden;
+    margin-block: 2rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 1rem;
+    background: var(--sl-color-bg-nav);
+    box-shadow: 0 1.5rem 4rem color-mix(in srgb, var(--sl-color-accent) 8%, transparent);
+  }
+
+  .lab-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 1.5rem;
+  }
+
+  .lab-kicker {
+    margin: 0 0 0.35rem;
+    color: var(--sl-color-accent-high);
+    font: 700 0.72rem/1.4 var(--__sl-font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .lab-header h2 {
+    margin: 0;
+    font-size: 1.35rem;
+  }
+
+  .lab-header p:last-child {
+    max-width: 38rem;
+    margin: 0.5rem 0 0;
+    color: var(--sl-color-gray-2);
+  }
+
+  .lab-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.5rem;
+  }
+
+  button {
+    border: 1px solid var(--sl-color-accent);
+    border-radius: 0.55rem;
+    padding: 0.55rem 0.8rem;
+    color: var(--sl-color-white);
+    background: var(--sl-color-accent);
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  button.secondary {
+    color: var(--sl-color-text);
+    border-color: var(--sl-color-hairline-light);
+    background: transparent;
+  }
+
+  button:focus-visible {
+    outline: 3px solid var(--sl-color-accent-low);
+    outline-offset: 2px;
+  }
+
+  .scenario-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.4rem;
+    border-block: 1px solid var(--sl-color-hairline);
+    padding: 0.75rem 1rem;
+  }
+
+  .scenario-tabs button {
+    flex: 0 0 auto;
+    color: var(--sl-color-gray-2);
+    border-color: transparent;
+    background: transparent;
+    font-size: 0.8rem;
+  }
+
+  .scenario-tabs button[aria-selected="true"] {
+    color: var(--sl-color-text-accent);
+    border-color: var(--sl-color-accent-low);
+    background: var(--sl-color-accent-low);
+  }
+
+  .lab-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(15rem, 0.75fr);
+  }
+
+  .code-panel,
+  .output-panel {
+    min-width: 0;
+    padding: 1.25rem;
+  }
+
+  .code-panel {
+    border-right: 1px solid var(--sl-color-hairline);
+    background: var(--sl-color-black);
+  }
+
+  .panel-label {
+    margin-bottom: 0.7rem;
+    color: var(--sl-color-gray-2);
+    font: 700 0.7rem/1.4 var(--__sl-font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  pre {
+    overflow: auto;
+    min-height: 18rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  code {
+    color: var(--sl-color-gray-1);
+    font-size: 0.78rem;
+    line-height: 1.65;
+  }
+
+  .output-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .result {
+    margin: 0;
+    color: var(--sl-color-text);
+    line-height: 1.6;
+  }
+
+  ol {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--sl-color-gray-2);
+    font-family: var(--__sl-font-mono);
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 50rem) {
+    .lab-header {
+      flex-direction: column;
+    }
+
+    .lab-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .code-panel {
+      border-right: 0;
+      border-bottom: 1px solid var(--sl-color-hairline);
+    }
+  }
+</style>

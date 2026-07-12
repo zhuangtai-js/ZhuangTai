@@ -85,7 +85,7 @@ function Double() {
 ## 语义
 
 - 值来自 core 的 `get()`，通知来自 core 的 `watch()`；都是同步的。
-- core 是同步的，`get()` 始终返回最新值，因此不存在 tearing。服务端快照直接复用 `get()`，支持 SSR。
+- core 是同步的，`get()` 始终返回最新值，因此不存在 tearing。adapter 将 `get()` 复用为 `useSyncExternalStore` 的服务端快照读取；这只提供 React 的服务端读取路径，不单独承诺特定 SSR 框架的 hydration 或请求隔离。
 - `subscribe` 会跳过 core 在订阅时立即触发的那次初始 watch 回调，只在真正变化时通知 React。
 - setter 与 `subscribe` 在同一个 atom 引用下保持稳定身份；React 不会在 atom 不变时重新订阅。
 - setter 直接调用 `atom.set`，因此支持直接值和 updater 函数，语义与 core 一致。
@@ -184,7 +184,7 @@ The factory names mirror core's `atom` / `computed`: pair `createAtomHook` with 
 ## Semantics
 
 - Values come from core's `get()` and notifications come from core's `watch()`; both are synchronous.
-- Because core is synchronous, `get()` always returns the latest value, so there is no tearing. The server snapshot reuses `get()`, which supports SSR.
+- Because core is synchronous, `get()` always returns the latest value, so there is no tearing. The adapter reuses `get()` as the `useSyncExternalStore` server snapshot; this provides React's server read path but does not by itself guarantee hydration or request isolation in a specific SSR framework.
 - `subscribe` skips the initial watch callback that core fires synchronously on subscribe, notifying React only on real changes.
 - The setter and `subscribe` keep a stable identity for the same atom reference; React does not re-subscribe while the atom is unchanged.
 - The setter calls `atom.set` directly, so it supports both concrete values and updater functions, matching core's semantics.

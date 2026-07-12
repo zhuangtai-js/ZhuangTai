@@ -151,6 +151,18 @@ Not a good fit:
 
 Read more on the [Philosophy](https://zhuangtai.yojigen.cn/en/philosophy/) page.
 
+## Playground, examples, and choosing a model
+
+- [State Lab](https://zhuangtai.yojigen.cn/en/playground/): run synchronous ordering, `Object.is`, dynamic `computed`, persistence failure consistency, and cross-context sync in one minute.
+- [Complete examples](https://zhuangtai.yojigen.cn/en/examples/): runnable Vite Vanilla and React projects built in CI.
+- [Why ZhuàngTài](https://zhuangtai.yojigen.cn/en/why-zhuangtai/): positioning, differentiators, and boundaries.
+- [State model comparison](https://zhuangtai.yojigen.cn/en/compare/): an honest comparison of ZhuàngTài, Zustand, and Jotai.
+- [Integrations and compatibility](https://zhuangtai.yojigen.cn/en/integrations/): official support, verified compatibility, Core availability, and unverified environments.
+- [Reproducible benchmarks](https://zhuangtai.yojigen.cn/en/benchmarks/): pinned versions, programs, results, and limitations.
+- [Roadmap](https://zhuangtai.yojigen.cn/en/roadmap/): adoption, integration, and community priorities.
+
+Complete projects live in [`examples/`](../../examples), and measurement programs live in [`benchmarks/`](../../benchmarks). Bring questions and ideas to [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions); see [`CONTRIBUTING.md`](../../CONTRIBUTING.md) to contribute.
+
 ## AI / agent integration
 
 Give this prompt to Claude Code, Codex, Cursor, OpenCode, or another coding agent:
