@@ -1,0 +1,27 @@
+{
+  "name": "@zhuangtai-js/benchmarks",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "benchmark": "node run.mjs --write",
+    "build": "node -e \"\"",
+    "format": "oxfmt .",
+    "format:check": "oxfmt . --check",
+    "lint": "oxlint . -f agent",
+    "test": "BENCH_ITERATIONS=1000 BENCH_PROCESSES=1 node run.mjs --check",
+    "typecheck": "node -e \"\""
+  },
+  "dependencies": {
+    "@zhuangtai-js/core": "workspace:*",
+    "@zhuangtai-js/persist": "workspace:*",
+    "@zhuangtai-js/react": "workspace:*",
+    "jotai": "2.20.1",
+    "zustand": "5.0.14"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.11",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0"
+  }
+}
