@@ -162,4 +162,10 @@ describe("build artifacts", () => {
     persisted.set(6);
     assert.equal(data.get("counter"), "6");
   });
+
+  it("builds docs workspace dependencies before deployment", () => {
+    const workflow = readFileSync(join(rootPath, ".github/workflows/docs-deploy.yml"), "utf8");
+
+    assert.match(workflow, /pnpm --filter ["']docs\.\.\.["'] build/u);
+  });
 });
