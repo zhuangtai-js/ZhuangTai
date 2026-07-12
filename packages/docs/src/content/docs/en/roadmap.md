@@ -3,27 +3,29 @@ title: Roadmap
 sidebar:
   label: Roadmap
   order: 8
-description: Review ZhuàngTài's current, next, and demand-driven priorities.
+description: See what ZhuàngTài offers today, what experience comes next, and which directions depend on demand.
 ---
 
-The roadmap communicates priorities, not release-date commitments. Core's synchronous contract will not drift merely to increase feature count.
+The roadmap communicates product direction, not release-date commitments. We will keep Core simple, synchronous, and predictable first, then grow the ecosystem around real use cases.
 
-## Current: adoption foundation
+## Available today
 
-- Vite Vanilla and React examples in the workspace, type checking, and CI production builds.
-- State Lab, honest comparison, integration support levels, and reproducible benchmarks.
-- Discussions, issue and PR templates, contributing guide, security policy, and code of conduct.
+- A stable, framework-independent Core with `atom`, `computed`, `watch`, and explicit updates.
+- A React 18 / 19 adapter and [interactive examples](/en/playground/) you can use directly.
+- Optional Persist, Sync, Freeze, and Immer composition.
+- Chinese and English guides, API reference, state-model comparisons, and reproducible benchmarks.
 
-## Next: verified integrations
+## Next
 
-- Next.js App Router fixture covering hydration, request isolation, and streaming SSR boundaries.
-- Astro fixture and a library-author or SDK example.
-- Node.js version matrix plus exploratory Bun and Deno verification.
+- Add focused guidance for Next.js, Astro, SSR, and request-scoped state.
+- Publish more complete examples that can be copied into applications.
+- Expand the Playground so common state patterns are easier to compare and learn.
+- Use adoption feedback to improve errors, types, and documentation navigation.
 
-## Later: driven by real demand
+## Demand-driven directions
 
-- Evaluate Vue, Svelte, Solid, or React Native adapters from early-user feedback.
-- Collect real projects and build the [Showcase](/en/showcase/).
-- Evaluate DevTools only when a concrete adoption blocker exists.
+- Evaluate Vue, Svelte, Solid, or React Native adapters when real projects need them.
+- Build a real-project [Showcase](/en/showcase/) and publish migration stories.
+- Consider DevTools only when debugging experience becomes a concrete adoption blocker.
 
-The complete bilingual roadmap lives in [`ROADMAP.md`](https://github.com/zhuangtai-js/ZhuangTai/blob/main/ROADMAP.md). Share proposals in [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions).
+Share use cases and proposals in [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions). They directly influence future priorities.

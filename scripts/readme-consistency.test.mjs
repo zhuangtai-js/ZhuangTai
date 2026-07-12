@@ -15,20 +15,26 @@ function readJson(relativePath) {
   return JSON.parse(readText(relativePath));
 }
 
-function collectMarkdown(relativeDirectory) {
+function collectFiles(relativeDirectory) {
   const files = [];
 
   for (const entry of readdirSync(join(rootPath, relativeDirectory), { withFileTypes: true })) {
     const relativePath = join(relativeDirectory, entry.name);
 
     if (entry.isDirectory()) {
-      files.push(...collectMarkdown(relativePath));
-    } else if (entry.isFile() && [".md", ".mdx"].includes(extname(entry.name))) {
+      files.push(...collectFiles(relativePath));
+    } else if (entry.isFile()) {
       files.push(relativePath);
     }
   }
 
   return files.toSorted((left, right) => left.localeCompare(right));
+}
+
+function collectMarkdown(relativeDirectory) {
+  return collectFiles(relativeDirectory).filter((relativePath) =>
+    [".md", ".mdx"].includes(extname(relativePath)),
+  );
 }
 
 function discoverPublishablePackages() {
@@ -91,7 +97,7 @@ const currentDocumentationPaths = [
   ]),
 ].toSorted((left, right) => left.localeCompare(right));
 const publicDocumentationPaths = [
-  ...new Set([...currentDocumentationPaths, ...packageDocumentationPaths]),
+  ...new Set(["ROADMAP.md", ...currentDocumentationPaths, ...packageDocumentationPaths]),
 ].toSorted((left, right) => left.localeCompare(right));
 
 function blockquoteContent(line, maximumDepth = Number.POSITIVE_INFINITY) {
@@ -361,7 +367,8 @@ function localDocumentationTargets(markdown, source) {
   }
 
   return targets.filter(
-    (target) => target.length > 0 && (target.startsWith("#") || !/^[a-z][a-z\d+.-]*:/iu.test(target)),
+    (target) =>
+      target.length > 0 && (target.startsWith("#") || !/^[a-z][a-z\d+.-]*:/iu.test(target)),
   );
 }
 
@@ -640,6 +647,77 @@ describe("README consistency", () => {
         expectedReact,
         `${relativePath} install command drifted`,
       );
+    }
+  });
+
+  it("keeps the public playground interactive, bilingual, and Tailwind-only", () => {
+    const playgroundPaths = [
+      "packages/docs/src/content/docs/playground.mdx",
+      "packages/docs/src/content/docs/en/playground.mdx",
+    ];
+
+    for (const relativePath of playgroundPaths) {
+      const source = readText(relativePath);
+      assert.ok(
+        source.includes("tableOfContents: false"),
+        `${relativePath} must disable the page TOC`,
+      );
+      assert.ok(
+        source.includes("<InteractiveExamples"),
+        `${relativePath} must render the interactive React examples`,
+      );
+    }
+
+    const docsSourcePaths = collectFiles("packages/docs/src");
+    const stylesheetPaths = docsSourcePaths.filter((relativePath) =>
+      [".css", ".less", ".sass", ".scss"].includes(extname(relativePath)),
+    );
+    assert.deepEqual(stylesheetPaths, ["packages/docs/src/styles/tailwind.css"]);
+
+    const customUiPaths = docsSourcePaths.filter((relativePath) =>
+      [".astro", ".md", ".mdx", ".ts", ".tsx"].includes(extname(relativePath)),
+    );
+    for (const relativePath of customUiPaths) {
+      const source = readText(relativePath);
+      assert.equal(
+        source.includes("<style"),
+        false,
+        `${relativePath} adds a handwritten style block`,
+      );
+      assert.equal(
+        /\sstyle\s*=/u.test(source),
+        false,
+        `${relativePath} adds an inline style attribute`,
+      );
+    }
+
+    const publicPlaygroundSources = [
+      "DESIGN.md",
+      ...publicDocumentationPaths,
+      ...customUiPaths.filter((relativePath) => relativePath.includes("/components/")),
+      "packages/docs/astro.config.mjs",
+    ];
+    const forbiddenPublicPhrases = [
+      "State Lab",
+      "直接运行工作区",
+      "real workspace packages",
+      "调用时间线",
+      "同步时间线",
+      "进入 CI",
+      "built in CI",
+      "fixture",
+      "探索性验证",
+      "exploratory Bun and Deno verification",
+    ];
+    for (const relativePath of publicPlaygroundSources) {
+      const source = readText(relativePath);
+      for (const phrase of forbiddenPublicPhrases) {
+        assert.equal(
+          source.includes(phrase),
+          false,
+          `${relativePath} exposes internal copy: ${phrase}`,
+        );
+      }
     }
   });
 

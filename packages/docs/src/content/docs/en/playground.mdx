@@ -1,25 +1,44 @@
 ---
-title: Playground
+title: Interactive Examples
+description: Interact with a counter, task list, and persisted preferences powered by ZhuàngTài and React.
+tableOfContents: false
 sidebar:
-  label: State Lab
+  label: Interactive Examples
   order: 3
-description: Run ZhuàngTài scenarios for synchronous ordering, Object.is, computed dependencies, persistence failure consistency, and cross-context synchronization.
 ---
 
-import StateLab from "../../../components/StateLab.astro";
+import InteractiveExamples from "../../../components/InteractiveExamples.astro";
 
-# Experience the state model in one minute
+## Try it before the API
 
-This is not a cloud IDE that installs an arbitrary dependency graph in your browser. It is a focused set of short experiments around core semantics. Every experiment runs the real ZhuàngTài workspace packages and exposes the synchronous execution order.
+Click a button, add a task, or change a preference and the interface updates immediately. These examples run the actual <code className="whitespace-nowrap">@zhuangtai-js/core</code>, <code className="whitespace-nowrap">@zhuangtai-js/react</code>, and <code className="whitespace-nowrap">@zhuangtai-js/persist</code> packages, so the behavior matches real application code.
 
-<StateLab locale="en" />
+<InteractiveExamples locale="en" />
 
-## What it verifies
+## Example takeaways
 
-- `watch` runs immediately on registration and synchronous notification completes before `set` returns.
-- Equality uses `Object.is`; objects and arrays remain reference-based.
-- `computed` automatically tracks dependencies read by the current evaluation.
-- A failed persistence write never leaves memory ahead of storage.
-- A remote Sync update does not re-broadcast into an echo loop.
+- **State can live outside components**: multiple components can read one atom without an extra Provider.
+- **React integration stays familiar**: `useAtom` feels close to `useState`, while state is not bound to one component lifecycle.
+- **Derived values need no dependency array**: `computed` tracks the atoms read by the current evaluation.
+- **Objects and arrays use immutable updates**: the task list creates new arrays and objects when it changes.
+- **Capabilities compose on demand**: only the preferences example adds `persist`, while Core stays lightweight.
 
-For complete project structure, build configuration, and React components, continue to the [complete examples](/en/examples/).
+## Start with React
+
+```sh
+pnpm add @zhuangtai-js/core @zhuangtai-js/react
+```
+
+```tsx
+import { atom } from "@zhuangtai-js/core";
+import { useAtom } from "@zhuangtai-js/react";
+
+const count = atom(0);
+
+export function Counter() {
+  const [value, setValue] = useAtom(count);
+  return <button onClick={() => setValue((n) => n + 1)}>{value}</button>;
+}
+```
+
+Continue with the [React guide](/en/guides/react/) or open the [complete examples](/en/examples/).

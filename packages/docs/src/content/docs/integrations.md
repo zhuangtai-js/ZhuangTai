@@ -3,38 +3,47 @@ title: 集成与兼容性
 sidebar:
   label: 集成与兼容性
   order: 6
-description: 区分官方支持、已验证兼容、Core 可用、尚未验证和不支持。
+description: 了解 ZhuàngTài 在 JavaScript、TypeScript、React 与常见框架中的使用方式和边界。
 ---
 
-我们只对有明确实现或自动化 fixture 的环境给出“官方支持”或“已验证”结论。框架能打包 ESM，不等于 SSR、hydration、请求隔离和生命周期行为已经得到验证。
+ZhuàngTài Core 不依赖 UI 框架。你可以在普通 JavaScript、组件库、SDK 或框架应用中直接创建和订阅状态；需要框架生命周期集成时，再选择对应 adapter。
 
-## 支持等级
+## 支持概览
 
-- **官方支持**：有维护中的公共 API、文档、测试与发布承诺。
-- **已验证兼容**：有真实 fixture 或消费者测试进入 CI，但不一定有专用 adapter。
-- **Core 可用**：框架无关 API 可以手动接入，但没有对应 adapter 与完整 fixture。
-- **尚未验证**：没有足够证据，不作兼容承诺。
-- **不支持**：当前包格式或 API 明确不能使用。
+| 环境                 | 支持情况        | 使用建议                                                                |
+| -------------------- | --------------- | ----------------------------------------------------------------------- |
+| Vanilla ESM          | 官方支持        | 直接使用 `@zhuangtai-js/core`；Core 没有第三方运行时依赖                |
+| TypeScript           | 官方支持        | 所有公开包都提供类型声明                                                |
+| React 18 / 19        | 官方支持        | 使用 `@zhuangtai-js/react` 的 `useAtom`、`useAtomValue` 与 `useSetAtom` |
+| Vite                 | 可直接使用      | Vanilla 与 React 项目都可按标准 ESM 方式引入                            |
+| Astro                | 可直接使用      | 在 React 岛中使用 React adapter，或在普通脚本中直接使用 Core            |
+| Next.js              | 需注意 SSR 边界 | 客户端组件可使用 React adapter；服务端状态应按请求隔离                  |
+| Vue / Svelte / Solid | Core 可用       | 可通过 `get`、`set`、`watch` 手动接入；暂时没有官方 adapter             |
+| Node.js ESM          | 可直接使用      | 使用 `import` 引入，适合 SDK、服务状态与工具代码                        |
+| React Native / Expo  | 尚无官方指南    | API 不依赖 DOM，但当前没有专门的官方集成指南                            |
+| Bun / Deno           | 尚无官方指南    | ESM API 具备可移植性，但当前没有正式运行时支持承诺                      |
+| CommonJS `require`   | 不支持          | 发布包为 ESM-only，请使用 `import`                                      |
 
-| 环境                 | 等级       | 证据与边界                                                      |
-| -------------------- | ---------- | --------------------------------------------------------------- |
-| Vanilla ESM          | 官方支持   | Core 零第三方运行时依赖；Vite Vanilla 示例进入 workspace 与 CI  |
-| TypeScript           | 官方支持   | 源码、声明构建、API 类型测试与严格类型检查                      |
-| React 18/19          | 官方支持   | `@zhuangtai-js/react` peer range、adapter 测试、Vite React 示例 |
-| Chromium             | 已验证兼容 | Playwright browser tests                                        |
-| Node.js ESM          | 已验证兼容 | NodeNext packed consumer；CI 当前使用 Node.js 24                |
-| Vite                 | 已验证兼容 | Vanilla 与 React production fixtures                            |
-| Astro                | Core 可用  | Docs 自身可打包 Core，但尚无面向用户的 Astro fixture 或 adapter |
-| Next.js              | 尚未验证   | 尚缺 hydration、request isolation、streaming SSR fixture        |
-| Vue / Svelte / Solid | Core 可用  | 可手动订阅；没有官方 adapter 或 fixture                         |
-| React Native / Expo  | 尚未验证   | 没有设备或 bundler fixture                                      |
-| Bun / Deno           | 尚未验证   | 没有运行时矩阵                                                  |
-| CommonJS `require`   | 不支持     | 发布包是 ESM-only，仅提供 `import` export                       |
+## React 与 Astro
 
-## 关于 SSR 的精确说明
+在 Astro 中使用 React 岛时，组件内部与普通 React 应用相同：
 
-React adapter 为 `useSyncExternalStore` 的服务端快照读取复用同步 `get()`。这说明 adapter 有服务端读取路径，但**不单独证明** Next.js App Router、hydration 一致、请求级状态隔离或 streaming SSR 已得到支持。
+```astro
+---
+import Counter from "../components/Counter.tsx";
+---
 
-在 SSR 应用中，把可变 module-level atom 作为所有请求共享状态可能造成跨请求数据泄漏。专用 Next.js fixture 完成前，请按请求创建状态，并把该环境视为“尚未验证”。
+<Counter client:load />
+```
 
-如果你愿意贡献 fixture，请先阅读[贡献指南](https://github.com/zhuangtai-js/ZhuangTai/blob/main/CONTRIBUTING.md)。
+`Counter.tsx` 中可以直接使用 `@zhuangtai-js/react`。如果页面不需要 React，也可以在普通模块或脚本中使用 Core 的 `atom` 与 `watch`。
+
+## Next.js 与服务端渲染
+
+React adapter 使用 `useSyncExternalStore` 接入 React。客户端组件可以采用常规方式使用，但 SSR 应用还需要决定状态属于谁：
+
+- 页面内共享状态可以在客户端模块中创建。
+- 与请求或用户相关的可变状态应按请求创建，不能让所有请求共享同一个 module-level atom。
+- 需要持久化时，只在浏览器环境访问 `localStorage` 等客户端 API。
+
+完整的 Next.js 专项指南仍在规划中。在此之前，请把请求隔离当成应用架构的一部分，而不是由全局 atom 自动处理。

@@ -1,45 +1,18 @@
 ---
-import { Card } from '@astrojs/starlight/components';
+import { Card } from "@astrojs/starlight/components";
 
 const { title, icon } = Astro.props;
 ---
 
-<div class="split-card">
+<div class="col-[1/-1] mt-8!">
   <Card title={title} icon={icon}>
-    <div class="split">
-      <div class="split-left">
+    <div class="flex flex-col gap-6 min-[50rem]:flex-row min-[50rem]:items-start min-[50rem]:gap-12">
+      <div class="mt-0! flex-1">
         <slot name="left" />
       </div>
-      <div class="split-right">
+      <div class="mt-0! flex-1">
         <slot name="right" />
       </div>
     </div>
   </Card>
 </div>
-
-<style>
-  .split-card {
-    grid-column: 1 / -1;
-    margin-top: 2rem;
-  }
-
-  .split {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .split-left,
-  .split-right {
-    flex: 1;
-    margin-top: 0 !important;
-  }
-
-  @media (min-width: 50rem) {
-    .split {
-      flex-direction: row;
-      align-items: flex-start;
-      gap: 3rem;
-    }
-  }
-</style>

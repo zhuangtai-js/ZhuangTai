@@ -3,18 +3,24 @@ title: Showcase
 sidebar:
   label: Showcase
   order: 9
-description: 提交使用 ZhuàngTài 的真实项目与案例。
+description: 展示使用 ZhuàngTài 构建的项目、组件、工具和迁移故事。
 ---
 
-Showcase 只收录能够公开验证的真实项目，不用虚构案例填充页面。当前库刚进入采用阶段，这里先明确收录标准与提交入口。
+正在使用 ZhuàngTài？欢迎把你的项目带到 Showcase。这里既可以展示完整应用，也可以展示一个库、SDK、组件或有代表性的状态模块。
 
-## 我们希望看到
+## 适合展示的内容
 
-- SDK、组件库或 Web Component 的框架无关状态。
-- 编辑器、播放器、Canvas 或可视化工具中的同步状态图。
-- React 应用中对 `useAtom`、Persist 或 Sync 的真实使用。
-- 从其他状态库迁移后的具体权衡，而不只是“换了 API”。
+- 使用 Core 管理框架无关状态的 SDK、组件库或 Web Component。
+- 编辑器、播放器、Canvas、可视化工具或复杂表单中的同步状态关系。
+- React 应用中的 `useAtom`、Persist 或 Sync 实践。
+- 从其他状态方案迁移时的取舍、收益和仍需解决的问题。
 
-## 如何提交
+## 提交时请提供
 
-在 [Show and tell Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions/categories/show-and-tell) 分享项目链接、使用的包、为什么选择 ZhuàngTài，以及允许公开展示的截图或说明。维护者确认可验证且获得授权后，再把案例加入此页面。
+- 可公开访问的项目或源码链接。
+- 使用了哪些 `@zhuangtai-js/*` 包。
+- ZhuàngTài 在项目中解决了什么问题。
+- 一张截图、演示地址或简短代码片段。
+- 希望我们展示的项目名称与说明。
+
+请在 [Show and tell Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions/categories/show-and-tell) 发帖。我们会与你确认展示内容，再将项目加入此页。

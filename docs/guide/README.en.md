@@ -153,11 +153,11 @@ Read more on the [Philosophy](https://zhuangtai.yojigen.cn/en/philosophy/) page.
 
 ## Playground, examples, and choosing a model
 
-- [State Lab](https://zhuangtai.yojigen.cn/en/playground/): run synchronous ordering, `Object.is`, dynamic `computed`, persistence failure consistency, and cross-context sync in one minute.
-- [Complete examples](https://zhuangtai.yojigen.cn/en/examples/): runnable Vite Vanilla and React projects built in CI.
+- [Interactive examples](https://zhuangtai.yojigen.cn/en/playground/): use a counter, task list, and preferences panel to observe real React state updates.
+- [Complete examples](https://zhuangtai.yojigen.cn/en/examples/): runnable Vite Vanilla and React projects ready to adapt.
 - [Why ZhuàngTài](https://zhuangtai.yojigen.cn/en/why-zhuangtai/): positioning, differentiators, and boundaries.
 - [State model comparison](https://zhuangtai.yojigen.cn/en/compare/): an honest comparison of ZhuàngTài, Zustand, and Jotai.
-- [Integrations and compatibility](https://zhuangtai.yojigen.cn/en/integrations/): official support, verified compatibility, Core availability, and unverified environments.
+- [Integrations and compatibility](https://zhuangtai.yojigen.cn/en/integrations/): official support, direct usage, SSR boundaries, and environments without an official guide.
 - [Reproducible benchmarks](https://zhuangtai.yojigen.cn/en/benchmarks/): pinned versions, programs, results, and limitations.
 - [Roadmap](https://zhuangtai.yojigen.cn/en/roadmap/): adoption, integration, and community priorities.
 

@@ -3,39 +3,69 @@ title: 完整示例
 sidebar:
   label: 完整示例
   order: 4
-description: 从可运行的 Vite Vanilla 与 React 工程开始使用 ZhuàngTài。
+description: 从 Vanilla JavaScript 或 React 示例开始，把 ZhuàngTài 用进真实界面。
 ---
 
-示例不是复制到文档里的代码片段，而是进入 workspace、安装依赖、执行类型检查并在 CI 中完成生产构建的真实工程。
+如果你想先感受 API，不必克隆仓库：打开[在线示例](/playground/)，直接操作计数器、任务清单和可持久化偏好设置。
 
-## Vite Vanilla
+## Vanilla JavaScript
 
-适合先理解 Core：一个计数器、一个 `computed` 派生值和一条同步 `watch` 时间线。
+适合先理解 Core 的最小模型：`atom` 保存状态，`computed` 派生状态，`watch` 同步响应变化。
 
-```sh
-pnpm install
-pnpm --filter @zhuangtai-js/example-vite-vanilla dev
+```ts
+import { atom, computed } from "@zhuangtai-js/core";
+
+const count = atom(0);
+const doubled = computed(() => count.get() * 2);
+
+count.watch((value) => {
+  console.log(value, doubled.get());
+});
+
+count.set((value) => value + 1);
 ```
 
-源码位于 [`examples/vite-vanilla`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-vanilla)。生产构建：
+安装 Core：
 
 ```sh
-pnpm --filter @zhuangtai-js/example-vite-vanilla build
+npm install @zhuangtai-js/core
 ```
 
-## Vite React
+完整的 Vite Vanilla 工程源码位于 [`examples/vite-vanilla`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-vanilla)。
 
-展示 Core atom 如何保持在组件外部，并通过 `useAtom`、`useAtomValue` 和 `useSetAtom` 接入 React 18/19。
+## React
+
+React adapter 让 atom 保持在组件外部，同时提供接近 `useState` 的组件体验。
+
+```tsx
+import { atom, computed } from "@zhuangtai-js/core";
+import { useAtom, useAtomValue } from "@zhuangtai-js/react";
+
+const count = atom(0);
+const doubled = computed(() => count.get() * 2);
+
+export function Counter() {
+  const [value, setValue] = useAtom(count);
+  const doubledValue = useAtomValue(doubled);
+
+  return (
+    <button onClick={() => setValue((current) => current + 1)}>
+      {value} · doubled {doubledValue}
+    </button>
+  );
+}
+```
+
+安装 React 所需包：
 
 ```sh
-pnpm install
-pnpm --filter @zhuangtai-js/example-vite-react dev
+npm install @zhuangtai-js/core @zhuangtai-js/react
 ```
 
-源码位于 [`examples/vite-react`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-react)。
+完整的 Vite React 工程源码位于 [`examples/vite-react`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-react)。
 
-## 为什么先做这两个
+## 下一步
 
-它们覆盖最短采用路径：Vanilla 证明 Core 不依赖 UI 框架，React 示例证明 adapter 可以提供熟悉的组件体验。Next.js 等 SSR 框架需要额外验证 hydration 与请求隔离，因此会在专门 fixture 完成后再标记为已验证。
-
-想先快速观察语义，请打开 [State Lab](/playground/)；想了解环境支持程度，请查看[集成与兼容性](/integrations/)。
+- 想直接点击和输入：前往[在线示例](/playground/)。
+- 想系统了解 React hooks：阅读 [React 用法](/guides/react/)。
+- 想确认目标环境与注意事项：查看[集成与兼容性](/integrations/)。

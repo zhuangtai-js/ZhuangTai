@@ -1,25 +1,44 @@
 ---
-title: Playground
+title: 在线示例
+description: 直接操作由 ZhuàngTài 和 React 驱动的计数器、任务清单与持久化偏好设置。
+tableOfContents: false
 sidebar:
-  label: State Lab
+  label: 在线示例
   order: 3
-description: 在浏览器中运行 ZhuàngTài 的同步顺序、Object.is、computed、persist 失败一致性与跨上下文同步场景。
 ---
 
-import StateLab from "../../components/StateLab.astro";
+import InteractiveExamples from "../../components/InteractiveExamples.astro";
 
-# 在一分钟内感受状态模型
+## 先试用，再阅读 API
 
-这里不是一个把所有依赖装进浏览器的云端 IDE，而是一组围绕核心语义设计的短实验。每个实验都直接使用当前工作区中的真实 ZhuàngTài 包，并把同步执行顺序展示出来。
+点击按钮、添加任务或切换偏好，界面会立即更新。这里运行的是实际的 <code className="whitespace-nowrap">@zhuangtai-js/core</code>、<code className="whitespace-nowrap">@zhuangtai-js/react</code> 和 <code className="whitespace-nowrap">@zhuangtai-js/persist</code>，因此你看到的就是应用中的真实使用方式。
 
-<StateLab locale="zh" />
+<InteractiveExamples locale="zh" />
 
-## 它适合验证什么
+## 示例要点
 
-- `watch` 注册时立即执行，`set` 返回前完成同步通知。
-- 相等判断使用 `Object.is`，对象与数组仍按引用比较。
-- `computed` 自动追踪本次求值实际读取的依赖。
-- Persist 写入失败时不会让内存状态领先于存储状态。
-- Sync 收到远端更新时不会再次广播形成回环。
+- **状态可以放在组件外部**：多个组件读取同一个 atom，不需要额外 Provider。
+- **React 接入保持熟悉**：`useAtom` 的使用方式接近 `useState`，但状态不绑定单个组件生命周期。
+- **派生值不需要手写依赖数组**：`computed` 会追踪本次求值实际读取的 atom。
+- **对象和数组保持不可变更新**：任务清单通过创建新数组和新对象触发更新。
+- **能力按需组合**：只有偏好设置示例引入 `persist`，Core 本身仍保持轻量。
 
-要看完整工程结构、构建配置和 React 组件，请继续阅读[完整示例](/examples/)。
+## 开始使用 React
+
+```sh
+pnpm add @zhuangtai-js/core @zhuangtai-js/react
+```
+
+```tsx
+import { atom } from "@zhuangtai-js/core";
+import { useAtom } from "@zhuangtai-js/react";
+
+const count = atom(0);
+
+export function Counter() {
+  const [value, setValue] = useAtom(count);
+  return <button onClick={() => setValue((n) => n + 1)}>{value}</button>;
+}
+```
+
+下一步可以阅读 [React 指南](/guides/react/) 或查看[完整示例](/examples/)。

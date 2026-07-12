@@ -1,13 +1,23 @@
+import react from "@astrojs/react";
 import starlight from "@astrojs/starlight";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import starlightLlmsTxt from "starlight-llms-txt";
 
 export default defineConfig({
+  vite: {
+    plugins: [tailwindcss()],
+  },
   site: "https://zhuangtai.yojigen.cn",
   integrations: [
+    react(),
     starlight({
       title: "ZhuàngTài 状态",
       description: "简单、直接的 JavaScript 状态原语。",
+      customCss: ["./src/styles/tailwind.css"],
+      components: {
+        Search: "./src/components/Search.astro",
+      },
       editLink: {
         baseUrl: "https://github.com/zhuangtai-js/ZhuangTai/edit/main/packages/docs/",
       },
@@ -77,7 +87,10 @@ export default defineConfig({
         },
         {
           slug: "playground",
-          label: "State Lab",
+          label: "在线示例",
+          translations: {
+            en: "Interactive Examples",
+          },
         },
         {
           slug: "examples",
