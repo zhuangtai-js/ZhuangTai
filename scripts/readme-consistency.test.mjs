@@ -23,7 +23,7 @@ function collectMarkdown(relativeDirectory) {
 
     if (entry.isDirectory()) {
       files.push(...collectMarkdown(relativePath));
-    } else if (entry.isFile() && entry.name.endsWith(".md")) {
+    } else if (entry.isFile() && [".md", ".mdx"].includes(extname(entry.name))) {
       files.push(relativePath);
     }
   }
@@ -405,7 +405,7 @@ function assertLocalTarget(sourcePath, target) {
 
   assert.ok(existsSync(absoluteTarget), `${sourcePath} links to missing path ${target}`);
 
-  if (extname(absoluteTarget) === ".md") {
+  if ([".md", ".mdx"].includes(extname(absoluteTarget))) {
     assertMarkdownFragment(sourcePath, targetPath, rawFragment, target);
   }
 }

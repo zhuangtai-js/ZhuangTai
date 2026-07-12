@@ -69,6 +69,24 @@ export default defineConfig({
           },
         },
         {
+          slug: "why-zhuangtai",
+          label: "为什么是 ZhuàngTài",
+          translations: {
+            en: "Why ZhuàngTài",
+          },
+        },
+        {
+          slug: "playground",
+          label: "State Lab",
+        },
+        {
+          slug: "examples",
+          label: "完整示例",
+          translations: {
+            en: "Complete Examples",
+          },
+        },
+        {
           label: "指南",
           translations: {
             en: "Guides",
@@ -94,6 +112,46 @@ export default defineConfig({
               translations: {
                 en: "Using with React",
               },
+            },
+          ],
+        },
+        {
+          label: "决策与采用",
+          translations: {
+            en: "Decision & Adoption",
+          },
+          items: [
+            {
+              slug: "compare",
+              label: "状态模型对比",
+              translations: {
+                en: "State Model Comparison",
+              },
+            },
+            {
+              slug: "integrations",
+              label: "集成与兼容性",
+              translations: {
+                en: "Integrations & Compatibility",
+              },
+            },
+            {
+              slug: "benchmarks",
+              label: "可复现基准",
+              translations: {
+                en: "Reproducible Benchmarks",
+              },
+            },
+            {
+              slug: "roadmap",
+              label: "路线图",
+              translations: {
+                en: "Roadmap",
+              },
+            },
+            {
+              slug: "showcase",
+              label: "Showcase",
             },
           ],
         },

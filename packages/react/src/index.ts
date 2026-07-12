@@ -5,8 +5,9 @@ import { useCallback, useMemo, useSyncExternalStore } from "react";
  * Subscribe to a readable atom (an `Atom` or a `computed`) and re-render on change.
  *
  * Bridges core's synchronous `watch`/`get` to React via `useSyncExternalStore`. Core is fully
- * synchronous, so `get()` always returns the latest value and there is no tearing; the same reader
- * is used as the server snapshot.
+ * synchronous, so `get()` always returns the latest value and there is no tearing. The same reader
+ * is passed as React's server snapshot; framework-level hydration and request isolation remain
+ * application responsibilities.
  */
 export function useAtomValue<Value>(atom: ReadableAtom<Value>): Value {
   const store = useMemo(() => {

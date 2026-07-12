@@ -74,7 +74,7 @@ Pair `createAtomHook` with something you made via `atom(...)`, and `createComput
 ## Semantics
 
 - Values come from core's `get()` and notifications come from core's `watch()`; both are synchronous.
-- Because core is synchronous, `get()` always returns the latest value, so there is no tearing. The server snapshot reuses `get()`, which supports SSR.
+- Because core is synchronous, `get()` always returns the latest value, so there is no tearing. The adapter reuses `get()` as the `useSyncExternalStore` server snapshot; this provides React's server read path but does not by itself guarantee hydration or request isolation in a specific SSR framework.
 - `subscribe` skips the initial watch callback that core fires synchronously on subscribe, notifying React only on real changes.
 - The setter and `subscribe` keep a stable identity for the same atom reference; React does not re-subscribe while the atom is unchanged.
 - The setter calls `atom.set` directly, so it supports both concrete values and updater functions, matching core's semantics.

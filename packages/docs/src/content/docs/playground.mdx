@@ -1,0 +1,25 @@
+---
+title: Playground
+sidebar:
+  label: State Lab
+  order: 3
+description: 在浏览器中运行 ZhuàngTài 的同步顺序、Object.is、computed、persist 失败一致性与跨上下文同步场景。
+---
+
+import StateLab from "../../components/StateLab.astro";
+
+# 在一分钟内感受状态模型
+
+这里不是一个把所有依赖装进浏览器的云端 IDE，而是一组围绕核心语义设计的短实验。每个实验都直接使用当前工作区中的真实 ZhuàngTài 包，并把同步执行顺序展示出来。
+
+<StateLab locale="zh" />
+
+## 它适合验证什么
+
+- `watch` 注册时立即执行，`set` 返回前完成同步通知。
+- 相等判断使用 `Object.is`，对象与数组仍按引用比较。
+- `computed` 自动追踪本次求值实际读取的依赖。
+- Persist 写入失败时不会让内存状态领先于存储状态。
+- Sync 收到远端更新时不会再次广播形成回环。
+
+要看完整工程结构、构建配置和 React 组件，请继续阅读[完整示例](/examples/)。

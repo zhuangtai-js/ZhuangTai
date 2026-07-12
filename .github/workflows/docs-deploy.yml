@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - "packages/docs/**"
+      - "examples/**"
+      - "benchmarks/**"
+      - "ROADMAP.md"
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"

@@ -1,0 +1,25 @@
+---
+title: Playground
+sidebar:
+  label: State Lab
+  order: 3
+description: Run ZhuàngTài scenarios for synchronous ordering, Object.is, computed dependencies, persistence failure consistency, and cross-context synchronization.
+---
+
+import StateLab from "../../../components/StateLab.astro";
+
+# Experience the state model in one minute
+
+This is not a cloud IDE that installs an arbitrary dependency graph in your browser. It is a focused set of short experiments around core semantics. Every experiment runs the real ZhuàngTài workspace packages and exposes the synchronous execution order.
+
+<StateLab locale="en" />
+
+## What it verifies
+
+- `watch` runs immediately on registration and synchronous notification completes before `set` returns.
+- Equality uses `Object.is`; objects and arrays remain reference-based.
+- `computed` automatically tracks dependencies read by the current evaluation.
+- A failed persistence write never leaves memory ahead of storage.
+- A remote Sync update does not re-broadcast into an echo loop.
+
+For complete project structure, build configuration, and React components, continue to the [complete examples](/en/examples/).

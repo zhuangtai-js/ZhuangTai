@@ -151,6 +151,18 @@ ZhuàngTài 把 API 维持得很小，让每一行状态代码都能直接推演
 
 更多说明见[设计理念](https://zhuangtai.yojigen.cn/philosophy/)。
 
+## 体验、示例与选型
+
+- [State Lab](https://zhuangtai.yojigen.cn/playground/)：一分钟运行同步顺序、`Object.is`、动态 `computed`、Persist 失败一致性与跨上下文同步。
+- [完整示例](https://zhuangtai.yojigen.cn/examples/)：进入 CI 的 Vite Vanilla 与 React 可运行工程。
+- [为什么是 ZhuàngTài](https://zhuangtai.yojigen.cn/why-zhuangtai/)：定位、差异与不适用边界。
+- [状态模型对比](https://zhuangtai.yojigen.cn/compare/)：诚实比较 ZhuàngTài、Zustand 与 Jotai。
+- [集成与兼容性](https://zhuangtai.yojigen.cn/integrations/)：区分官方支持、已验证、Core 可用与尚未验证。
+- [可复现基准](https://zhuangtai.yojigen.cn/benchmarks/)：固定版本、测量程序、结果与限制。
+- [路线图](https://zhuangtai.yojigen.cn/roadmap/)：采用、集成与社区优先级。
+
+完整工程在 [`examples/`](./examples)，测量程序在 [`benchmarks/`](./benchmarks)。问题和想法请到 [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions)，贡献方式见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+
 ## AI / Agent 集成
 
 把下面的提示词交给 Claude Code、Codex、Cursor、OpenCode 等编码助手：
