@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="/favicon.svg"
+      type="image/svg+xml" />
+    <meta
+      name="description"
+      content="ZhuàngTài Vanilla Vite example" />
+    <title>ZhuàngTài · Vanilla Vite</title>
+  </head>
+  <body>
+    <main class="shell">
+      <p class="eyebrow">@zhuangtai-js/core</p>
+      <h1>同步状态，一眼可见</h1>
+      <p class="lede">每次操作都会立即更新 atom、computed 和下面的同步调用时间线。</p>
+
+      <section
+        class="demo"
+        aria-labelledby="counter-title">
+        <div>
+          <p
+            class="label"
+            id="counter-title">
+            当前计数
+          </p>
+          <output
+            id="count"
+            class="count"
+            aria-live="polite">
+            0
+          </output>
+          <p
+            id="parity"
+            class="parity">
+            偶数
+          </p>
+        </div>
+        <div
+          class="controls"
+          aria-label="计数操作">
+          <button
+            id="decrement"
+            type="button"
+            aria-label="减少一">
+            −
+          </button>
+          <button
+            id="reset"
+            type="button"
+            class="secondary">
+            重置
+          </button>
+          <button
+            id="increment"
+            type="button"
+            aria-label="增加一">
+            +
+          </button>
+        </div>
+      </section>
+
+      <section
+        class="timeline"
+        aria-labelledby="timeline-title">
+        <div class="timeline-heading">
+          <h2 id="timeline-title">同步时间线</h2>
+          <span>watch(value, prevValue)</span>
+        </div>
+        <ol id="events"></ol>
+      </section>
+    </main>
+    <script
+      type="module"
+      src="/src/main.ts"></script>
+  </body>
+</html>

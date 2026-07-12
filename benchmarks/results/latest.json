@@ -1,0 +1,87 @@
+{
+  "generatedAt": "2026-07-12T10:08:13.914Z",
+  "environment": {
+    "node": "v24.16.0",
+    "platform": "darwin-arm64"
+  },
+  "versions": {
+    "zhuangtaiCore": "0.5.0",
+    "zhuangtaiReact": "0.2.0",
+    "zustand": "5.0.14",
+    "jotai": "2.20.1",
+    "esbuild": "0.25.11"
+  },
+  "bundleSize": {
+    "vanilla": {
+      "zhuangtai": {
+        "bytes": 1206,
+        "gzipBytes": 638
+      },
+      "zustand": {
+        "bytes": 343,
+        "gzipBytes": 256
+      },
+      "jotai": {
+        "bytes": 7284,
+        "gzipBytes": 2984
+      }
+    },
+    "react": {
+      "zhuangtai": {
+        "bytes": 1581,
+        "gzipBytes": 793
+      },
+      "zustand": {
+        "bytes": 630,
+        "gzipBytes": 391
+      },
+      "jotai": {
+        "bytes": 9941,
+        "gzipBytes": 4081
+      }
+    },
+    "derived": {
+      "zhuangtai": {
+        "bytes": 3505,
+        "gzipBytes": 1427
+      },
+      "zustand": {
+        "bytes": 589,
+        "gzipBytes": 382
+      },
+      "jotai": {
+        "bytes": 7305,
+        "gzipBytes": 2996
+      }
+    }
+  },
+  "primitiveUpdate": {
+    "zhuangtai": {
+      "iterations": 100000,
+      "processes": 5,
+      "minMedianMs": 1.610792,
+      "maxMedianMs": 1.6680410000000023,
+      "medianOfMediansMs": 1.6217499999999987
+    },
+    "zustand": {
+      "iterations": 100000,
+      "processes": 5,
+      "minMedianMs": 1.177707999999999,
+      "maxMedianMs": 1.2495830000000012,
+      "medianOfMediansMs": 1.2115420000000015
+    },
+    "jotai": {
+      "iterations": 100000,
+      "processes": 5,
+      "minMedianMs": 36.45554200000001,
+      "maxMedianMs": 37.70875000000001,
+      "medianOfMediansMs": 36.676874999999995
+    }
+  },
+  "persistenceFailure": {
+    "scenario": "state starts at 0; persistence of set(1) throws 'disk full'",
+    "zhuangtaiMemoryValue": 0,
+    "zustandMemoryValue": 1,
+    "jotaiMemoryValue": 1
+  }
+}
