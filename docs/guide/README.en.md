@@ -57,8 +57,12 @@ stop();
 | Package                                                             | Purpose                                                                  | Documentation                                                       |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | [`@zhuangtai-js/core`](../../packages/core/README.md#english)       | Framework-agnostic state core with zero third-party runtime dependencies | [API reference](https://zhuangtai.yojigen.cn/en/reference/core/)    |
-| [`@zhuangtai-js/react`](../../packages/react/README.md#english)     | React 18/19 hooks for atoms and computeds                                | [React guide](https://zhuangtai.yojigen.cn/en/guides/react/)        |
-| [`@zhuangtai-js/persist`](../../packages/persist/README.md#english) | Persist atoms with synchronous storage                                   | [API reference](https://zhuangtai.yojigen.cn/en/reference/persist/) |
+| [`@zhuangtai-js/react`](../../packages/react/README.md#english)     | React hooks                                                              | [React guide](https://zhuangtai.yojigen.cn/en/guides/react/)        |
+| [`@zhuangtai-js/preact`](../../packages/preact/README.md#english)   | Preact hooks                                                             | [API reference](https://zhuangtai.yojigen.cn/en/reference/preact/)  |
+| [`@zhuangtai-js/svelte`](../../packages/svelte/README.md#english)   | Standard Svelte stores                                                   | [API reference](https://zhuangtai.yojigen.cn/en/reference/svelte/)  |
+| [`@zhuangtai-js/vue`](../../packages/vue/README.md#english)         | Read-only Vue computed refs and setters                                  | [API reference](https://zhuangtai.yojigen.cn/en/reference/vue/)     |
+| [`@zhuangtai-js/solid`](../../packages/solid/README.md#english)     | Solid accessors and setters                                              | [API reference](https://zhuangtai.yojigen.cn/en/reference/solid/)   |
+| [`@zhuangtai-js/persist`](../../packages/persist/README.md#english) | Persist and migrate atoms with synchronous storage                       | [API reference](https://zhuangtai.yojigen.cn/en/reference/persist/) |
 | [`@zhuangtai-js/freeze`](../../packages/freeze/README.md#english)   | Deep-freeze values during development to catch in-place mutation         | [API reference](https://zhuangtai.yojigen.cn/en/reference/freeze/)  |
 | [`@zhuangtai-js/immer`](../../packages/immer/README.md#english)     | Write immutable updates with Immer drafts                                | [API reference](https://zhuangtai.yojigen.cn/en/reference/immer/)   |
 | [`@zhuangtai-js/sync`](../../packages/sync/README.md#english)       | Sync across same-origin contexts with `BroadcastChannel`                 | [API reference](https://zhuangtai.yojigen.cn/en/reference/sync/)    |
@@ -85,9 +89,13 @@ Extension packages declare only verified peer versions. The current release line
 | ----------------------------- | -------------------- | --------------------------------- |
 | `@zhuangtai-js/freeze@0.2.x`  | `^0.5.0`             | —                                 |
 | `@zhuangtai-js/immer@0.2.x`   | `^0.5.0`             | — (Immer is a regular dependency) |
-| `@zhuangtai-js/persist@0.3.x` | `^0.5.0`             | —                                 |
+| `@zhuangtai-js/persist@0.4.x` | `^0.5.0`             | —                                 |
+| `@zhuangtai-js/preact@0.1.x`  | `^0.5.0`             | Preact `>=10.9 <11`               |
 | `@zhuangtai-js/react@0.2.x`   | `^0.5.0`             | React `>=18 <20`                  |
+| `@zhuangtai-js/solid@0.1.x`   | `^0.5.0`             | Solid `>=1.5 <2`                  |
+| `@zhuangtai-js/svelte@0.1.x`  | `^0.5.0`             | Svelte `>=4.2 <6`                 |
 | `@zhuangtai-js/sync@0.2.x`    | `^0.5.0`             | —                                 |
+| `@zhuangtai-js/vue@0.1.x`     | `^0.5.0`             | Vue `>=3.2 <4`                    |
 
 ## React
 
@@ -116,7 +124,7 @@ function Counter() {
 }
 ```
 
-`useAtomValue` also reads computeds. Use `useSetAtom` when only a setter is needed, and use `createAtomHook` or `createComputedHook` for bound hooks. See the [`@zhuangtai-js/react` README](../../packages/react/README.md#english) for complete details.
+`useAtomValue` also reads computeds. Use `useSetAtom` when only a setter is needed, and use `createAtomHook` or `createComputedHook` for bound hooks. See the [`@zhuangtai-js/react` README](../../packages/react/README.md#english) for complete details. For native APIs, lifecycle, and SSR boundaries in Preact, Svelte, Vue, and Solid, read [Framework Adapter Best Practices](https://zhuangtai.yojigen.cn/en/guides/framework-adapters/).
 
 ## API at a glance
 

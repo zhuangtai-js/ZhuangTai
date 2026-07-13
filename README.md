@@ -54,14 +54,18 @@ stop();
 
 ## 包
 
-| 包                                                      | 用途                                       | 文档                                                        |
-| ------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------- |
-| [`@zhuangtai-js/core`](./packages/core/README.md)       | 框架无关的状态核心，零第三方运行时依赖     | [API 参考](https://zhuangtai.yojigen.cn/reference/core/)    |
-| [`@zhuangtai-js/react`](./packages/react/README.md)     | 面向 atom 和 computed 的 React 18/19 hooks | [React 指南](https://zhuangtai.yojigen.cn/guides/react/)    |
-| [`@zhuangtai-js/persist`](./packages/persist/README.md) | 使用同步 storage 持久化 atom               | [API 参考](https://zhuangtai.yojigen.cn/reference/persist/) |
-| [`@zhuangtai-js/freeze`](./packages/freeze/README.md)   | 开发期深冻结，尽早发现原地修改             | [API 参考](https://zhuangtai.yojigen.cn/reference/freeze/)  |
-| [`@zhuangtai-js/immer`](./packages/immer/README.md)     | 使用 Immer 草稿编写不可变更新              | [API 参考](https://zhuangtai.yojigen.cn/reference/immer/)   |
-| [`@zhuangtai-js/sync`](./packages/sync/README.md)       | 通过 `BroadcastChannel` 跨同源上下文同步   | [API 参考](https://zhuangtai.yojigen.cn/reference/sync/)    |
+| 包                                                      | 用途                                     | 文档                                                        |
+| ------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------- |
+| [`@zhuangtai-js/core`](./packages/core/README.md)       | 框架无关的状态核心，零第三方运行时依赖   | [API 参考](https://zhuangtai.yojigen.cn/reference/core/)    |
+| [`@zhuangtai-js/react`](./packages/react/README.md)     | React hooks                              | [React 指南](https://zhuangtai.yojigen.cn/guides/react/)    |
+| [`@zhuangtai-js/preact`](./packages/preact/README.md)   | Preact hooks                             | [API 参考](https://zhuangtai.yojigen.cn/reference/preact/)  |
+| [`@zhuangtai-js/svelte`](./packages/svelte/README.md)   | 标准 Svelte store                        | [API 参考](https://zhuangtai.yojigen.cn/reference/svelte/)  |
+| [`@zhuangtai-js/vue`](./packages/vue/README.md)         | 只读 Vue computed ref 与 setter          | [API 参考](https://zhuangtai.yojigen.cn/reference/vue/)     |
+| [`@zhuangtai-js/solid`](./packages/solid/README.md)     | Solid accessor 与 setter                 | [API 参考](https://zhuangtai.yojigen.cn/reference/solid/)   |
+| [`@zhuangtai-js/persist`](./packages/persist/README.md) | 使用同步 storage 持久化并迁移 atom       | [API 参考](https://zhuangtai.yojigen.cn/reference/persist/) |
+| [`@zhuangtai-js/freeze`](./packages/freeze/README.md)   | 开发期深冻结，尽早发现原地修改           | [API 参考](https://zhuangtai.yojigen.cn/reference/freeze/)  |
+| [`@zhuangtai-js/immer`](./packages/immer/README.md)     | 使用 Immer 草稿编写不可变更新            | [API 参考](https://zhuangtai.yojigen.cn/reference/immer/)   |
+| [`@zhuangtai-js/sync`](./packages/sync/README.md)       | 通过 `BroadcastChannel` 跨同源上下文同步 | [API 参考](https://zhuangtai.yojigen.cn/reference/sync/)    |
 
 插件安装在 `createAtom()` 创建的 creator 上：
 
@@ -85,9 +89,13 @@ const theme = atom("light", {
 | ----------------------------- | -------------------- | ---------------------------- |
 | `@zhuangtai-js/freeze@0.2.x`  | `^0.5.0`             | —                            |
 | `@zhuangtai-js/immer@0.2.x`   | `^0.5.0`             | —（Immer 是普通 dependency） |
-| `@zhuangtai-js/persist@0.3.x` | `^0.5.0`             | —                            |
+| `@zhuangtai-js/persist@0.4.x` | `^0.5.0`             | —                            |
+| `@zhuangtai-js/preact@0.1.x`  | `^0.5.0`             | Preact `>=10.9 <11`          |
 | `@zhuangtai-js/react@0.2.x`   | `^0.5.0`             | React `>=18 <20`             |
+| `@zhuangtai-js/solid@0.1.x`   | `^0.5.0`             | Solid `>=1.5 <2`             |
+| `@zhuangtai-js/svelte@0.1.x`  | `^0.5.0`             | Svelte `>=4.2 <6`            |
 | `@zhuangtai-js/sync@0.2.x`    | `^0.5.0`             | —                            |
+| `@zhuangtai-js/vue@0.1.x`     | `^0.5.0`             | Vue `>=3.2 <4`               |
 
 ## React
 
@@ -116,7 +124,7 @@ function Counter() {
 }
 ```
 
-`useAtomValue` 也可以读取 `computed`；只需要 setter 时使用 `useSetAtom`，需要绑定式 hook 时使用 `createAtomHook` 或 `createComputedHook`。完整说明见 [`@zhuangtai-js/react` README](./packages/react/README.md)。
+`useAtomValue` 也可以读取 `computed`；只需要 setter 时使用 `useSetAtom`，需要绑定式 hook 时使用 `createAtomHook` 或 `createComputedHook`。完整说明见 [`@zhuangtai-js/react` README](./packages/react/README.md)。Preact、Svelte、Vue 与 Solid 的原生 API、生命周期和 SSR 边界见[框架适配器最佳实践](https://zhuangtai.yojigen.cn/guides/framework-adapters/)。
 
 ## API 一览
 
