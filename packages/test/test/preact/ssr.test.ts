@@ -1,9 +1,9 @@
 // @vitest-environment node
 import type { ReadableAtom } from "@zhuangtai-js/core";
-import { useAtomValue } from "@zhuangtai-js/preact";
 import { createElement } from "preact";
 import { renderToString } from "preact-render-to-string";
 import { describe, expect, it } from "vitest";
+import { useAtomValue } from "../../../preact/src/index.ts";
 
 describe("Preact adapter SSR surface", () => {
   it("renders from getSnapshot without subscribing", () => {

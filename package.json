@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build",
-    "build:test": "node --test scripts/build-artifacts.test.mjs",
+    "build:test": "node --test scripts/build-artifacts.test.mjs scripts/adapter-local-tests.test.mjs",
     "docs:test": "node --test scripts/readme-consistency.test.mjs",
     "browser:test": "pnpm --filter @zhuangtai-js/test browser:test",
     "pack:test": "pnpm build && node --test scripts/pack-consumer.test.mjs",

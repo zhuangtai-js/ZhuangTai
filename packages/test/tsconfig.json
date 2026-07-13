@@ -9,6 +9,14 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["test", "vitest.config.ts", "vitest.browser.config.ts", "../vue/src", "../solid/src"],
+  "include": [
+    "test",
+    "vitest.config.ts",
+    "vitest.browser.config.ts",
+    "../preact/src",
+    "../svelte/src",
+    "../vue/src",
+    "../solid/src"
+  ],
   "exclude": ["dist"]
 }

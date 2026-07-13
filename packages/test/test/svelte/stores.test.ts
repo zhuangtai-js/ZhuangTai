@@ -1,8 +1,8 @@
 import { atom, computed } from "@zhuangtai-js/core";
 import type { ReadableAtom } from "@zhuangtai-js/core";
-import { toReadable, toWritable } from "@zhuangtai-js/svelte";
 import { derived, get, readonly } from "svelte/store";
 import { describe, expect, it, vi } from "vitest";
+import { toReadable, toWritable } from "../../../svelte/src/index.ts";
 
 describe("toReadable", () => {
   it("subscribes through core watch and emits the current value exactly once", () => {

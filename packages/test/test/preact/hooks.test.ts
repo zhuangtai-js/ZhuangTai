@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 import { atom, computed } from "@zhuangtai-js/core";
+import { createElement, render } from "preact";
+import { act } from "preact/test-utils";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createAtomHook,
   createComputedHook,
   useAtom,
   useAtomValue,
   useSetAtom,
-} from "@zhuangtai-js/preact";
-import { createElement, render } from "preact";
-import { act } from "preact/test-utils";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+} from "../../../preact/src/index.ts";
 
 let container: HTMLDivElement;
 

@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { atom } from "@zhuangtai-js/core";
 import type { ReadableAtom, Watcher } from "@zhuangtai-js/core";
-import { useAtomValue } from "@zhuangtai-js/preact";
 import { createElement, render } from "preact";
 import { useLayoutEffect } from "preact/hooks";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { useAtomValue } from "../../../preact/src/index.ts";
 
 type TrackedReadable = {
   readonly source: ReadableAtom<number>;

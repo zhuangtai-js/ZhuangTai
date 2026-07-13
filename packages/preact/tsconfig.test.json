@@ -1,9 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "../test",
+    "rootDir": "..",
     "noEmit": true,
-    "composite": false
+    "composite": false,
+    "allowImportingTsExtensions": true
   },
-  "include": ["../test/test/preact/**/*.ts"]
+  "include": ["src", "../test/test/preact/**/*.ts"]
 }
