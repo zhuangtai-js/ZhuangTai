@@ -1,16 +1,31 @@
-import { atom, computed, createAtom, type Atom, type AtomValue, type Computed } from "@zhuangtai-js/core";
+import {
+  atom,
+  computed,
+  createAtom,
+  type Atom,
+  type AtomValue,
+  type Computed,
+} from "@zhuangtai-js/core";
 // @ts-expect-error AtomCreatorArgs is internal type plumbing, not public API.
 import type { AtomCreatorArgs } from "@zhuangtai-js/core";
 // @ts-expect-error AtomCreatorOptions is internal type plumbing, not public API.
 import type { AtomCreatorOptions } from "@zhuangtai-js/core";
-import { persist, type PersistCodec, type PersistOptions, type PersistStorage } from "@zhuangtai-js/persist";
+import {
+  definePersistMigration,
+  persist,
+  type PersistCodec,
+  type PersistMigration,
+  type PersistOptions,
+  type PersistStorage,
+} from "@zhuangtai-js/persist";
 
 type Expect<T extends true> = T;
-type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
-  ? (<T>() => T extends B ? 1 : 2) extends <T>() => T extends A ? 1 : 2
-    ? true
-    : false
-  : false;
+type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+    ? (<T>() => T extends B ? 1 : 2) extends <T>() => T extends A ? 1 : 2
+      ? true
+      : false
+    : false;
 
 const numberAtom = atom(0);
 const stringAtom = atom("x");
@@ -41,7 +56,24 @@ computed((value: number) => value * 2);
 const createPersistedAtom = createAtom().use(persist);
 
 type _PersistedCreatorOptions = Expect<
-  Equal<NonNullable<Parameters<typeof createPersistedAtom>[1]>, { readonly persist?: PersistOptions }>
+  Equal<
+    NonNullable<Parameters<typeof createPersistedAtom>[1]>,
+    { readonly persist?: PersistOptions }
+  >
+>;
+
+type NarrowMigration = (value: string) => unknown;
+type _NarrowMigrationCannotCrossStorageBoundary = Expect<
+  Equal<NarrowMigration extends PersistMigration ? true : false, false>
+>;
+type NarrowReturningMigration = (value: string) => string;
+type _HelperCannotAcceptNarrowMigration = Expect<
+  Equal<
+    NarrowReturningMigration extends Parameters<typeof definePersistMigration<string>>[0]
+      ? true
+      : false,
+    false
+  >
 >;
 
 const storage: PersistStorage = {
