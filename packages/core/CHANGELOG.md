@@ -1,5 +1,27 @@
 # core 更新日志 / Changelog
 
+## 0.5.1 - 2026-07-13
+
+### 优化
+
+- 通知队列和 computed 生命周期队列改为游标遍历，避免在长队列中反复调用 `Array.shift()` 搬移剩余元素。
+- 通知队列为空时直接跳过 flush，减少普通 atom 同步更新路径中的固定开销。
+
+### 说明
+
+- 本次仅优化内部队列实现，不改变公开 API 或运行语义：`set` 仍立即生效，`watch` 仍同步执行，相等性仍使用 `Object.is`。
+- flush 期间新加入的任务仍在同一同步队列中继续执行；错误聚合、重入顺序和深层 computed 传播行为保持不变。
+
+### Optimized
+
+- Switched the notification and computed lifecycle queues to cursor-based iteration, avoiding repeated `Array.shift()` calls and the resulting element moves in long queues.
+- Skip notification flushing when the queue is empty, reducing fixed overhead on ordinary synchronous atom updates.
+
+### Notes
+
+- This release only optimizes internal queue handling. The public API and runtime semantics are unchanged: `set` still applies immediately, `watch` remains synchronous, and equality still uses `Object.is`.
+- Jobs added during a flush still run in the same synchronous queue; error aggregation, reentrant ordering, and deep computed propagation remain unchanged.
+
 ## 0.5.0 - 2026-07-11
 
 ### 修复

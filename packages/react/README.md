@@ -52,7 +52,7 @@ function ResetButton() {
 - `useSetAtom(atom)`：返回一个可写 `Atom` 的稳定 setter，不订阅值。只用 setter 的组件不会因值变化而重渲染。
 - `useAtom(atom)`：读写一个可写 `Atom`，类似 `useState`，返回 `[value, setter]`。
 
-## 绑定 hook（类 zustand）
+## 绑定 Hook
 
 如果不想在每个组件里传 atom，可以在创建时把 atom 绑进一个 hook。两个工厂与 core 的 `atom` / `computed` 一一对应，在创建时就区分普通 store 和计算 store。
 
@@ -151,7 +151,7 @@ function ResetButton() {
 - `useSetAtom(atom)`: returns a stable setter for a writable `Atom` without subscribing to the value. A component that uses only the setter does not re-render when the value changes.
 - `useAtom(atom)`: reads and writes a writable `Atom`, like `useState`, returning `[value, setter]`.
 
-## Bound hooks (zustand-style)
+## Bound hooks
 
 If you would rather not pass an atom in every component, bind an atom into a hook at creation time. The two factories map one-to-one to core's `atom` / `computed`, so you distinguish writable stores from computed stores when you create the hook.
 

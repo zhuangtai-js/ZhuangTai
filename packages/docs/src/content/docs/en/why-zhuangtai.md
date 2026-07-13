@@ -3,12 +3,12 @@ title: Why ZhuàngTài
 sidebar:
   label: Why ZhuàngTài
   order: 2
-description: Understand ZhuàngTài's position, differentiators, and boundaries.
+description: See how direct, synchronous, type-safe state primitives reduce learning and usage cost.
 ---
 
-ZhuàngTài provides **predictable state primitives for JavaScript libraries and applications**. It does not try to be “a smaller Zustand” or “a more capable Jotai.” It turns synchronous, direct, composable state behavior into a small set of foundations that are easy to reason about.
+ZhuàngTài provides **predictable state primitives for JavaScript libraries and applications**. Its goal is to keep state code direct: a small, clear API; data flow that follows source order; and capabilities that compose only when needed.
 
-## It does not optimize for API count
+## Data flow you can read at a glance
 
 ```ts
 const count = atom(0);
@@ -20,19 +20,15 @@ count.watch((value, prevValue) => {
 count.set(1);
 ```
 
-The source order is the runtime order: `watch` runs immediately on registration; `set` applies immediately; callbacks complete synchronously; equality uses `Object.is`. Core has no hidden batching, transactions, debouncing, or scheduler.
+Source order is runtime order: `watch` runs immediately on registration; `set` applies immediately; callbacks complete synchronously; equality uses `Object.is`. Core does not hide update timing or introduce implicit scheduling.
 
-## Four reasons to choose it
+## Four core values
 
 1. **Direct `get / set / watch`**: no framework lifecycle is required, which also suits SDKs, Web Components, editors, media players, and Canvas tools.
-2. **A synchronous derived graph**: `computed` automatically tracks dependencies actually read and does not notify when the derived value is unchanged.
-3. **Explicit error semantics**: every watcher is attempted before collected errors are thrown; failures do not silently change call order.
-4. **A persistence commit boundary**: Persist writes storage before committing memory, so a failed write never leaves memory ahead of storage.
+2. **Automatic derived state**: `computed` tracks the dependencies read by the current evaluation and only notifies when the derived value changes.
+3. **TypeScript first**: the public API preserves precise inference so the type system can enforce constraints that are knowable statically.
+4. **Capabilities on demand**: React, Persist, Sync, Immer, and Freeze live in separate packages while Core keeps zero third-party runtime dependencies.
 
-## When not to choose it
+## Start with working examples
 
-- If you need a mature selector middleware ecosystem, Redux DevTools workflows, or many existing Zustand integrations, evaluate Zustand first.
-- If you need asynchronous derived atoms, Suspense, writable derived state, or a broad utilities ecosystem, evaluate Jotai first.
-- If you need an official Vue, Svelte, Solid, or React Native adapter, check [integrations and compatibility](/en/integrations/) first; do not treat “Core may work” as “officially supported.”
-
-Continue to the [state model comparison](/en/compare/) and [reproducible benchmarks](/en/benchmarks/) for evidence and limitations.
+Try the real React components in [Interactive Examples](/en/playground/), then continue with [Core Concepts](/en/guides/core-concepts/) and [Integrations & Compatibility](/en/integrations/).

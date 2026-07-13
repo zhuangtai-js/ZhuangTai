@@ -151,17 +151,15 @@ Not a good fit:
 
 Read more on the [Philosophy](https://zhuangtai.yojigen.cn/en/philosophy/) page.
 
-## Playground, examples, and choosing a model
+## Playground, examples, and integrations
 
 - [Interactive examples](https://zhuangtai.yojigen.cn/en/playground/): use a counter, task list, and preferences panel to observe real React state updates.
 - [Complete examples](https://zhuangtai.yojigen.cn/en/examples/): runnable Vite Vanilla and React projects ready to adapt.
-- [Why ZhuàngTài](https://zhuangtai.yojigen.cn/en/why-zhuangtai/): positioning, differentiators, and boundaries.
-- [State model comparison](https://zhuangtai.yojigen.cn/en/compare/): an honest comparison of ZhuàngTài, Zustand, and Jotai.
-- [Integrations and compatibility](https://zhuangtai.yojigen.cn/en/integrations/): official support, direct usage, SSR boundaries, and environments without an official guide.
-- [Reproducible benchmarks](https://zhuangtai.yojigen.cn/en/benchmarks/): pinned versions, programs, results, and limitations.
-- [Roadmap](https://zhuangtai.yojigen.cn/en/roadmap/): adoption, integration, and community priorities.
+- [Why ZhuàngTài](https://zhuangtai.yojigen.cn/en/why-zhuangtai/): direct, synchronous, and type-safe design values.
+- [Integrations and compatibility](https://zhuangtai.yojigen.cn/en/integrations/): framework, runtime, SSR, and official adapter usage.
+- [Showcase](https://zhuangtai.yojigen.cn/en/showcase/): projects built with ZhuàngTài.
 
-Complete projects live in [`examples/`](../../examples), and measurement programs live in [`benchmarks/`](../../benchmarks). Bring questions and ideas to [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions); see [`CONTRIBUTING.md`](../../CONTRIBUTING.md) to contribute.
+Complete projects live in [`examples/`](../../examples). Bring questions and ideas to [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions); see [`CONTRIBUTING.md`](../../CONTRIBUTING.md) to contribute.
 
 ## AI / agent integration
 

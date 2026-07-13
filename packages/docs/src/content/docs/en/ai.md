@@ -31,10 +31,6 @@ Paste this prompt into your agent. It tells the model to read the installation g
 Read https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/guide/installation.md and follow its steps to install and configure ZhuàngTài in this project.
 ```
 
-## MCP
-
-An MCP server is on the roadmap, but it has not shipped yet. When it lands, it will expose docs and API lookup so agents can query the needed information right inside the session.
-
 ## Next steps
 
 - Read [Philosophy](/en/philosophy/) to see why the library looks the way it does.

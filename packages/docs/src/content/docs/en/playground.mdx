@@ -18,7 +18,7 @@ Click a button, add a task, or change a preference and the interface updates imm
 ## Example takeaways
 
 - **State can live outside components**: multiple components can read one atom without an extra Provider.
-- **React integration stays familiar**: `useAtom` feels close to `useState`, while state is not bound to one component lifecycle.
+- **React integration stays familiar**: `useAtom` feels like `useState`, while the atom stays outside the component.
 - **Derived values need no dependency array**: `computed` tracks the atoms read by the current evaluation.
 - **Objects and arrays use immutable updates**: the task list creates new arrays and objects when it changes.
 - **Capabilities compose on demand**: only the preferences example adds `persist`, while Core stays lightweight.

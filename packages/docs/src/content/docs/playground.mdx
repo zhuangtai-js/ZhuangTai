@@ -11,14 +11,14 @@ import InteractiveExamples from "../../components/InteractiveExamples.astro";
 
 ## 先试用，再阅读 API
 
-点击按钮、添加任务或切换偏好，界面会立即更新。这里运行的是实际的 <code className="whitespace-nowrap">@zhuangtai-js/core</code>、<code className="whitespace-nowrap">@zhuangtai-js/react</code> 和 <code className="whitespace-nowrap">@zhuangtai-js/persist</code>，因此你看到的就是应用中的真实使用方式。
+点击按钮、添加任务或切换偏好，<span className="whitespace-nowrap">界面会立即更新。</span>示例直接运行 <code className="whitespace-nowrap">@zhuangtai-js/core</code>、<code className="whitespace-nowrap">@zhuangtai-js/react</code> 和 <code className="whitespace-nowrap">@zhuangtai-js/persist</code>，交互行为与实际应用一致。
 
 <InteractiveExamples locale="zh" />
 
 ## 示例要点
 
 - **状态可以放在组件外部**：多个组件读取同一个 atom，不需要额外 Provider。
-- **React 接入保持熟悉**：`useAtom` 的使用方式接近 `useState`，但状态不绑定单个组件生命周期。
+- **React 接入保持熟悉**：`useAtom` 像 `useState` 一样调用，atom 可以放在组件外部。
 - **派生值不需要手写依赖数组**：`computed` 会追踪本次求值实际读取的 atom。
 - **对象和数组保持不可变更新**：任务清单通过创建新数组和新对象触发更新。
 - **能力按需组合**：只有偏好设置示例引入 `persist`，Core 本身仍保持轻量。

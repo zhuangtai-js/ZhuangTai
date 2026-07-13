@@ -33,10 +33,10 @@ function CounterControls({ locale }: { readonly locale: Locale }) {
   const [, setCount] = useAtom(countState);
 
   return (
-    <div className="m-0! mt-4! grid grid-cols-[2.75rem_minmax(6rem,1fr)_2.75rem] gap-2">
+    <div className="m-0! mt-4! grid grid-cols-3 gap-2">
       <button
         type="button"
-        className={`${secondaryButton} w-11 px-0 text-lg`}
+        className={`${secondaryButton} px-0 text-lg`}
         aria-label={copy.decrease}
         onClick={() => setCount((value) => value - 1)}>
         −
@@ -49,7 +49,7 @@ function CounterControls({ locale }: { readonly locale: Locale }) {
       </button>
       <button
         type="button"
-        className={`${primaryButton} w-11 px-0 text-lg`}
+        className={`${primaryButton} px-0 text-lg`}
         aria-label={copy.increase}
         onClick={() => setCount((value) => value + 1)}>
         +
@@ -66,7 +66,7 @@ export function CounterExample({ locale }: { readonly locale: Locale }) {
       <div className="m-0! flex flex-wrap items-start justify-between gap-4">
         <div className="m-0!">
           <h4 className="m-0! text-lg leading-tight">{copy.title}</h4>
-          <p className="mt-1! mb-0! text-sm leading-6 text-[var(--sl-color-gray-2)]">
+          <p className="mt-1! mb-0! text-sm leading-6 text-pretty text-[var(--sl-color-gray-2)]">
             {copy.description}
           </p>
         </div>

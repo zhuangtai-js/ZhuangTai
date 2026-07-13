@@ -12,7 +12,7 @@ body:
     id: package
     attributes:
       label: 包与版本 / Package and version
-      placeholder: "@zhuangtai-js/core@0.5.0"
+      placeholder: "@zhuangtai-js/core@<version>"
     validations:
       required: true
   - type: dropdown

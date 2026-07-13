@@ -10,19 +10,17 @@ ZhuàngTài Core is independent of UI frameworks. You can create and subscribe t
 
 ## Support overview
 
-| Environment          | Support               | Guidance                                                                                 |
-| -------------------- | --------------------- | ---------------------------------------------------------------------------------------- |
-| Vanilla ESM          | Official              | Use `@zhuangtai-js/core` directly; Core has no third-party runtime dependencies          |
-| TypeScript           | Official              | Every public package includes type declarations                                          |
-| React 18 / 19        | Official              | Use `useAtom`, `useAtomValue`, and `useSetAtom` from `@zhuangtai-js/react`               |
-| Vite                 | Ready to use          | Import the ESM packages normally in Vanilla or React projects                            |
-| Astro                | Ready to use          | Use the React adapter inside React islands, or Core directly in plain scripts            |
-| Next.js              | Mind the SSR boundary | Client Components can use the React adapter; server state should be isolated per request |
-| Vue / Svelte / Solid | Core available        | Integrate manually with `get`, `set`, and `watch`; no official adapter yet               |
-| Node.js ESM          | Ready to use          | Import with `import` for SDKs, service state, and tooling                                |
-| React Native / Expo  | No official guide yet | The API does not depend on the DOM, but there is no dedicated integration guide yet      |
-| Bun / Deno           | No official guide yet | The ESM API is portable, but there is no formal runtime support commitment yet           |
-| CommonJS `require`   | Unsupported           | Packages are ESM-only; use `import`                                                      |
+| Environment          | Recommended approach  | Notes                                                                              |
+| -------------------- | --------------------- | ---------------------------------------------------------------------------------- |
+| Vanilla ESM          | Use Core              | Import `@zhuangtai-js/core` directly; Core has no third-party runtime dependencies |
+| TypeScript           | Use directly          | Every public package includes type declarations                                    |
+| React 18 / 19        | Use the React package | Use `useAtom`, `useAtomValue`, and `useSetAtom` from `@zhuangtai-js/react`         |
+| Vite                 | Standard ESM imports  | Vanilla and React projects can use the packages directly                           |
+| Astro                | React island or Core  | Use the React adapter in React islands, or Core directly in plain scripts          |
+| Next.js              | Client Components     | Use the React adapter and isolate server state per request                         |
+| Vue / Svelte / Solid | Core API integration  | Connect `get`, `set`, and `watch` to the framework lifecycle                       |
+| Node.js ESM          | Use Core              | Suitable for SDKs, service state, and tooling                                      |
+| CommonJS projects    | Import through ESM    | Packages use the ESM-only format; use `import`                                     |
 
 ## React and Astro
 
@@ -46,4 +44,4 @@ The React adapter integrates through `useSyncExternalStore`. Client Components c
 - Mutable state associated with a request or user should be created per request, not shared through one module-level atom.
 - Browser APIs such as `localStorage` should only be accessed in the client environment.
 
-A complete Next.js guide is still planned. Until then, treat request isolation as part of your application architecture rather than something a global atom handles automatically.
+These isolation principles apply to every server-rendered environment: global state suits application constants or shared client state, while request-specific mutable state belongs to the request lifecycle.

@@ -31,10 +31,6 @@ npx skills add zhuangtai-js/ZhuangTai
 请阅读 https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/guide/installation.md 并按其中的步骤在当前项目中安装并配置 ZhuàngTài。
 ```
 
-## MCP
-
-MCP 服务器已经在规划中，但还没有发布。等它上线后，会提供文档和 API 查询入口，方便代理直接在会话里查到需要的内容。
-
 ## 下一步
 
 - 先看 [设计理念](/philosophy/) 了解这个库为什么长这样。
