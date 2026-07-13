@@ -22,20 +22,6 @@ ZhuàngTài Core is independent of UI frameworks. You can create and subscribe t
 | Node.js ESM          | Use Core              | Suitable for SDKs, service state, and tooling                                      |
 | CommonJS projects    | Import through ESM    | Packages use the ESM-only format; use `import`                                     |
 
-## React and Astro
-
-A React island in Astro uses the adapter just like a regular React application:
-
-```astro
----
-import Counter from "../components/Counter.tsx";
----
-
-<Counter client:load />
-```
-
-Inside `Counter.tsx`, use `@zhuangtai-js/react` normally. If a page does not need React, Core's `atom` and `watch` can be used from a regular module or script instead.
-
 ## Next.js and server rendering
 
 The React adapter integrates through `useSyncExternalStore`. Client Components can use it normally, but an SSR application must still decide who owns each state instance:
