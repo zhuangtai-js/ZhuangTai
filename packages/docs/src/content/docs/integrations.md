@@ -22,20 +22,6 @@ ZhuàngTài Core 不依赖 UI 框架。你可以在普通 JavaScript、组件库
 | Node.js ESM          | 使用 Core       | 适合 SDK、服务状态与工具代码                                            |
 | CommonJS 项目        | 通过 ESM 引入   | 发布包采用 ESM-only 格式，请使用 `import`                               |
 
-## React 与 Astro
-
-在 Astro 中使用 React 岛时，组件内部与普通 React 应用相同：
-
-```astro
----
-import Counter from "../components/Counter.tsx";
----
-
-<Counter client:load />
-```
-
-`Counter.tsx` 中可以直接使用 `@zhuangtai-js/react`。如果页面不需要 React，也可以在普通模块或脚本中使用 Core 的 `atom` 与 `watch`。
-
 ## Next.js 与服务端渲染
 
 React adapter 使用 `useSyncExternalStore` 接入 React。客户端组件可以采用常规方式使用，但 SSR 应用还需要决定状态属于谁：

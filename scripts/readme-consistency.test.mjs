@@ -678,8 +678,8 @@ describe("README consistency", () => {
     for (const relativePath of playgroundPaths) {
       const source = readText(relativePath);
       assert.ok(
-        source.includes("tableOfContents: false"),
-        `${relativePath} must disable the page TOC`,
+        source.includes("tableOfContents: true"),
+        `${relativePath} must enable the page TOC`,
       );
       assert.ok(
         source.includes("<InteractiveExamples"),
