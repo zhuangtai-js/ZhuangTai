@@ -84,7 +84,7 @@ export function enqueueNotification(job: NotificationJob): void {
 }
 
 function flushNotifications(): void {
-  if (isFlushingNotifications) {
+  if (isFlushingNotifications || notificationQueue.length === 0) {
     return;
   }
 
@@ -92,11 +92,11 @@ function flushNotifications(): void {
   const errors: unknown[] = [];
 
   try {
-    for (;;) {
-      const job = notificationQueue.shift();
+    for (let index = 0; index < notificationQueue.length; index += 1) {
+      const job = notificationQueue[index];
 
       if (!job) {
-        break;
+        continue;
       }
 
       pendingNotifications.delete(job);
@@ -108,6 +108,7 @@ function flushNotifications(): void {
       }
     }
   } finally {
+    notificationQueue.length = 0;
     isFlushingNotifications = false;
   }
 

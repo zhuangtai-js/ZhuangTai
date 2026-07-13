@@ -25,8 +25,8 @@ function enqueueLifecycle(job: LifecycleJob): void {
   isFlushingLifecycle = true;
 
   try {
-    for (;;) {
-      const nextJob = lifecycleQueue.shift();
+    for (let index = 0; index < lifecycleQueue.length; index += 1) {
+      const nextJob = lifecycleQueue[index];
 
       if (!nextJob) {
         break;
@@ -34,10 +34,8 @@ function enqueueLifecycle(job: LifecycleJob): void {
 
       nextJob();
     }
-  } catch (error) {
-    lifecycleQueue.length = 0;
-    throw error;
   } finally {
+    lifecycleQueue.length = 0;
     isFlushingLifecycle = false;
   }
 }
