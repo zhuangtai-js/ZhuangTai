@@ -97,8 +97,12 @@ const currentDocumentationPaths = [
   ]),
 ].toSorted((left, right) => left.localeCompare(right));
 const publicDocumentationPaths = [
-  ...new Set(["ROADMAP.md", ...currentDocumentationPaths, ...packageDocumentationPaths]),
+  ...new Set([...currentDocumentationPaths, ...packageDocumentationPaths]),
 ].toSorted((left, right) => left.localeCompare(right));
+const positioningDocumentationPaths = publicDocumentationPaths.filter(
+  (relativePath) => !relativePath.endsWith("/CHANGELOG.md"),
+);
+const generatedSiteRoutes = new Set(["/llms.txt", "/llms-full.txt", "/llms-small.txt"]);
 
 function blockquoteContent(line, maximumDepth = Number.POSITIVE_INFINITY) {
   let content = line;
@@ -366,10 +370,20 @@ function localDocumentationTargets(markdown, source) {
     targets.push(match[1]);
   }
 
-  return targets.filter(
-    (target) =>
-      target.length > 0 && (target.startsWith("#") || !/^[a-z][a-z\d+.-]*:/iu.test(target)),
-  );
+  return targets
+    .map((target) => {
+      if (target.startsWith("https://zhuangtai.yojigen.cn/")) {
+        const url = new URL(target);
+        return `${url.pathname}${url.search}${url.hash}`;
+      }
+
+      return target;
+    })
+    .filter(
+      (target) =>
+        target.length > 0 &&
+        (target.startsWith("#") || !/^[a-z][a-z\d+.-]*:/iu.test(target)),
+    );
 }
 
 function normalizeDocumentationRoute(route) {
@@ -400,6 +414,11 @@ function assertLocalTarget(sourcePath, target) {
   const pathOnly = decodeURIComponent(rawPath.split("?", 1)[0]);
 
   if (pathOnly.startsWith("/")) {
+    if (generatedSiteRoutes.has(pathOnly)) {
+      assert.equal(rawFragment, undefined, `${sourcePath} links to a fragment on ${target}`);
+      return;
+    }
+
     const route = normalizeDocumentationRoute(pathOnly);
     const targetPath = docsSiteRoutes.get(route);
     assert.notEqual(targetPath, undefined, `${sourcePath} links to missing site route ${target}`);
@@ -716,6 +735,32 @@ describe("README consistency", () => {
           source.includes(phrase),
           false,
           `${relativePath} exposes internal copy: ${phrase}`,
+        );
+      }
+    }
+  });
+
+  it("keeps public positioning focused on shipped capabilities", () => {
+    const forbiddenPhrases = [
+      "Zustand",
+      "zustand",
+      "Jotai",
+      "jotai",
+      "尚无官方指南",
+      "暂时没有官方",
+      "仍在规划",
+      "No official guide",
+      "no official adapter",
+      "still planned",
+    ];
+
+    for (const relativePath of positioningDocumentationPaths) {
+      const source = readText(relativePath);
+      for (const phrase of forbiddenPhrases) {
+        assert.equal(
+          source.includes(phrase),
+          false,
+          `${relativePath} exposes internal or competitor-focused positioning: ${phrase}`,
         );
       }
     }

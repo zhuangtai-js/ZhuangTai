@@ -151,17 +151,15 @@ ZhuàngTài 把 API 维持得很小，让每一行状态代码都能直接推演
 
 更多说明见[设计理念](https://zhuangtai.yojigen.cn/philosophy/)。
 
-## 体验、示例与选型
+## 体验、示例与集成
 
 - [在线示例](https://zhuangtai.yojigen.cn/playground/)：直接操作计数器、任务清单与偏好设置，观察真实 React 状态更新。
 - [完整示例](https://zhuangtai.yojigen.cn/examples/)：可直接运行和改造的 Vite Vanilla 与 React 工程。
-- [为什么是 ZhuàngTài](https://zhuangtai.yojigen.cn/why-zhuangtai/)：定位、差异与不适用边界。
-- [状态模型对比](https://zhuangtai.yojigen.cn/compare/)：诚实比较 ZhuàngTài、Zustand 与 Jotai。
-- [集成与兼容性](https://zhuangtai.yojigen.cn/integrations/)：梳理官方支持、可直接使用、SSR 边界与尚无官方指南的环境。
-- [可复现基准](https://zhuangtai.yojigen.cn/benchmarks/)：固定版本、测量程序、结果与限制。
-- [路线图](https://zhuangtai.yojigen.cn/roadmap/)：采用、集成与社区优先级。
+- [为什么是 ZhuàngTài](https://zhuangtai.yojigen.cn/why-zhuangtai/)：直接、同步和类型安全的设计价值。
+- [集成与兼容性](https://zhuangtai.yojigen.cn/integrations/)：查看框架、运行时、SSR 与官方适配器的使用方式。
+- [Showcase](https://zhuangtai.yojigen.cn/showcase/)：查看使用 ZhuàngTài 构建的项目。
 
-完整工程在 [`examples/`](./examples)，测量程序在 [`benchmarks/`](./benchmarks)。问题和想法请到 [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions)，贡献方式见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+完整工程在 [`examples/`](./examples)。问题和想法请到 [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions)，贡献方式见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
 
 ## AI / Agent 集成
 

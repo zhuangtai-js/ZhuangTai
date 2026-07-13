@@ -3,9 +3,9 @@ export const copies = {
     eyebrow: "真实 React 示例",
     title: "实时操作，观察状态变化",
     intro: {
-      before: "下面的界面直接使用",
+      before: "下面是基于",
       packageName: "@zhuangtai-js/react",
-      after: "。选择示例即可操作并查看关键代码。",
+      after: " 的实时示例，可直接操作并查看关键代码。",
     },
     examplesLabel: "选择示例",
     preview: "实时预览",
@@ -13,7 +13,7 @@ export const copies = {
     examples: { counter: "计数器", tasks: "任务清单", preferences: "偏好设置" },
     counter: {
       title: "计数器",
-      description: "一个 atom 保存计数，computed 自动生成双倍值。",
+      description: "atom 保存值，computed 派生双倍值。",
       current: "当前值",
       doubled: "双倍值",
       decrease: "减少 1",
@@ -49,11 +49,11 @@ export const copies = {
   },
   en: {
     eyebrow: "REAL REACT EXAMPLES",
-    title: "Interact and watch state update",
+    title: "See state updates live",
     intro: {
-      before: "These interfaces run directly on",
+      before: "Live examples powered by",
       packageName: "@zhuangtai-js/react",
-      after: ". Pick an example, try it, and inspect the code.",
+      after: ". Interact with each one and inspect its code.",
     },
     examplesLabel: "Choose an example",
     preview: "Live preview",
@@ -82,7 +82,7 @@ export const copies = {
     },
     preferences: {
       title: "Reading preferences",
-      description: "Your choices are stored in the browser and remain after a refresh.",
+      description: "Preferences stay in the browser after refresh.",
       theme: "Theme",
       density: "Density",
       light: "Light",

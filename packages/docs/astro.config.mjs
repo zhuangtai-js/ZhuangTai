@@ -5,6 +5,14 @@ import { defineConfig } from "astro/config";
 import starlightLlmsTxt from "starlight-llms-txt";
 
 export default defineConfig({
+  redirects: {
+    "/compare": "/why-zhuangtai/",
+    "/benchmarks": "/why-zhuangtai/",
+    "/roadmap": "/integrations/",
+    "/en/compare": "/en/why-zhuangtai/",
+    "/en/benchmarks": "/en/why-zhuangtai/",
+    "/en/roadmap": "/en/integrations/",
+  },
   vite: {
     plugins: [tailwindcss()],
   },
@@ -129,37 +137,16 @@ export default defineConfig({
           ],
         },
         {
-          label: "决策与采用",
+          label: "生态",
           translations: {
-            en: "Decision & Adoption",
+            en: "Ecosystem",
           },
           items: [
-            {
-              slug: "compare",
-              label: "状态模型对比",
-              translations: {
-                en: "State Model Comparison",
-              },
-            },
             {
               slug: "integrations",
               label: "集成与兼容性",
               translations: {
                 en: "Integrations & Compatibility",
-              },
-            },
-            {
-              slug: "benchmarks",
-              label: "可复现基准",
-              translations: {
-                en: "Reproducible Benchmarks",
-              },
-            },
-            {
-              slug: "roadmap",
-              label: "路线图",
-              translations: {
-                en: "Roadmap",
               },
             },
             {

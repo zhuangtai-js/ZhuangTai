@@ -168,4 +168,20 @@ describe("build artifacts", () => {
 
     assert.match(workflow, /pnpm --filter ["']docs\.\.\.["'] build/u);
   });
+
+  it("redirects removed public docs routes", () => {
+    const redirects = {
+      "benchmarks/index.html": "/why-zhuangtai/",
+      "compare/index.html": "/why-zhuangtai/",
+      "roadmap/index.html": "/integrations/",
+      "en/benchmarks/index.html": "/en/why-zhuangtai/",
+      "en/compare/index.html": "/en/why-zhuangtai/",
+      "en/roadmap/index.html": "/en/integrations/",
+    };
+
+    for (const [relativePath, destination] of Object.entries(redirects)) {
+      const redirectPage = readFileSync(join(rootPath, "packages/docs/dist", relativePath), "utf8");
+      assert.ok(redirectPage.includes(destination), `${relativePath} does not redirect to ${destination}`);
+    }
+  });
 });
