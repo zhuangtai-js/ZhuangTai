@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "../test",
+    "noEmit": true,
+    "composite": false
+  },
+  "include": ["../test/test/preact/**/*.ts"]
+}

@@ -5,6 +5,7 @@ import {
   type Atom,
   type AtomValue,
   type Computed,
+  type NextValue,
 } from "@zhuangtai-js/core";
 // @ts-expect-error AtomCreatorArgs is internal type plumbing, not public API.
 import type { AtomCreatorArgs } from "@zhuangtai-js/core";
@@ -18,6 +19,27 @@ import {
   type PersistOptions,
   type PersistStorage,
 } from "@zhuangtai-js/persist";
+import {
+  createAtomHook as createPreactAtomHook,
+  createComputedHook as createPreactComputedHook,
+  useAtom as usePreactAtom,
+  useAtomValue as usePreactAtomValue,
+  useSetAtom as usePreactSetAtom,
+} from "../packages/preact/dist/index.js";
+import {
+  createAtomSignal as createSolidAtomSignal,
+  createAtomValue as createSolidAtomValue,
+  createSetAtom as createSolidSetAtom,
+} from "../packages/solid/dist/index.js";
+import {
+  toReadable as toSvelteReadable,
+  toWritable as toSvelteWritable,
+} from "../packages/svelte/dist/index.js";
+import {
+  useAtom as useVueAtom,
+  useAtomValue as useVueAtomValue,
+  useSetAtom as useVueSetAtom,
+} from "../packages/vue/dist/index.js";
 
 type Expect<T extends true> = T;
 type Equal<A, B> =
@@ -111,3 +133,46 @@ createPersistedAtom(0, { persist: { key: "counter", codec: {} } });
 
 // @ts-expect-error plugin options namespace should be named persist
 createPersistedAtom(0, { wrong: { key: "counter" } });
+
+type NumberSetter = (nextValue: NextValue<number>) => void;
+
+const usePreactNumber = createPreactAtomHook(numberAtom);
+const usePreactString = createPreactComputedHook(stringAtom);
+const preactPair = usePreactAtom(numberAtom);
+const preactValue = usePreactAtomValue(numberAtom);
+const setPreactNumber = usePreactSetAtom(numberAtom);
+
+type _PreactBoundAtom = Expect<
+  Equal<ReturnType<typeof usePreactNumber>, readonly [number, NumberSetter]>
+>;
+type _PreactBoundComputed = Expect<Equal<ReturnType<typeof usePreactString>, string>>;
+type _PreactAtomPair = Expect<Equal<typeof preactPair, readonly [number, NumberSetter]>>;
+type _PreactAtomValue = Expect<Equal<typeof preactValue, number>>;
+type _PreactSetAtom = Expect<Equal<typeof setPreactNumber, NumberSetter>>;
+
+const svelteReadable = toSvelteReadable(numberAtom);
+const svelteWritable = toSvelteWritable(numberAtom);
+svelteReadable.subscribe((value) => {
+  const numberValue: number = value;
+  void numberValue;
+});
+svelteWritable.set(1);
+svelteWritable.update((value) => value + 1);
+
+const vuePair = useVueAtom(numberAtom);
+const vueValue = useVueAtomValue(numberAtom);
+const setVueNumber = useVueSetAtom(numberAtom);
+
+type _VueAtomPairValue = Expect<Equal<(typeof vuePair)[0]["value"], number>>;
+type _VueAtomPairSetter = Expect<Equal<(typeof vuePair)[1], NumberSetter>>;
+type _VueAtomValue = Expect<Equal<(typeof vueValue)["value"], number>>;
+type _VueSetAtom = Expect<Equal<typeof setVueNumber, NumberSetter>>;
+
+const solidPair = createSolidAtomSignal(numberAtom);
+const solidValue = createSolidAtomValue(numberAtom);
+const setSolidNumber = createSolidSetAtom(numberAtom);
+
+type _SolidAtomPairValue = Expect<Equal<ReturnType<(typeof solidPair)[0]>, number>>;
+type _SolidAtomPairSetter = Expect<Equal<(typeof solidPair)[1], NumberSetter>>;
+type _SolidAtomValue = Expect<Equal<ReturnType<typeof solidValue>, number>>;
+type _SolidSetAtom = Expect<Equal<typeof setSolidNumber, NumberSetter>>;
