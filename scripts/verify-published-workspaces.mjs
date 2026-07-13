@@ -41,6 +41,20 @@ function validateRelease(release) {
       throw new Error(`Release ${release.packageName} must define ${field}`);
     }
   }
+
+  if (
+    typeof release.peerDependencies !== "object" ||
+    release.peerDependencies === null ||
+    Array.isArray(release.peerDependencies)
+  ) {
+    throw new Error(`Release ${release.packageName} must define peerDependencies`);
+  }
+
+  for (const [peerName, peerRange] of Object.entries(release.peerDependencies)) {
+    if (typeof peerRange !== "string" || peerRange.length === 0) {
+      throw new Error(`Release ${release.packageName} has an invalid peer range for ${peerName}`);
+    }
+  }
 }
 
 async function waitForRegistryRelease(
@@ -117,6 +131,9 @@ function verifyInstall(release, { log = console.log, runCommand }) {
       `${JSON.stringify({ private: true, type: "module" }, null, 2)}\n`,
     );
 
+    const peerReferences = Object.entries(release.peerDependencies).map(
+      ([peerName, peerRange]) => `${peerName}@${peerRange}`,
+    );
     const installResult = runCommand(
       "npm",
       [
@@ -128,6 +145,7 @@ function verifyInstall(release, { log = console.log, runCommand }) {
         "--registry",
         npmRegistry,
         reference,
+        ...peerReferences,
       ],
       { cwd: tempDir },
     );

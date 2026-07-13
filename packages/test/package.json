@@ -17,8 +17,12 @@
     "@zhuangtai-js/freeze": "workspace:*",
     "@zhuangtai-js/immer": "workspace:*",
     "@zhuangtai-js/persist": "workspace:*",
+    "@zhuangtai-js/preact": "workspace:*",
     "@zhuangtai-js/react": "workspace:*",
-    "@zhuangtai-js/sync": "workspace:*"
+    "@zhuangtai-js/solid": "workspace:*",
+    "@zhuangtai-js/svelte": "workspace:*",
+    "@zhuangtai-js/sync": "workspace:*",
+    "@zhuangtai-js/vue": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -26,14 +30,20 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitest/browser-playwright": "^4.1.10",
+    "@vue/server-renderer": "^3.5.39",
     "jsdom": "^26.1.0",
     "oxfmt": "^0.58.0",
     "oxlint": "^1.73.0",
     "oxlint-tsgolint": "^0.24.0",
     "playwright": "^1.61.1",
+    "preact": "^10.29.7",
+    "preact-render-to-string": "^6.7.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "solid-js": "^1.9.14",
+    "svelte": "^5.56.4",
     "typescript": "7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "vue": "^3.5.39"
   }
 }

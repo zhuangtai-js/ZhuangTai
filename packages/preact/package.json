@@ -1,0 +1,66 @@
+{
+  "name": "@zhuangtai-js/preact",
+  "version": "0.1.0",
+  "description": "Preact adapter for ZhuangTai atoms.",
+  "keywords": [
+    "javascript",
+    "preact",
+    "state",
+    "state-management",
+    "store",
+    "typescript"
+  ],
+  "homepage": "https://github.com/zhuangtai-js/ZhuangTai#readme",
+  "bugs": {
+    "url": "https://github.com/zhuangtai-js/ZhuangTai/issues"
+  },
+  "license": "ISC",
+  "author": "mouyase",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhuangtai-js/ZhuangTai.git",
+    "directory": "packages/preact"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "dist/index.d.ts",
+    "dist/index.js"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "rslib",
+    "format": "oxfmt .",
+    "format:check": "oxfmt . --check",
+    "lint": "oxlint . -f agent",
+    "test": "vitest --config vitest.config.ts run",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit"
+  },
+  "devDependencies": {
+    "@zhuangtai-js/core": "workspace:*",
+    "jsdom": "^26.1.0",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0",
+    "oxlint-tsgolint": "^0.24.0",
+    "preact": "^10.29.7",
+    "preact-render-to-string": "^6.7.0",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "@zhuangtai-js/core": "^0.5.0",
+    "preact": ">=10.9 <11"
+  }
+}

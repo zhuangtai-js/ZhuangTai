@@ -91,7 +91,7 @@ theme.set("dark");
 
 ## 当前支持范围
 
-当前 `freeze@0.2.x`、`immer@0.2.x`、`persist@0.3.x`、`react@0.2.x` 和 `sync@0.2.x` 都支持 `@zhuangtai-js/core@^0.5.0`。React adapter 另外支持 React `>=18 <20`。这些范围是已经验证的兼容声明，不代表对未知未来主版本的承诺。
+当前插件发布线 `freeze@0.2.x`、`immer@0.2.x`、`persist@0.4.x` 与 `sync@0.2.x` 都声明 `@zhuangtai-js/core@^0.5.0`。框架 adapter 的独立 peer 范围见[集成与兼容性](/integrations/)。
 
 ## 下一步
 

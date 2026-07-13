@@ -80,10 +80,59 @@ const count = atom(0, {
 });
 ```
 
+## 版本化持久化
+
+版本化持久化是可选功能。传入正安全整数 `version` 后，插件会把 codec 生成的字符串 payload 包装在带标记的 JSON 记录中。未传 `version` 时，现有原始存储字节和行为保持不变。
+
+```ts
+import { definePersistMigration } from "@zhuangtai-js/persist";
+
+type SettingsV0 = { readonly theme: string };
+type Settings = { readonly theme: string; readonly density: "comfortable" | "compact" };
+
+function isSettingsV0(value: unknown): value is SettingsV0 {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "theme" in value &&
+    typeof value.theme === "string"
+  );
+}
+
+const settings = atom<Settings>(
+  { theme: "light", density: "comfortable" },
+  {
+    persist: {
+      key: "settings",
+      version: 1,
+      migrations: {
+        0: definePersistMigration((value) => {
+          if (!isSettingsV0(value)) {
+            throw new TypeError("Invalid SettingsV0 stored value.");
+          }
+
+          return { ...value, density: "comfortable" };
+        }),
+      },
+    },
+  },
+);
+```
+
+- 没有版本标记的旧数据视为版本 `0`。
+- `migrations[n]` 负责把版本 `n` 前向迁移到版本 `n + 1`；所有步骤都会同步、按顺序执行。
+- 迁移完成后，插件会先用 codec 编码迁移结果并写回当前版本记录；写入成功后再解码该 payload，得到内存 `Value` 并创建 atom。
+- 当前版本记录会直接恢复，不迁移也不重写。
+- 未来版本、缺失的迁移步骤和形状不精确的带标记记录会同步抛错。
+- 迁移、codec 或 storage 失败时，错误会包含 key 和相关版本；原错误保留在 `cause`。
+- 自定义 codec 只负责 envelope 内的 `payload`；envelope 本身始终是精确的 JSON 对象：`{"__zhuangtai_persist__":true,"version":1,"payload":"..."}`。
+
+`PersistMigration` 的输入和返回值都位于 storage 边界，类型分别是 `unknown`。迁移函数必须先解析或收窄输入，再访问旧结构；不能把窄输入函数（例如 `(value: string) => unknown`）直接放进 migrations。`definePersistMigration<Value>` 是运行时 identity helper：回调参数始终是 `unknown`，可选的 `Value` 泛型只约束返回值，不做运行时校验，也不把 atom 的 `Value` 泛型放进插件选项类型。
+
 ## 语义
 
 - 省略 `persist` 选项时，atom 保持不变。
-- 已存储的值会在第一次 `get()` 前恢复。
+- 已存储的值会在第一次 `get()` 前恢复。传入 `version` 时会启用同步的前向迁移和写回。
 - 更新会先持久化：先用 codec 编码并写入 storage，成功后才提交内存状态并同步通知 watcher。
 - 如果 encode 或 storage 写入失败，内存状态保持不变，并抛出错误。
 - 默认 JSON codec 拒绝非有限数字和无效 `Date`，避免 JSON 把它们静默变成 `null`。
@@ -181,10 +230,59 @@ const count = atom(0, {
 });
 ```
 
+## Versioned persistence
+
+Versioned persistence is opt-in. When a positive safe integer `version` is provided, the plugin wraps the codec-produced string payload in a marked JSON record. Without `version`, existing raw storage bytes and behavior remain unchanged.
+
+```ts
+import { definePersistMigration } from "@zhuangtai-js/persist";
+
+type SettingsV0 = { readonly theme: string };
+type Settings = { readonly theme: string; readonly density: "comfortable" | "compact" };
+
+function isSettingsV0(value: unknown): value is SettingsV0 {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "theme" in value &&
+    typeof value.theme === "string"
+  );
+}
+
+const settings = atom<Settings>(
+  { theme: "light", density: "comfortable" },
+  {
+    persist: {
+      key: "settings",
+      version: 1,
+      migrations: {
+        0: definePersistMigration((value) => {
+          if (!isSettingsV0(value)) {
+            throw new TypeError("Invalid SettingsV0 stored value.");
+          }
+
+          return { ...value, density: "comfortable" };
+        }),
+      },
+    },
+  },
+);
+```
+
+- Legacy data without a version marker is treated as version `0`.
+- `migrations[n]` migrates version `n` forward to version `n + 1`; every step runs synchronously and in order.
+- After migration, the plugin encodes the migrated result and writes back the current-version record first; only after that write succeeds does it decode the payload into the in-memory `Value` and create the atom.
+- A current-version record is restored directly without migration or rewriting.
+- Future versions, missing migration steps, and marked records without the exact envelope shape throw synchronously.
+- Migration, codec, and storage failures include the key and relevant versions; the original error is preserved as `cause`.
+- A custom codec only controls the envelope's `payload`; the envelope itself is always the exact JSON object `{"__zhuangtai_persist__":true,"version":1,"payload":"..."}`.
+
+`PersistMigration` receives and returns values across the storage boundary, so both sides are `unknown`. A migration must parse or narrow its input before reading the legacy shape; a narrow-input function such as `(value: string) => unknown` cannot be assigned to `migrations`. `definePersistMigration<Value>` is a runtime identity helper whose callback input is always `unknown`; the optional `Value` generic only constrains the return value. It performs no runtime validation and does not put the atom's `Value` generic into the plugin options type.
+
 ## Semantics
 
 - Omitting `persist` options leaves the atom unchanged.
-- Stored values are restored before the first `get()`.
+- Stored values are restored before the first `get()`. Providing `version` enables synchronous forward migration and write-back.
 - Updates persist first: the value is encoded and written to storage, and only after a successful write is the in-memory state committed and watchers notified synchronously.
 - If encode or the storage write fails, the in-memory state stays unchanged and the error is thrown.
 - The default JSON codec rejects non-finite numbers and invalid `Date` values so JSON cannot silently turn them into `null`.

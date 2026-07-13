@@ -22,8 +22,12 @@ on:
           - freeze
           - immer
           - persist
+          - preact
           - react
+          - solid
+          - svelte
           - sync
+          - vue
         default: all
       dry_run:
         description: "Run npm publish --dry-run instead of publishing"
@@ -100,7 +104,10 @@ jobs:
       - run: pnpm build
 
       - name: Dry-run publish
-        run: pnpm release:dry-run -- --channel ${{ inputs.channel }} --package ${{ inputs.package_name }}
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          PACKAGE_NAME: ${{ inputs.package_name }}
+        run: pnpm release:dry-run -- --channel "$CHANNEL" --package "$PACKAGE_NAME"
 
   publish:
     if: ${{ !inputs.dry_run && github.ref == 'refs/heads/main' }}
@@ -134,8 +141,11 @@ jobs:
 
       - name: Publish
         id: publish
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          PACKAGE_NAME: ${{ inputs.package_name }}
         run: |
-          pnpm release:publish -- --channel ${{ inputs.channel }} --package ${{ inputs.package_name }} --summary-file release-summary.json
+          pnpm release:publish -- --channel "$CHANNEL" --package "$PACKAGE_NAME" --summary-file release-summary.json
           pnpm release:verify -- --summary-file release-summary.json
           echo "release_summary=$(base64 < release-summary.json | tr -d '\n')" >> "${GITHUB_OUTPUT}"
 

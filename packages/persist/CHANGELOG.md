@@ -1,5 +1,33 @@
 # persist 更新日志 / Changelog
 
+## 0.4.0 - 2026-07-13
+
+### 新增
+
+- 新增可选的 `version` 和逐版本 `migrations`，支持把无标记旧数据作为版本 `0` 同步前向迁移。
+- 新增 `PersistMigration` 类型和运行时 identity helper `definePersistMigration<Value>`，用于在不让插件选项依赖 atom `Value` 泛型的前提下声明迁移输入类型。
+- 版本化记录使用精确的带标记 JSON envelope 保存版本和 codec payload；迁移成功后会先编码并写回当前版本，再解码得到内存值。
+
+### 安全性
+
+- `version` 必须是正安全整数。未来版本、缺失迁移和格式错误的带标记记录会同步失败。
+- 版本化 encode、decode、迁移和 storage 写入错误会保留原始 `cause`，并包含 key 与相关版本上下文。
+- 版本化更新和迁移写回继续遵循 storage-before-memory：写入失败时不会提交内存状态。
+- 未传 `version` 时，原始存储字节和现有行为保持不变。
+
+### Added
+
+- Added opt-in `version` and per-version `migrations`, treating unmarked legacy data as version `0` for synchronous forward migration.
+- Added the `PersistMigration` type and runtime identity helper `definePersistMigration<Value>` so migration input types can be declared without making plugin options depend on the atom's `Value` generic.
+- Versioned records use an exact marked JSON envelope containing the version and codec payload; successful migrations encode and write back the current version before decoding the in-memory value.
+
+### Safety
+
+- `version` must be a positive safe integer. Future versions, missing migrations, and malformed marked records fail synchronously.
+- Versioned encode, decode, migration, and storage-write errors preserve the original `cause` and include key and relevant version context.
+- Versioned updates and migration write-back retain storage-before-memory ordering: failed writes do not commit in-memory state.
+- Without `version`, raw storage bytes and existing behavior remain unchanged.
+
 ## 0.3.1 - 2026-07-12
 
 ### 修复

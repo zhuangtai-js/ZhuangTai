@@ -1,115 +1,129 @@
-# Installation
-ZhuàngTài 的安装说明，分给人类和 AI 代理两种读法。
-Installation notes for ZhuàngTài, written for both humans and AI agents.
+# 安装 ZhuàngTài
 
-## For Humans
-先看这里，再决定装哪些包。
-Start here, then choose the packages you actually need.
+<p align="center">简体中文 · <a href="#english">English</a></p>
 
-如果你想把这份安装说明直接交给代理使用，可以先让它安装 Agent Skills：`npx skills add zhuangtai-js/ZhuangTai`
+这份说明帮助使用者和 AI 代理按项目框架选择最小安装集合。先安装 `@zhuangtai-js/core`，只有在需要框架生命周期或插件能力时再添加对应包。
 
-| 包 | 用途 / purpose | 安装命令 |
-| --- | --- | --- |
-| `@zhuangtai-js/core` | 状态核心，零第三方运行时依赖 / state core with zero third party runtime deps | `pnpm add @zhuangtai-js/core` |
-| `@zhuangtai-js/react` | React hooks 适配器 / React hooks adapter | `pnpm add @zhuangtai-js/core @zhuangtai-js/react react` |
-| `@zhuangtai-js/persist` | 持久化插件 / persistence plugin | `pnpm add @zhuangtai-js/core @zhuangtai-js/persist` |
-| `@zhuangtai-js/freeze` | 开发期深冻结插件 / dev time deep freeze plugin | `pnpm add @zhuangtai-js/core @zhuangtai-js/freeze` |
-| `@zhuangtai-js/immer` | Immer 草稿更新插件 / Immer draft updates plugin | `pnpm add @zhuangtai-js/core @zhuangtai-js/immer` |
-| `@zhuangtai-js/sync` | BroadcastChannel 跨标签页同步插件 / BroadcastChannel cross-tab sync plugin | `pnpm add @zhuangtai-js/core @zhuangtai-js/sync` |
+## 给使用者
 
-把上面的 `pnpm` 换成你的项目实际包管理器即可。
-Replace `pnpm` with the package manager your project already uses.
+### 选择需要的包
 
-把下面这段直接贴给 AI 代理：
-Paste the following prompt directly into an AI agent:
+| 包                      | 用途                                 | 安装命令                                                   |
+| ----------------------- | ------------------------------------ | ---------------------------------------------------------- |
+| `@zhuangtai-js/core`    | 框架无关状态核心，零第三方运行时依赖 | `pnpm add @zhuangtai-js/core`                              |
+| `@zhuangtai-js/react`   | React hooks adapter                  | `pnpm add @zhuangtai-js/core @zhuangtai-js/react react`    |
+| `@zhuangtai-js/preact`  | Preact hooks adapter                 | `pnpm add @zhuangtai-js/core @zhuangtai-js/preact preact`  |
+| `@zhuangtai-js/svelte`  | 标准 Svelte store adapter            | `pnpm add @zhuangtai-js/core @zhuangtai-js/svelte svelte`  |
+| `@zhuangtai-js/vue`     | Vue computed ref adapter             | `pnpm add @zhuangtai-js/core @zhuangtai-js/vue vue`        |
+| `@zhuangtai-js/solid`   | Solid accessor adapter               | `pnpm add @zhuangtai-js/core @zhuangtai-js/solid solid-js` |
+| `@zhuangtai-js/persist` | 同步 storage 持久化与版本迁移        | `pnpm add @zhuangtai-js/core @zhuangtai-js/persist`        |
+| `@zhuangtai-js/freeze`  | 开发期深冻结                         | `pnpm add @zhuangtai-js/core @zhuangtai-js/freeze`         |
+| `@zhuangtai-js/immer`   | Immer 草稿更新                       | `pnpm add @zhuangtai-js/core @zhuangtai-js/immer`          |
+| `@zhuangtai-js/sync`    | `BroadcastChannel` 跨同源上下文同步  | `pnpm add @zhuangtai-js/core @zhuangtai-js/sync`           |
 
-```text
-请阅读 https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/guide/installation.md 并按其中的步骤在当前项目中安装并配置 ZhuàngTài。
+把 `pnpm` 换成项目已经使用的包管理器。框架 peer 范围是：React `>=18 <20`、Preact `>=10.9 <11`、Svelte `>=4.2 <6`、Vue `>=3.2 <4`、Solid `>=1.5 <2`；这些 adapter 都要求 `@zhuangtai-js/core ^0.5.0`。
+
+需要选择框架 API、处理组件生命周期或 SSR 时，阅读[框架适配器最佳实践](https://zhuangtai.yojigen.cn/guides/framework-adapters/)；需要版本化持久化时，阅读[Persist 参考](https://zhuangtai.yojigen.cn/reference/persist/)。
+
+### 交给 AI 代理
+
+可以先安装仓库附带的 Agent Skills：
+
+```sh
+npx skills add zhuangtai-js/ZhuangTai
 ```
 
+然后把这段提示交给代理：
+
 ```text
-Please read https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/guide/installation.md and follow its steps to install and configure ZhuàngTài in the current project.
+请阅读 https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/guide/installation.md，识别当前项目使用的包管理器与框架，只安装需要的 ZhuàngTài Core、adapter 或插件，并遵守文档中的生命周期、SSR 与不可变更新边界。
 ```
 
-## For AI Agents
+## 给 AI 代理
 
-1. Detect the package manager from lockfiles.
-   Use `pnpm` if `pnpm-lock.yaml` exists, `yarn` if `yarn.lock` exists, `bun` if `bun.lockb` or `bun.lock` exists, and `npm` if `package-lock.json` exists. If none of those files exist, default to `npm`.
-   Also detect whether the project uses TypeScript, React, or both. Treat `tsconfig.json`, `tsx` files, `typescript` dependencies, or existing `.ts` and `.tsx` source as TypeScript signals. Treat `react`, `react-dom`, `.tsx` source, or `jsx` settings as React signals.
+1. **识别项目。** 从 lockfile 识别 `pnpm`、npm、Yarn 或 Bun；从依赖、源码扩展名和框架配置识别 React、Preact、Svelte、Vue、Solid 或无框架项目。不要仅凭 `.tsx` 区分 React 与 Preact。
+2. **选择最小安装集合。** 无框架代码只安装 Core。只有组件需要原生订阅生命周期时才安装 adapter；只有明确需要持久化、冻结、Immer 更新或跨上下文同步时才安装插件。安装 adapter 时同时安装表格中的框架 peer。
+3. **使用准确 API。** Core 使用 `atom`、`computed`、`get`、`set`、`watch` 与 `createAtom`。框架 API 如下：
+   - React：`useAtomValue`、`useSetAtom`、`useAtom`、`createAtomHook`、`createComputedHook`。
+   - Preact：`useAtomValue`、`useSetAtom`、`useAtom`、`createAtomHook`、`createComputedHook`。
+   - Svelte：`toReadable`、`toWritable`，返回标准 `svelte/store` 对象。
+   - Vue：`useAtomValue`、`useSetAtom`、`useAtom`；读取 API 必须位于活动 effect scope。
+   - Solid：`createAtomValue`、`createSetAtom`、`createAtomSignal`；读取 API 必须位于活动 owner。
+4. **保留 Core 语义。** `set` 立即生效，`watch` 同步执行，相等性使用 `Object.is`。对象和数组按引用判断，必须用不可变更新。adapter 不添加调度、批处理、延迟或事务。
+5. **处理生命周期与 SSR。** 让框架管理订阅清理；手动调用 Svelte `subscribe` 时保留并调用取消函数，手动创建 Vue effect scope 或 Solid root 时负责停止或 dispose。服务端可变 atom 必须按请求创建，不能跨用户共享 module-level 实例。Preact SSR 读取 snapshot 而不订阅；Vue 在 `createSSRApp` 的 `setup()` 中创建的订阅会在 `renderToString` 完成时随组件 scope 自动释放。持久化默认依赖 `localStorage`，服务端必须传入合适的同步 storage，或只在客户端创建持久化 atom。
+6. **配置插件。** 插件安装在 `createAtom().use(plugin)` 创建的 creator 上。Persist 的 `version` 必须是正安全整数；`migrations[n]` 同步执行从版本 `n` 到 `n + 1` 的迁移。迁移回调输入来自 storage，始终是 `unknown`，必须先解析或收窄；`definePersistMigration<Value>` 的 `Value` 只约束返回值。
+7. **检查项目。** 运行项目已有的格式化、类型检查和测试命令，确认导入路径、peer 依赖和示例代码符合当前框架。
+8. **提供后续资料。** 人类文档位于 https://zhuangtai.yojigen.cn ，机器可读入口是 https://zhuangtai.yojigen.cn/llms.txt 和 https://zhuangtai.yojigen.cn/llms-full.txt 。
 
-2. Ask the user which capabilities they need if the choice is not already obvious from the project.
-   Offer these options: core only, React, persistence, cross-tab sync, Immer updates, or dev-time freeze guard.
-   Install `@zhuangtai-js/core` plus only the needed adapter or plugins with the detected package manager.
-   If the project uses React and you install `@zhuangtai-js/react`, install `react` as well, because it is a peer dependency and supports React 18 and React 19.
+## 说明
 
-3. Write a minimal verification snippet that matches the project.
-   Use the core API below as the baseline, because it reflects the actual `@zhuangtai-js/core` README and its semantics.
+- `@zhuangtai-js/core` 没有第三方运行时依赖。
+- 所有插件都必须挂载到 `createAtom()` 创建的 creator。
+- `@zhuangtai-js/persist` 只支持同步 storage 与同步迁移。
+- 在框架生命周期之外的服务、SDK、事件处理器或服务器逻辑中，如果不需要框架响应式包装，直接使用 Core。
 
-   ```ts
-   import { atom, computed } from "@zhuangtai-js/core";
+---
 
-   const count = atom(0);
-   const double = computed(() => count.get() * 2);
+<a id="english"></a>
 
-   count.get();
-   count.set(1);
-   count.set((value) => value + 1);
-   count.watch((value, prevValue) => {});
+# Install ZhuàngTài
 
-   double.get();
-   double.watch((value, prevValue) => {});
-   ```
+This guide helps people and AI agents choose the smallest installation for the project framework. Install `@zhuangtai-js/core` first, then add an adapter or plugin only when framework lifecycle integration or an extra capability is needed.
 
-   Core semantics to respect while verifying or extending the snippet:
-   `set` applies immediately, `watch` callbacks run synchronously, equality uses `Object.is`, object and array updates must use new references, and core has no batching, deferring, or hidden scheduling.
+## For people
 
-   If the project uses React, verify the real hook names below. These are the exact hook names from `@zhuangtai-js/react`.
+### Choose the packages you need
 
-   ```tsx
-   import { atom, computed } from "@zhuangtai-js/core";
-   import { useAtom, useAtomValue, useSetAtom } from "@zhuangtai-js/react";
+| Package                 | Purpose                                                                  | Install command                                            |
+| ----------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| `@zhuangtai-js/core`    | Framework-agnostic state core with zero third-party runtime dependencies | `pnpm add @zhuangtai-js/core`                              |
+| `@zhuangtai-js/react`   | React hooks adapter                                                      | `pnpm add @zhuangtai-js/core @zhuangtai-js/react react`    |
+| `@zhuangtai-js/preact`  | Preact hooks adapter                                                     | `pnpm add @zhuangtai-js/core @zhuangtai-js/preact preact`  |
+| `@zhuangtai-js/svelte`  | Standard Svelte store adapter                                            | `pnpm add @zhuangtai-js/core @zhuangtai-js/svelte svelte`  |
+| `@zhuangtai-js/vue`     | Vue computed-ref adapter                                                 | `pnpm add @zhuangtai-js/core @zhuangtai-js/vue vue`        |
+| `@zhuangtai-js/solid`   | Solid accessor adapter                                                   | `pnpm add @zhuangtai-js/core @zhuangtai-js/solid solid-js` |
+| `@zhuangtai-js/persist` | Synchronous storage persistence and version migration                    | `pnpm add @zhuangtai-js/core @zhuangtai-js/persist`        |
+| `@zhuangtai-js/freeze`  | Development-time deep freeze                                             | `pnpm add @zhuangtai-js/core @zhuangtai-js/freeze`         |
+| `@zhuangtai-js/immer`   | Immer draft updates                                                      | `pnpm add @zhuangtai-js/core @zhuangtai-js/immer`          |
+| `@zhuangtai-js/sync`    | Cross-context sync through `BroadcastChannel`                            | `pnpm add @zhuangtai-js/core @zhuangtai-js/sync`           |
 
-   const countAtom = atom(0);
-   const doubleAtom = computed(() => countAtom.get() * 2);
+Replace `pnpm` with the package manager already used by the project. Framework peer ranges are React `>=18 <20`, Preact `>=10.9 <11`, Svelte `>=4.2 <6`, Vue `>=3.2 <4`, and Solid `>=1.5 <2`; each adapter also requires `@zhuangtai-js/core ^0.5.0`.
 
-   function Counter() {
-     const [count, setCount] = useAtom(countAtom);
+For framework API selection, component lifecycle, and SSR, read [Framework Adapter Best Practices](https://zhuangtai.yojigen.cn/en/guides/framework-adapters/). For versioned persistence, read the [Persist reference](https://zhuangtai.yojigen.cn/en/reference/persist/).
 
-     return <button onClick={() => setCount((value) => value + 1)}>{count}</button>;
-   }
+### Hand the setup to an AI agent
 
-   function Double() {
-     const double = useAtomValue(doubleAtom);
+You can first install the repository's Agent Skills:
 
-     return <span>{double}</span>;
-   }
+```sh
+npx skills add zhuangtai-js/ZhuangTai
+```
 
-   function ResetButton() {
-     const setCount = useSetAtom(countAtom);
+Then give the agent this prompt:
 
-     return <button onClick={() => setCount(0)}>reset</button>;
-   }
-   ```
+```text
+Please read https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/guide/installation.md, detect the current project's package manager and framework, install only the required ZhuàngTài Core, adapter, or plugins, and follow the documented lifecycle, SSR, and immutable-update boundaries.
+```
 
-   If you installed plugins, add one small `createAtom().use(...)` example that matches the plugin you chose.
-   For example, `persist` uses `createAtom().use(persist)` and per-atom options like `{ persist: { key: "theme" } }`; `freeze`, `immer`, and `sync` use the same creator pattern with their own plugin names and option keys.
+## For AI agents
 
-4. Verify the setup.
-   Run the project typecheck. Use `tsc --noEmit` if the project is TypeScript, or the repo's own typecheck command if it already exists.
-   Make sure the snippet compiles in the project, then remove it or keep it only if the user asked to keep the check file.
-
-5. Point to deeper context.
-   Use these links for more detail: https://zhuangtai.yojigen.cn/llms.txt for the index, https://zhuangtai.yojigen.cn/llms-full.txt for the full LLM-oriented docs, and https://zhuangtai.yojigen.cn for human docs.
-   For ongoing sessions, suggest installing the Agent Skills bundle with `npx skills add zhuangtai-js/ZhuangTai -y`.
-
-6. Ask about starring the repo.
-   Ask the user first whether they would like to star the project if it helped them.
-   Only after explicit consent, and only after checking that `gh` is available, run `gh api -X PUT /user/starred/zhuangtai-js/ZhuangTai`.
-   If they do not want that, or if you have not asked yet, offer the repository link instead: https://github.com/zhuangtai-js/ZhuangTai.
-   Never star the repository without asking first.
+1. **Detect the project.** Detect pnpm, npm, Yarn, or Bun from lockfiles. Detect React, Preact, Svelte, Vue, Solid, or a framework-free project from dependencies, source extensions, and framework configuration. Do not use `.tsx` alone to distinguish React from Preact.
+2. **Choose the smallest installation.** Install only Core for framework-free code. Add an adapter only when components need native subscription lifecycle integration. Add persistence, freeze, Immer, or sync only when that capability is requested. Install the framework peer shown in the table with every adapter.
+3. **Use the exact API.** Core provides `atom`, `computed`, `get`, `set`, `watch`, and `createAtom`. Framework APIs are:
+   - React: `useAtomValue`, `useSetAtom`, `useAtom`, `createAtomHook`, and `createComputedHook`.
+   - Preact: `useAtomValue`, `useSetAtom`, `useAtom`, `createAtomHook`, and `createComputedHook`.
+   - Svelte: `toReadable` and `toWritable`, which return standard `svelte/store` objects.
+   - Vue: `useAtomValue`, `useSetAtom`, and `useAtom`; read APIs require an active effect scope.
+   - Solid: `createAtomValue`, `createSetAtom`, and `createAtomSignal`; read APIs require an active owner.
+4. **Preserve Core semantics.** `set` applies immediately, `watch` runs synchronously, and equality uses `Object.is`. Objects and arrays are reference-based and require immutable updates. Adapters add no scheduling, batching, deferring, or transactions.
+5. **Handle lifecycle and SSR.** Let the framework own subscription cleanup. Keep and call the unsubscribe function for manual Svelte `subscribe` calls; stop manually created Vue effect scopes and dispose manually created Solid roots. Create mutable server atoms per request instead of sharing module-level instances across users. Preact SSR reads a snapshot without subscribing. Vue subscriptions created inside `createSSRApp` `setup()` are automatically released with the component scope when `renderToString` completes. Persist uses `localStorage` by default, so on the server either pass suitable synchronous storage or create the persisted atom only on the client.
+6. **Configure plugins.** Install plugins on a creator made with `createAtom().use(plugin)`. Persist `version` must be a positive safe integer. `migrations[n]` synchronously migrates version `n` to `n + 1`. Migration callback input comes from storage and is always `unknown`, so parse or narrow it first; `definePersistMigration<Value>` uses `Value` only to constrain the return value.
+7. **Check the project.** Run the project's existing formatter, typecheck, and test commands, and confirm imports, peer dependencies, and examples match the current framework.
+8. **Provide follow-up context.** Human documentation is at https://zhuangtai.yojigen.cn . Machine-readable entrypoints are https://zhuangtai.yojigen.cn/llms.txt and https://zhuangtai.yojigen.cn/llms-full.txt .
 
 ## Notes
 
-`@zhuangtai-js/core` has zero third-party runtime dependencies.
-All plugins must be attached to atoms created with `createAtom()` from `@zhuangtai-js/core`.
-`@zhuangtai-js/persist` uses synchronous storage only.
+- `@zhuangtai-js/core` has zero third-party runtime dependencies.
+- Every plugin must be attached to a creator made with `createAtom()`.
+- `@zhuangtai-js/persist` supports synchronous storage and synchronous migrations only.
+- In services, SDKs, event handlers, or server logic outside framework lifecycle, use Core directly when no framework-reactive wrapper is needed.

@@ -1,30 +1,25 @@
 ---
 name: zhuangtai
-description: Use this skill for `@zhuangtai-js/core` and `zhuangtai` questions about `atom`, `computed`, `watch`, `createAtom`, `set`, `get`, `Object.is`, and immutable reference-based state updates. Trigger it when working on the core package, core semantics, watcher behavior, computed dependency tracking, or when you need the framework-agnostic state model used by ZhuàngTài.
+description: Use this skill for @zhuangtai-js/core questions about atom, computed, get, set, watch, createAtom, Object.is, synchronous notifications, immutable reference-based updates, and choosing between Core, plugins, and framework adapters.
 ---
 
 # ZhuàngTài Core
 
-Use this skill for the framework-agnostic core in `@zhuangtai-js/core`.
+## 中文
 
-Docs: https://zhuangtai.yojigen.cn
+使用本 skill 处理 `@zhuangtai-js/core` 的框架无关状态模型。
 
-Full context: https://zhuangtai.yojigen.cn/llms-full.txt
+文档：https://zhuangtai.yojigen.cn
 
-## Install
+完整上下文：https://zhuangtai.yojigen.cn/llms-full.txt
+
+### 安装
 
 ```sh
 pnpm add @zhuangtai-js/core
-# npm i @zhuangtai-js/core
-# yarn add @zhuangtai-js/core
 ```
 
-## What it covers
-
-- `atom(initialValue)` for writable state.
-- `computed(() => value)` for derived state.
-- `createAtom()` for plugin-capable atom creators.
-- `get()`, `set()`, and `watch()`.
+### API
 
 ```ts
 import { atom, computed, createAtom } from "@zhuangtai-js/core";
@@ -32,65 +27,100 @@ import { atom, computed, createAtom } from "@zhuangtai-js/core";
 const count = atom(0);
 const double = computed(() => count.get() * 2);
 
+count.get();
 count.set(1);
 count.set((value) => value + 1);
-count.watch((value, prevValue) => {});
+const stop = count.watch((value, previousValue) => {});
 
 double.get();
-double.watch((value, prevValue) => {});
+double.watch((value, previousValue) => {});
 
 const creator = createAtom();
+stop();
 ```
 
-## Semantics
+- `atom(initialValue)` 创建可读写状态。
+- `computed(derive)` 创建自动追踪同步 `get()` 依赖的只读状态。
+- `createAtom()` 创建可通过 `.use(plugin)` 扩展的 creator。
+- `watch()` 在订阅时立即以 `(currentValue, undefined)` 同步调用，并返回取消函数。
 
-- `set` applies immediately.
-- `watch` callbacks run synchronously.
-- Equality uses `Object.is`.
-- Object and array updates are reference-based, so use immutable updates and return new references.
-- Watcher errors are isolated. One throwing watcher does not stop the rest of the current notification round.
-- A watcher added during notification is called once right away with `(currentValue, undefined)` and does not join the in-flight snapshot.
-- The first `watch` call receives `prevValue === undefined` as a sentinel.
-- Calling `set()` on an atom while that same atom is notifying watchers throws.
-- `computed(...)` computes its initial value when created.
-- `computed(...)` auto-tracks synchronous dependencies from the `.get()` calls actually made inside the derive.
-- Tracking only happens inside the synchronous derive. Reads after `await` or inside `setTimeout` are not tracked.
-- Nested computeds isolate dependencies.
-- Multi-source computed values are synchronous snapshots, not transactional boundaries.
-- `computed` also compares derived results with `Object.is`.
+### 核心语义
+
+- `set` 立即生效；没有隐藏调度、批处理、延迟或事务。
+- `watch` 回调同步执行。一个 watcher 抛错不会阻止当前通知轮次中的其他 watcher，但该错误会在通知完成后传播。
+- 相等性使用 `Object.is`。重复 `NaN` 不通知，`0` 与 `-0` 不相等。
+- 对象和数组按引用判断，必须使用不可变更新并返回新引用。
+- `set(fn)` 把函数当 updater；如需保存函数值，把函数包在对象中。
+- 同一个 atom 正在通知 watcher 时再次调用该 atom 的 `set()` 会抛错。
+- `computed` 创建时立即求值，只追踪 derive 同步执行期间实际读取的依赖；`await` 后或定时器中的读取不参与追踪。
+- 嵌套 computed 隔离依赖；多来源 computed 是同步 snapshot，不是事务边界。
+- `computed` 结果也使用 `Object.is`。
+
+### 选择 Core、插件或 adapter
+
+- 不需要框架重渲染时直接使用 Core：SDK、数据层、服务器逻辑、事件处理器、Web Component 与共享业务状态。
+- 需要持久化、Freeze、Immer 或跨上下文同步时使用 `zhuangtai-plugins` skill。
+- 需要 React hooks 时使用 `zhuangtai-react` skill。
+- 需要 Preact、Svelte、Vue 或 Solid 原生生命周期时使用 `zhuangtai-framework-adapters` skill。
+
+常见错误包括原地修改对象、期待异步调度、把函数直接作为 atom 值，以及假设 computed 会追踪异步读取。
+
+## English
+
+Use this skill for the framework-independent state model in `@zhuangtai-js/core`.
+
+Docs: https://zhuangtai.yojigen.cn/en/
+
+Full context: https://zhuangtai.yojigen.cn/llms-full.txt
+
+### Install
+
+```sh
+pnpm add @zhuangtai-js/core
+```
+
+### API
 
 ```ts
-const flag = atom(true);
-const left = atom(1);
-const right = atom(2);
+import { atom, computed, createAtom } from "@zhuangtai-js/core";
 
-const current = computed(() => (flag.get() ? left.get() : right.get()));
+const count = atom(0);
+const double = computed(() => count.get() * 2);
+
+count.get();
+count.set(1);
+count.set((value) => value + 1);
+const stop = count.watch((value, previousValue) => {});
+
+double.get();
+double.watch((value, previousValue) => {});
+
+const creator = createAtom();
+stop();
 ```
 
-## Plugins
+- `atom(initialValue)` creates readable and writable state.
+- `computed(derive)` creates read-only state that tracks synchronous `get()` dependencies.
+- `createAtom()` creates a creator that can be extended through `.use(plugin)`.
+- `watch()` immediately runs synchronously with `(currentValue, undefined)` and returns an unsubscribe function.
 
-Use `createAtom()` when you want a creator that can be extended by plugins. Install plugins on the creator, not on atom instances.
+### Core semantics
 
-```ts
-import { createAtom } from "@zhuangtai-js/core";
-import { persist } from "@zhuangtai-js/persist";
+- `set` applies immediately. There is no hidden scheduling, batching, deferring, or transaction layer.
+- `watch` callbacks run synchronously. One throwing watcher does not prevent the other watchers in the current notification round, but the error propagates after notification.
+- Equality uses `Object.is`. Repeated `NaN` values do not notify, while `0` and `-0` are distinct.
+- Objects and arrays are reference-based and require immutable updates with new references.
+- `set(fn)` treats the function as an updater. Wrap a function in an object when it must be stored as a value.
+- Calling `set()` on the same atom while it is notifying watchers throws.
+- `computed` evaluates on creation and tracks only dependencies read during the synchronous derive. Reads after `await` or inside timers are not tracked.
+- Nested computeds isolate dependencies. Multi-source computeds are synchronous snapshots, not transaction boundaries.
+- Computed results also use `Object.is`.
 
-const atomWithPlugins = createAtom().use(persist);
+### Choose Core, plugins, or an adapter
 
-const count = atomWithPlugins(0, {
-  persist: { key: "count" },
-});
-```
+- Use Core directly when framework rendering is unnecessary: SDKs, data layers, server logic, event handlers, Web Components, and shared business state.
+- Use the `zhuangtai-plugins` skill for persistence, Freeze, Immer, or cross-context sync.
+- Use the `zhuangtai-react` skill for React hooks.
+- Use the `zhuangtai-framework-adapters` skill for native Preact, Svelte, Vue, or Solid lifecycle integration.
 
-For React usage, see the `zhuangtai-react` skill. For persistence, freezing, Immer, and sync, see `zhuangtai-plugins`.
-
-## Common mistakes
-
-- Mutating nested objects or arrays in place. Core uses reference equality, so in-place mutation looks like no change.
-- Expecting batching, async scheduling, or transactions. Core does not add hidden scheduling.
-- Storing a function directly as atom state. `set(fn)` is treated as an updater.
-- Assuming a computed tracks asynchronous reads. It only tracks synchronous reads inside the derive.
-
-## When to reach for the docs
-
-Use the docs site for deeper reference material, then this skill for quick, correct prompting and code generation.
+Common mistakes are mutating objects in place, expecting asynchronous scheduling, storing a function directly, and assuming a computed tracks asynchronous reads.

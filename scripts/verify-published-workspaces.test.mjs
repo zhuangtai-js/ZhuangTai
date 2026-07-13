@@ -23,6 +23,7 @@ function commandRecorder(results = []) {
 const release = {
   npmTag: "latest",
   packageName: "@zhuangtai-js/core",
+  peerDependencies: {},
   version: "0.4.2",
 };
 
@@ -34,6 +35,14 @@ describe("validateRelease", () => {
   it("rejects malformed release summaries", () => {
     assert.throws(() => validateRelease({ ...release, packageName: "core" }), /@zhuangtai-js\//u);
     assert.throws(() => validateRelease({ ...release, npmTag: "" }), /npmTag/u);
+    assert.throws(
+      () => validateRelease({ ...release, peerDependencies: undefined }),
+      /peerDependencies/u,
+    );
+    assert.throws(
+      () => validateRelease({ ...release, peerDependencies: { react: "" } }),
+      /invalid peer range/u,
+    );
   });
 });
 
@@ -118,6 +127,33 @@ describe("verifyInstall", () => {
     assert.ok(recorder.calls[0].args.includes("@zhuangtai-js/core@0.4.2"));
     assert.equal(recorder.calls[1].command, "node");
     assert.match(recorder.calls[1].args.at(-1), /@zhuangtai-js\/core/u);
+  });
+
+  it("installs only the framework adapter's declared peers", () => {
+    const recorder = commandRecorder([
+      { status: 0, stdout: "", stderr: "" },
+      { status: 0, stdout: "", stderr: "" },
+    ]);
+    const preactRelease = {
+      ...release,
+      packageName: "@zhuangtai-js/preact",
+      peerDependencies: {
+        "@zhuangtai-js/core": "^0.5.0",
+        preact: ">=10.9 <11",
+      },
+      version: "0.1.0",
+    };
+
+    verifyInstall(preactRelease, { log: () => {}, runCommand: recorder.run });
+
+    const installReferences = recorder.calls[0].args.filter(
+      (argument) => argument.startsWith("@zhuangtai-js/") || argument.startsWith("preact@"),
+    );
+    assert.deepEqual(installReferences, [
+      "@zhuangtai-js/preact@0.1.0",
+      "@zhuangtai-js/core@^0.5.0",
+      "preact@>=10.9 <11",
+    ]);
   });
 });
 

@@ -1,12 +1,22 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": ".",
+    "rootDir": "..",
     "outDir": "dist",
     "composite": true,
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
-  "include": ["test", "vitest.config.ts", "vitest.browser.config.ts"],
+  "include": [
+    "test",
+    "vitest.config.ts",
+    "vitest.browser.config.ts",
+    "../preact/src",
+    "../svelte/src",
+    "../vue/src",
+    "../solid/src"
+  ],
   "exclude": ["dist"]
 }

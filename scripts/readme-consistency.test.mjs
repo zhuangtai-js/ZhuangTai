@@ -259,6 +259,22 @@ function compatibilityRows(markdown, source) {
   return rows;
 }
 
+function peerDisplayName(packageName) {
+  const displayNames = {
+    preact: "Preact",
+    react: "React",
+    "solid-js": "Solid",
+    svelte: "Svelte",
+    vue: "Vue",
+  };
+
+  return displayNames[packageName] ?? packageName;
+}
+
+function isEnglishDocumentation(source) {
+  return source.includes("README.en.md") || source.includes("/en/");
+}
+
 function assertCompatibilityMatrix(markdown, source) {
   const extensions = publishablePackages.filter(
     ({ manifest }) => manifest.name !== "@zhuangtai-js/core",
@@ -291,10 +307,10 @@ function assertCompatibilityMatrix(markdown, source) {
     let expectedOtherPeers = "—";
     if (extraPeers.length > 0) {
       expectedOtherPeers = extraPeers
-        .map(([name, range]) => `${name[0].toUpperCase()}${name.slice(1)} \`${range}\``)
+        .map(([name, range]) => `${peerDisplayName(name)} \`${range}\``)
         .join(", ");
     } else if (manifest.name === "@zhuangtai-js/immer") {
-      expectedOtherPeers = source.includes("README.en.md")
+      expectedOtherPeers = isEnglishDocumentation(source)
         ? "— (Immer is a regular dependency)"
         : "—（Immer 是普通 dependency）";
     }
@@ -381,8 +397,7 @@ function localDocumentationTargets(markdown, source) {
     })
     .filter(
       (target) =>
-        target.length > 0 &&
-        (target.startsWith("#") || !/^[a-z][a-z\d+.-]*:/iu.test(target)),
+        target.length > 0 && (target.startsWith("#") || !/^[a-z][a-z\d+.-]*:/iu.test(target)),
     );
 }
 
@@ -521,7 +536,13 @@ describe("README consistency", () => {
   });
 
   it("derives each compatibility matrix row from its package manifest", () => {
-    for (const relativePath of rootReadmePaths) {
+    const compatibilityPaths = [
+      ...rootReadmePaths,
+      "packages/docs/src/content/docs/integrations.md",
+      "packages/docs/src/content/docs/en/integrations.md",
+    ];
+
+    for (const relativePath of compatibilityPaths) {
       const readme = readText(relativePath);
       assertCompatibilityMatrix(readme, relativePath);
 
@@ -565,8 +586,11 @@ describe("README consistency", () => {
         manifest,
         `${readmePath} Chinese install section`,
       );
+      const englishInstallHeading = sections[1].includes("## Installation")
+        ? "Installation"
+        : "Install";
       assertInstallSection(
-        markdownSection(sections[1], "Install", `${readmePath} English section`),
+        markdownSection(sections[1], englishInstallHeading, `${readmePath} English section`),
         manifest,
         `${readmePath} English install section`,
       );
@@ -667,6 +691,179 @@ describe("README consistency", () => {
         `${relativePath} install command drifted`,
       );
     }
+  });
+
+  it("documents framework adapters with manifest-derived ranges and lifecycle boundaries", () => {
+    const frameworkAdapters = [
+      {
+        directory: "preact",
+        peer: "preact",
+        api: ["useAtomValue", "useSetAtom", "useAtom", "createAtomHook", "createComputedHook"],
+      },
+      { directory: "svelte", peer: "svelte", api: ["toReadable", "toWritable"] },
+      { directory: "vue", peer: "vue", api: ["useAtomValue", "useSetAtom", "useAtom"] },
+      {
+        directory: "solid",
+        peer: "solid-js",
+        api: ["createAtomValue", "createSetAtom", "createAtomSignal"],
+      },
+    ];
+    const guidePaths = [
+      "packages/docs/src/content/docs/guides/framework-adapters.md",
+      "packages/docs/src/content/docs/en/guides/framework-adapters.md",
+    ];
+
+    for (const adapter of frameworkAdapters) {
+      const packageEntry = publishablePackages.find(
+        ({ directory }) => directory === adapter.directory,
+      );
+      assert.notEqual(packageEntry, undefined);
+      const range = packageEntry.manifest.peerDependencies?.[adapter.peer];
+      assert.equal(typeof range, "string");
+
+      for (const relativePath of [
+        `packages/docs/src/content/docs/reference/${adapter.directory}.md`,
+        `packages/docs/src/content/docs/en/reference/${adapter.directory}.md`,
+        ...guidePaths,
+      ]) {
+        const source = readText(relativePath);
+        assert.ok(
+          source.includes(packageEntry.manifest.name),
+          `${relativePath} omits package name`,
+        );
+        assert.ok(source.includes(range), `${relativePath} omits ${adapter.peer} range ${range}`);
+        assertContainsAll(source, adapter.api, relativePath);
+      }
+    }
+
+    for (const relativePath of guidePaths) {
+      assertContainsAll(
+        readText(relativePath),
+        ["Object.is", "immutable", "Core", "SSR"],
+        relativePath,
+      );
+    }
+
+    const chineseFrameworkGuide = readText(
+      "packages/docs/src/content/docs/guides/framework-adapters.md",
+    );
+    assertContainsAll(
+      chineseFrameworkGuide,
+      [
+        "每个请求",
+        "createSSRApp",
+        "renderToString",
+        "只读取 `atom.get()` snapshot",
+        "不安装 Core watcher",
+        "只有客户端活动 effect scope 中的读取 API 才会订阅 Core",
+        "scope cleanup 自动释放",
+      ],
+      "packages/docs/src/content/docs/guides/framework-adapters.md",
+    );
+    assert.ok(
+      !chineseFrameworkGuide.includes("renderToString` 完成后会停止组件 scope"),
+      "Chinese Vue SSR contract must not claim that SSR installs and then releases a subscription",
+    );
+
+    const englishFrameworkGuide = readText(
+      "packages/docs/src/content/docs/en/guides/framework-adapters.md",
+    );
+    assertContainsAll(
+      englishFrameworkGuide,
+      [
+        "per request",
+        "createSSRApp",
+        "renderToString",
+        "only reads an `atom.get()` snapshot",
+        "does not install a Core watcher",
+        "Only read APIs in an active client effect scope subscribe to Core",
+        "scope cleanup registered with `onScopeDispose` releases them",
+      ],
+      "packages/docs/src/content/docs/en/guides/framework-adapters.md",
+    );
+    assert.ok(
+      !englishFrameworkGuide.includes(
+        "renderToString` provides the active component scope and stops that scope after rendering",
+      ),
+      "English Vue SSR contract must not claim that SSR installs and then releases a subscription",
+    );
+
+    const sidebar = readText("packages/docs/astro.config.mjs");
+    assertContainsAll(
+      sidebar,
+      [
+        'slug: "guides/framework-adapters"',
+        'slug: "reference/preact"',
+        'slug: "reference/svelte"',
+        'slug: "reference/vue"',
+        'slug: "reference/solid"',
+      ],
+      "packages/docs/astro.config.mjs",
+    );
+
+    const frameworkSkill = readText("skills/zhuangtai-framework-adapters/SKILL.md");
+    assertContainsAll(
+      frameworkSkill,
+      [
+        "@zhuangtai-js/preact",
+        "@zhuangtai-js/svelte",
+        "@zhuangtai-js/vue",
+        "@zhuangtai-js/solid",
+        "per request",
+        "Object.is",
+      ],
+      "skills/zhuangtai-framework-adapters/SKILL.md",
+    );
+  });
+
+  it("documents versioned Persist migration and synchronous failure semantics", () => {
+    const persistReferencePaths = [
+      "packages/docs/src/content/docs/reference/persist.md",
+      "packages/docs/src/content/docs/en/reference/persist.md",
+    ];
+
+    for (const relativePath of persistReferencePaths) {
+      assertContainsAll(
+        readText(relativePath),
+        [
+          "version",
+          "migrations",
+          "definePersistMigration",
+          "version 0",
+          "cause",
+          "Object.is",
+          "PersistMigration",
+        ],
+        relativePath,
+      );
+    }
+
+    assertContainsAll(
+      readText("packages/docs/src/content/docs/reference/persist.md"),
+      ["正安全整数", "逐步", "同步抛错", "写回", "内存状态保持不变"],
+      "packages/docs/src/content/docs/reference/persist.md",
+    );
+    assertContainsAll(
+      readText("packages/docs/src/content/docs/en/reference/persist.md"),
+      [
+        "positive safe integer",
+        "step by step",
+        "throws synchronously",
+        "write-back",
+        "in-memory state stays unchanged",
+      ],
+      "packages/docs/src/content/docs/en/reference/persist.md",
+    );
+
+    assertContainsAll(
+      readText("skills/zhuangtai-plugins/SKILL.md"),
+      ["definePersistMigration", "version 0", "write-back", "future version", "cause"],
+      "skills/zhuangtai-plugins/SKILL.md",
+    );
+    assert.ok(
+      readText("skills/zhuangtai/SKILL.md").includes("zhuangtai-framework-adapters"),
+      "skills/zhuangtai/SKILL.md must reference the framework adapter skill",
+    );
   });
 
   it("keeps the public playground interactive, bilingual, and Tailwind-only", () => {

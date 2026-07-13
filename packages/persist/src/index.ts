@@ -4,25 +4,18 @@ import type {
   AtomCreatorPluginContext,
   NextValue,
 } from "@zhuangtai-js/core";
+import type { PersistCodec, PersistOptions, PersistStorage } from "./types.js";
+import {
+  assertPersistVersion,
+  encodeVersioned,
+  restoreVersioned,
+  writeEncodedVersioned,
+} from "./versioned.js";
+
+export { definePersistMigration } from "./types.js";
+export type { PersistCodec, PersistMigration, PersistOptions, PersistStorage } from "./types.js";
 
 const PACKAGE_NAME = "@zhuangtai-js/persist";
-
-export type PersistStorage = {
-  readonly getItem: (key: string) => string | null;
-  readonly setItem: (key: string, value: string) => void;
-  readonly removeItem: (key: string) => void;
-};
-
-export type PersistCodec = {
-  readonly encode: (value: unknown) => string;
-  readonly decode: <Value>(rawValue: string, initialValue: Value) => Value;
-};
-
-export type PersistOptions = {
-  readonly key: string;
-  readonly storage?: PersistStorage;
-  readonly codec?: PersistCodec;
-};
 
 export const persist: AtomCreatorPlugin<"persist", PersistOptions> = {
   id: "persist",
@@ -38,16 +31,57 @@ function createPersistedAtom<Value>(
     return context.next(context.initialValue);
   }
 
+  if (options.version !== undefined) {
+    assertPersistVersion(options.version, options.key);
+  }
+
   const storage = resolveStorage(options.storage);
   const codec = options.codec ?? jsonCodec;
   const storedValue = storage.getItem(options.key);
+
+  if (options.version === undefined) {
+    const initialValue =
+      storedValue === null
+        ? context.initialValue
+        : decodeStored(codec, storedValue, context.initialValue, options.key);
+    const state = context.next(initialValue);
+
+    return persistAtom({
+      state,
+      storage,
+      key: options.key,
+      encode(value) {
+        return codec.encode(value);
+      },
+    });
+  }
+
   const initialValue =
     storedValue === null
       ? context.initialValue
-      : decodeStored(codec, storedValue, context.initialValue, options.key);
+      : restoreVersioned({
+          rawValue: storedValue,
+          initialValue: context.initialValue,
+          key: options.key,
+          version: options.version,
+          migrations: options.migrations,
+          storage,
+          codec,
+        });
   const state = context.next(initialValue);
+  const version = options.version;
 
-  return persistAtom({ state, storage, codec, key: options.key });
+  return persistAtom({
+    state,
+    key: options.key,
+    storage,
+    encode(value) {
+      return encodeVersioned(codec, value, options.key, version);
+    },
+    write(encodedValue) {
+      writeEncodedVersioned(storage, options.key, version, encodedValue);
+    },
+  });
 }
 
 function decodeStored<Value>(
@@ -68,15 +102,22 @@ function decodeStored<Value>(
 type PersistAtomParams<Value> = {
   readonly state: Atom<Value>;
   readonly storage: PersistStorage;
-  readonly codec: PersistCodec;
+  readonly encode: (value: Value) => string;
   readonly key: string;
+  readonly write?: (encodedValue: string) => void;
 };
 
 function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue: Value) => Value {
   return typeof nextValue === "function";
 }
 
-function persistAtom<Value>({ state, storage, codec, key }: PersistAtomParams<Value>): Atom<Value> {
+function persistAtom<Value>({
+  state,
+  storage,
+  encode,
+  key,
+  write,
+}: PersistAtomParams<Value>): Atom<Value> {
   function set(nextValue: NextValue<Value>): void {
     const prevValue = state.get();
     const value = isUpdater(nextValue) ? nextValue(prevValue) : nextValue;
@@ -85,11 +126,14 @@ function persistAtom<Value>({ state, storage, codec, key }: PersistAtomParams<Va
       return;
     }
 
-    // Persist first: if encode or setItem throws, in-memory state stays unchanged.
-    storage.setItem(key, codec.encode(value));
+    const encodedValue = encode(value);
 
-    // Commit only after a successful write. A concrete value is passed, so core never
-    // treats it as an updater.
+    if (write === undefined) {
+      storage.setItem(key, encodedValue);
+    } else {
+      write(encodedValue);
+    }
+
     state.set(value);
   }
 

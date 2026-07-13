@@ -13,9 +13,23 @@ If you need fuller context, use `https://zhuangtai.yojigen.cn/llms-full.txt`. It
 
 If you want a smaller context window, use `https://zhuangtai.yojigen.cn/llms-small.txt`. It fits better for quick Q&A, retrieval prefill, and low-cost prompts.
 
+## Key boundaries for LLMs
+
+- SSR: Create an independent `atom/store` for every SSR request; never share mutable state across requests.
+- Persist: migration input comes from storage and is always `unknown`; parse and narrow it first. Run migrations synchronously, one version at a time; if the durable write fails, do not commit the new in-memory state.
+- Choice: use `@zhuangtai-js/core` directly without framework rendering lifecycle or reactive bridging; use a framework adapter in components when automatic re-rendering, subscriptions, and lifecycle cleanup are needed.
+- The four framework adapters are `@zhuangtai-js/preact`, `@zhuangtai-js/svelte`, `@zhuangtai-js/vue`, and `@zhuangtai-js/solid`. The four Agent Skills are `zhuangtai`, `zhuangtai-react`, `zhuangtai-plugins`, and `zhuangtai-framework-adapters`.
+
+### 给模型的关键边界
+
+- SSR：每个 SSR 请求创建独立的 `atom/store`，避免跨请求共享可变状态。
+- Persist：migration 输入来自 storage，始终视为 `unknown`，先解析并收窄；迁移按版本同步、逐步执行；durable write 失败时不提交新的内存状态。
+- 选择：不需要框架渲染生命周期或响应式桥接时直接使用 `@zhuangtai-js/core`；组件需要自动重渲染、订阅和生命周期清理时使用 framework adapter。
+- 四个 framework adapter 是 `@zhuangtai-js/preact`、`@zhuangtai-js/svelte`、`@zhuangtai-js/vue`、`@zhuangtai-js/solid`；四个 Agent Skills 是 `zhuangtai`、`zhuangtai-react`、`zhuangtai-plugins`、`zhuangtai-framework-adapters`。
+
 ## Agent Skills
 
-The repo ships three skills under `skills/`, covering ZhuàngTài core usage, `zhuangtai-react`, and `zhuangtai-plugins`. You can install them with:
+The repo ships four skills under `skills/`, covering ZhuàngTài core usage, `zhuangtai-react`, `zhuangtai-plugins`, and `zhuangtai-framework-adapters`. You can install them with:
 
 ```sh
 npx skills add zhuangtai-js/ZhuangTai
