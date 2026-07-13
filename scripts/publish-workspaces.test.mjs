@@ -1,6 +1,6 @@
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-
+import { readFileSync } from "node:fs";
+import { describe, it } from "node:test";
 import {
   changelogNotesForPackage,
   commandOutput,
@@ -14,13 +14,87 @@ import {
   validatePackage,
 } from "./publish-workspaces.mjs";
 
+const npmPublishWorkflow = readFileSync(
+  new URL("../.github/workflows/npm-publish.yml", import.meta.url),
+  "utf8",
+);
+
+function workflowRunBlocks(workflow) {
+  const blocks = [];
+  let current = undefined;
+
+  for (const line of workflow.split(/\r?\n/u)) {
+    const runMatch = /^(?<indent>\s*)run:\s*(?<command>.*)$/u.exec(line);
+
+    if (runMatch !== null) {
+      current = {
+        indent: runMatch.groups.indent.length,
+        lines: runMatch.groups.command === "|" ? [] : [runMatch.groups.command],
+      };
+      blocks.push(current);
+      continue;
+    }
+
+    if (current === undefined || line.trim() === "") {
+      continue;
+    }
+
+    const indent = line.match(/^\s*/u)?.[0].length ?? 0;
+    if (indent <= current.indent) {
+      current = undefined;
+      continue;
+    }
+
+    current.lines.push(line);
+  }
+
+  return blocks.map(({ lines }) => lines.join("\n"));
+}
+
+function workflowSection(start, end) {
+  const startIndex = npmPublishWorkflow.indexOf(start);
+  const endIndex = npmPublishWorkflow.indexOf(end, startIndex + start.length);
+
+  assert.notEqual(startIndex, -1, `Missing workflow section: ${start}`);
+  assert.notEqual(endIndex, -1, `Missing workflow section boundary: ${end}`);
+  return npmPublishWorkflow.slice(startIndex, endIndex);
+}
+
+describe("npm publish workflow input handling", () => {
+  it("does not interpolate workflow_dispatch inputs directly in shell commands", () => {
+    const runBlocks = workflowRunBlocks(npmPublishWorkflow);
+
+    assert.ok(runBlocks.length > 0);
+    assert.ok(
+      runBlocks.every(
+        (block) => !/\$\{\{\s*(?:inputs|github\.event\.inputs)\.[^}]+\}\}/u.test(block),
+      ),
+    );
+  });
+
+  it("maps release inputs through env and quotes shell arguments", () => {
+    const dryRunStep = workflowSection("      - name: Dry-run publish", "\n  publish:");
+    const publishStep = workflowSection("      - name: Publish", "\n  github-release:");
+
+    for (const step of [dryRunStep, publishStep]) {
+      assert.match(step, /CHANNEL: \$\{\{ inputs\.channel \}\}/u);
+      assert.match(step, /PACKAGE_NAME: \$\{\{ inputs\.package_name \}\}/u);
+      assert.match(step, /--channel "\$CHANNEL"/u);
+      assert.match(step, /--package "\$PACKAGE_NAME"/u);
+    }
+  });
+});
+
 describe("commandOutput", () => {
   it("keeps stdout when stderr is empty", () => {
     assert.equal(commandOutput({ stdout: "stdout failure", stderr: "" }), "stdout failure");
   });
 
   it("keeps stderr and stdout when both exist", () => {
-    assert.equal(commandOutput({ stdout: "stdout failure", stderr: "stderr failure" }), "stderr failure\nstdout failure");
+    assert.equal(
+      commandOutput({ stdout: "stdout failure", stderr: "stderr failure" }),
+      "stderr failure\nstdout failure",
+    );
   });
 });
 
@@ -94,7 +168,10 @@ describe("isAlreadyPublished", () => {
     assert.throws(
       () =>
         isAlreadyPublished(
-          { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
+          {
+            dir: "/repo/packages/core",
+            manifest: { name: "@zhuangtai-js/core", version: "0.1.0" },
+          },
           recorder.run,
         ),
       /Failed to check/,
@@ -114,7 +191,12 @@ describe("publishPackage", () => {
       { channel: "stable", dryRun: true, runCommand: recorder.run, env: {} },
     );
 
-    assert.deepEqual(recorder.calls[0].args.slice(0, 4), ["--dir", "/repo/packages/core", "pack", "--pack-destination"]);
+    assert.deepEqual(recorder.calls[0].args.slice(0, 4), [
+      "--dir",
+      "/repo/packages/core",
+      "pack",
+      "--pack-destination",
+    ]);
     assert.equal(recorder.calls[1].command, "npm");
     assert.equal(recorder.calls[1].args[0], "publish");
     assert.match(recorder.calls[1].args[1], /zhuangtai-js-core-0\.1\.0\.tgz$/u);
@@ -137,25 +219,41 @@ describe("publishPackage", () => {
 
     publishPackage(
       { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
-      { channel: "stable", dryRun: false, runCommand: recorder.run, env: { GITHUB_ACTIONS: "true" } },
+      {
+        channel: "stable",
+        dryRun: false,
+        runCommand: recorder.run,
+        env: { GITHUB_ACTIONS: "true" },
+      },
     );
 
-    assert.deepEqual(recorder.calls.map((call) => call.command), ["pnpm", "npm"]);
+    assert.deepEqual(
+      recorder.calls.map((call) => call.command),
+      ["pnpm", "npm"],
+    );
     assert.deepEqual(recorder.calls[1].args.slice(0, 1), ["publish"]);
     assert.ok(!recorder.calls[1].args.includes("--dry-run"));
   });
 
   it("uses package manager compatible tarball names", () => {
-    assert.equal(packedPackageName({ name: "@zhuangtai-js/core", version: "0.1.0" }), "zhuangtai-js-core-0.1.0.tgz");
+    assert.equal(
+      packedPackageName({ name: "@zhuangtai-js/core", version: "0.1.0" }),
+      "zhuangtai-js-core-0.1.0.tgz",
+    );
   });
 
   it("rejects real publishing outside GitHub Actions after packing", () => {
-    const recorder = commandRecorder([{ status: 0, stdout: "zhuangtai-js-core-0.1.0.tgz", stderr: "" }]);
+    const recorder = commandRecorder([
+      { status: 0, stdout: "zhuangtai-js-core-0.1.0.tgz", stderr: "" },
+    ]);
 
     assert.throws(
       () =>
         publishPackage(
-          { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
+          {
+            dir: "/repo/packages/core",
+            manifest: { name: "@zhuangtai-js/core", version: "0.1.0" },
+          },
           { channel: "stable", dryRun: false, runCommand: recorder.run, env: {} },
         ),
       /GitHub Actions/,
@@ -212,12 +310,23 @@ describe("parseArgs", () => {
   });
 
   it("parses package and summary options", () => {
-    assert.deepEqual(parseArgs(["--channel", "beta", "--package", "persist", "--summary-file", "summary.json", "--dry-run"]), {
-      channel: "beta",
-      dryRun: true,
-      packageName: "@zhuangtai-js/persist",
-      summaryFile: "summary.json",
-    });
+    assert.deepEqual(
+      parseArgs([
+        "--channel",
+        "beta",
+        "--package",
+        "persist",
+        "--summary-file",
+        "summary.json",
+        "--dry-run",
+      ]),
+      {
+        channel: "beta",
+        dryRun: true,
+        packageName: "@zhuangtai-js/persist",
+        summaryFile: "summary.json",
+      },
+    );
   });
 
   it("rejects ambiguous modes", () => {
@@ -267,7 +376,10 @@ describe("changelogNotesForPackage", () => {
     assert.throws(
       () =>
         changelogNotesForPackage(
-          { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.3.1" } },
+          {
+            dir: "/repo/packages/core",
+            manifest: { name: "@zhuangtai-js/core", version: "0.3.1" },
+          },
           { readFileSync: () => "# core 更新日志 / Changelog\n" },
         ),
       /Missing @zhuangtai-js\/core 0.3.1 changelog entry/,
@@ -287,7 +399,14 @@ describe("publishWorkspaces", () => {
     const summary = publishWorkspaces({
       workspacePackages: [
         { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
-        { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" } },
+        {
+          dir: "/repo/packages/persist",
+          manifest: {
+            name: "@zhuangtai-js/persist",
+            peerDependencies: { "@zhuangtai-js/core": "^0.5.0" },
+            version: "0.1.0",
+          },
+        },
       ],
       channel: "stable",
       dryRun: true,
@@ -302,6 +421,7 @@ describe("publishWorkspaces", () => {
       {
         npmTag: "latest",
         packageName: "@zhuangtai-js/core",
+        peerDependencies: {},
         prerelease: false,
         tag: "core-v0.1.0",
         notes: "@zhuangtai-js/core 0.1.0 notes",
@@ -311,6 +431,7 @@ describe("publishWorkspaces", () => {
       {
         npmTag: "latest",
         packageName: "@zhuangtai-js/persist",
+        peerDependencies: { "@zhuangtai-js/core": "^0.5.0" },
         prerelease: false,
         tag: "persist-v0.1.0",
         notes: "@zhuangtai-js/persist 0.1.0 notes",
@@ -330,7 +451,10 @@ describe("publishWorkspaces", () => {
     const summary = publishWorkspaces({
       workspacePackages: [
         { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
-        { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" } },
+        {
+          dir: "/repo/packages/persist",
+          manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" },
+        },
       ],
       channel: "stable",
       dryRun: true,
@@ -353,7 +477,10 @@ describe("publishWorkspaces", () => {
     const summary = publishWorkspaces({
       workspacePackages: [
         { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.3.1" } },
-        { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.2.1" } },
+        {
+          dir: "/repo/packages/persist",
+          manifest: { name: "@zhuangtai-js/persist", version: "0.2.1" },
+        },
       ],
       channel: "stable",
       dryRun: true,
@@ -368,6 +495,7 @@ describe("publishWorkspaces", () => {
       {
         npmTag: "latest",
         packageName: "@zhuangtai-js/core",
+        peerDependencies: {},
         prerelease: false,
         tag: "core-v0.3.1",
         notes: "@zhuangtai-js/core 0.3.1 notes",
@@ -381,7 +509,12 @@ describe("publishWorkspaces", () => {
     assert.throws(
       () =>
         publishWorkspaces({
-          workspacePackages: [{ dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } }],
+          workspacePackages: [
+            {
+              dir: "/repo/packages/core",
+              manifest: { name: "@zhuangtai-js/core", version: "0.1.0" },
+            },
+          ],
           channel: "stable",
           dryRun: true,
           packageName: "@zhuangtai-js/persist",
@@ -399,7 +532,12 @@ describe("publishWorkspaces", () => {
     assert.throws(
       () =>
         publishWorkspaces({
-          workspacePackages: [{ dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } }],
+          workspacePackages: [
+            {
+              dir: "/repo/packages/core",
+              manifest: { name: "@zhuangtai-js/core", version: "0.1.0" },
+            },
+          ],
           channel: "beta",
           dryRun: true,
           runCommand: recorder.run,
@@ -419,8 +557,14 @@ describe("publishWorkspaces", () => {
       () =>
         publishWorkspaces({
           workspacePackages: [
-            { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
-            { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "banana" } },
+            {
+              dir: "/repo/packages/core",
+              manifest: { name: "@zhuangtai-js/core", version: "0.1.0" },
+            },
+            {
+              dir: "/repo/packages/persist",
+              manifest: { name: "@zhuangtai-js/persist", version: "banana" },
+            },
           ],
           channel: "stable",
           dryRun: false,
@@ -450,7 +594,10 @@ describe("publishWorkspaces", () => {
     const summary = publishWorkspaces({
       workspacePackages: [
         { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
-        { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" } },
+        {
+          dir: "/repo/packages/persist",
+          manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" },
+        },
       ],
       channel: "stable",
       dryRun: false,
@@ -460,12 +607,17 @@ describe("publishWorkspaces", () => {
       readReleaseNotes: releaseNotes,
     });
 
-    const publishCalls = recorder.calls.filter(({ command, args }) => command === "npm" && args[0] === "publish");
+    const publishCalls = recorder.calls.filter(
+      ({ command, args }) => command === "npm" && args[0] === "publish",
+    );
     assert.deepEqual(
       publishCalls.map(({ args }) => args.includes("--dry-run")),
       [true, true, false, false],
     );
-    assert.deepEqual(summary.published, ["@zhuangtai-js/core@0.1.0", "@zhuangtai-js/persist@0.1.0"]);
+    assert.deepEqual(summary.published, [
+      "@zhuangtai-js/core@0.1.0",
+      "@zhuangtai-js/persist@0.1.0",
+    ]);
   });
 
   it("packs every unpublished package before publishing any package", () => {
@@ -480,8 +632,14 @@ describe("publishWorkspaces", () => {
       () =>
         publishWorkspaces({
           workspacePackages: [
-            { dir: "/repo/packages/core", manifest: { name: "@zhuangtai-js/core", version: "0.1.0" } },
-            { dir: "/repo/packages/persist", manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" } },
+            {
+              dir: "/repo/packages/core",
+              manifest: { name: "@zhuangtai-js/core", version: "0.1.0" },
+            },
+            {
+              dir: "/repo/packages/persist",
+              manifest: { name: "@zhuangtai-js/persist", version: "0.1.0" },
+            },
           ],
           channel: "stable",
           dryRun: false,
@@ -494,7 +652,8 @@ describe("publishWorkspaces", () => {
     );
 
     assert.equal(
-      recorder.calls.filter(({ command, args }) => command === "npm" && args[0] === "publish").length,
+      recorder.calls.filter(({ command, args }) => command === "npm" && args[0] === "publish")
+        .length,
       0,
     );
   });

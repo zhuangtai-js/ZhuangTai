@@ -9,7 +9,8 @@ const packageScope = "@zhuangtai-js/";
 const stableVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/u;
 const betaVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)-beta\.(?:0|[1-9]\d*)$/u;
 const devVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)-dev\.(?:0|[1-9]\d*)$/u;
-const releaseVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:beta|dev)\.(?:0|[1-9]\d*))?$/u;
+const releaseVersionPattern =
+  /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:beta|dev)\.(?:0|[1-9]\d*))?$/u;
 
 const channels = {
   beta: {
@@ -54,7 +55,9 @@ function validatePackage({ manifest }) {
   }
 
   if (typeof manifest.name !== "string" || !manifest.name.startsWith(packageScope)) {
-    throw new Error(`Publishable workspace package must use ${packageScope} scope: ${manifest.name ?? "<missing>"}`);
+    throw new Error(
+      `Publishable workspace package must use ${packageScope} scope: ${manifest.name ?? "<missing>"}`,
+    );
   }
 
   if (typeof manifest.version !== "string" || manifest.version.length === 0) {
@@ -94,7 +97,9 @@ function changelogNotesForPackage(workspacePackage, fs = { readFileSync }) {
   const match = new RegExp(`^## ${versionPattern}(?:\\s+-[^\\n]*)?\\n`, "mu").exec(changelog);
 
   if (match === null) {
-    throw new Error(`Missing ${manifest.name} ${manifest.version} changelog entry in ${changelogPath}`);
+    throw new Error(
+      `Missing ${manifest.name} ${manifest.version} changelog entry in ${changelogPath}`,
+    );
   }
 
   const rest = changelog.slice(match.index + match[0].length);
@@ -103,13 +108,18 @@ function changelogNotesForPackage(workspacePackage, fs = { readFileSync }) {
   return (nextEntryIndex === -1 ? rest : rest.slice(0, nextEntryIndex)).trim();
 }
 
-function githubReleaseForPackage(workspacePackage, channel, readReleaseNotes = changelogNotesForPackage) {
+function githubReleaseForPackage(
+  workspacePackage,
+  channel,
+  readReleaseNotes = changelogNotesForPackage,
+) {
   const { manifest } = workspacePackage;
 
   return {
     notes: readReleaseNotes(workspacePackage),
     npmTag: channels[channel].npmTag,
     packageName: manifest.name,
+    peerDependencies: manifest.peerDependencies ?? {},
     prerelease: channels[channel].prerelease,
     tag: `${packageShortName(manifest)}-v${manifest.version}`,
     title: `${packageShortName(manifest)} v${manifest.version}`,
@@ -139,13 +149,19 @@ function isNotFoundError(result) {
 }
 
 function commandOutput(result) {
-  return [result.stderr, result.stdout].filter((output) => typeof output === "string" && output.length > 0).join("\n");
+  return [result.stderr, result.stdout]
+    .filter((output) => typeof output === "string" && output.length > 0)
+    .join("\n");
 }
 
 function isAlreadyPublished(workspacePackage, runCommand) {
-  const result = runCommand("npm", ["view", packageRef(workspacePackage.manifest), "version", "--registry", npmRegistry], {
-    cwd: workspacePackage.dir,
-  });
+  const result = runCommand(
+    "npm",
+    ["view", packageRef(workspacePackage.manifest), "version", "--registry", npmRegistry],
+    {
+      cwd: workspacePackage.dir,
+    },
+  );
 
   if (result.status === 0) {
     return true;
@@ -155,19 +171,27 @@ function isAlreadyPublished(workspacePackage, runCommand) {
     return false;
   }
 
-  throw new Error(`Failed to check ${packageRef(workspacePackage.manifest)} on npm:\n${commandOutput(result)}`);
+  throw new Error(
+    `Failed to check ${packageRef(workspacePackage.manifest)} on npm:\n${commandOutput(result)}`,
+  );
 }
 
 function packPackage(workspacePackage, runCommand) {
   const tempDir = mkdtempSync(join(tmpdir(), "zhuangtai-publish-"));
 
   try {
-    const packResult = runCommand("pnpm", ["--dir", workspacePackage.dir, "pack", "--pack-destination", tempDir], {
-      cwd: workspacePackage.dir,
-    });
+    const packResult = runCommand(
+      "pnpm",
+      ["--dir", workspacePackage.dir, "pack", "--pack-destination", tempDir],
+      {
+        cwd: workspacePackage.dir,
+      },
+    );
 
     if (packResult.status !== 0) {
-      throw new Error(`Failed to pack ${packageRef(workspacePackage.manifest)}:\n${commandOutput(packResult)}`);
+      throw new Error(
+        `Failed to pack ${packageRef(workspacePackage.manifest)}:\n${commandOutput(packResult)}`,
+      );
     }
 
     return {
@@ -201,7 +225,9 @@ function publishPackedPackage(packedPackage, { channel, dryRun, runCommand }) {
   const publishResult = runCommand("npm", publishArgs, { cwd: workspacePackage.dir });
 
   if (publishResult.status !== 0) {
-    throw new Error(`Failed to publish ${packageRef(workspacePackage.manifest)}:\n${commandOutput(publishResult)}`);
+    throw new Error(
+      `Failed to publish ${packageRef(workspacePackage.manifest)}:\n${commandOutput(publishResult)}`,
+    );
   }
 }
 
@@ -357,12 +383,20 @@ function parseArgs(args) {
     return { channel, dryRun: false, packageName, summaryFile };
   }
 
-  throw new Error("Usage: node scripts/publish-workspaces.mjs --channel dev|beta|stable --dry-run|--publish");
+  throw new Error(
+    "Usage: node scripts/publish-workspaces.mjs --channel dev|beta|stable --dry-run|--publish",
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const { channel, dryRun, packageName, summaryFile } = parseArgs(process.argv.slice(2));
-  const summary = publishWorkspaces({ rootDir: resolve(import.meta.dirname, ".."), channel, dryRun, packageName, runCommand });
+  const summary = publishWorkspaces({
+    rootDir: resolve(import.meta.dirname, ".."),
+    channel,
+    dryRun,
+    packageName,
+    runCommand,
+  });
 
   if (summaryFile !== undefined) {
     writeFileSync(summaryFile, `${JSON.stringify(summary, null, 2)}\n`);

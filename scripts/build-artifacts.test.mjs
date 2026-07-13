@@ -1,8 +1,8 @@
+import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { gzipSync } from "node:zlib";
-import assert from "node:assert/strict";
 
 const rootPath = new URL("..", import.meta.url).pathname;
 
@@ -23,15 +23,26 @@ function assertPackageManifest(packagePath) {
 const CORE_BUNDLE_BADGE_URL =
   "https://img.shields.io/bundlephobia/minzip/%40zhuangtai-js%2Fcore?label=bundle%20size&style=flat&colorA=000000&colorB=000000";
 
+const publishablePackagePaths = [
+  "packages/core",
+  "packages/freeze",
+  "packages/immer",
+  "packages/persist",
+  "packages/preact",
+  "packages/react",
+  "packages/solid",
+  "packages/svelte",
+  "packages/sync",
+  "packages/vue",
+];
+
 describe("build artifacts", () => {
   it("emits package export targets", () => {
     // Given
-    const expectedFiles = [
-      "packages/core/dist/index.js",
-      "packages/core/dist/index.d.ts",
-      "packages/persist/dist/index.js",
-      "packages/persist/dist/index.d.ts",
-    ];
+    const expectedFiles = publishablePackagePaths.flatMap((packagePath) => [
+      `${packagePath}/dist/index.js`,
+      `${packagePath}/dist/index.d.ts`,
+    ]);
 
     // When
     const missingFiles = expectedFiles.filter((filePath) => !existsSync(join(rootPath, filePath)));
@@ -49,7 +60,9 @@ describe("build artifacts", () => {
     ];
 
     // When
-    const existingStaleFiles = staleFiles.filter((filePath) => existsSync(join(rootPath, filePath)));
+    const existingStaleFiles = staleFiles.filter((filePath) =>
+      existsSync(join(rootPath, filePath)),
+    );
 
     // Then
     assert.deepEqual(existingStaleFiles, []);
@@ -58,7 +71,10 @@ describe("build artifacts", () => {
   it("keeps core external in the persist runtime", () => {
     // Given
     const persistRuntime = readFileSync(join(rootPath, "packages/persist/dist/index.js"), "utf8");
-    const persistDeclarations = readFileSync(join(rootPath, "packages/persist/dist/index.d.ts"), "utf8");
+    const persistDeclarations = readFileSync(
+      join(rootPath, "packages/persist/dist/index.d.ts"),
+      "utf8",
+    );
 
     // When
     const importsCoreTypes = persistDeclarations.includes("@zhuangtai-js/core");
@@ -71,13 +87,37 @@ describe("build artifacts", () => {
     assert.equal(inlinesCoreCreator, false);
   });
 
+  it("keeps core and framework runtimes external in framework adapters", () => {
+    const expectedRuntimeImports = {
+      "packages/preact": ['from "preact/compat"', 'from "preact/hooks"'],
+      "packages/solid": ['from "solid-js"'],
+      "packages/svelte": [],
+      "packages/vue": ['from "vue"'],
+    };
+
+    for (const [packagePath, runtimeImports] of Object.entries(expectedRuntimeImports)) {
+      const runtime = readFileSync(join(rootPath, packagePath, "dist/index.js"), "utf8");
+      const declarations = readFileSync(join(rootPath, packagePath, "dist/index.d.ts"), "utf8");
+
+      assert.ok(declarations.includes("@zhuangtai-js/core"));
+      assert.equal(runtime.includes("function atom("), false);
+      assert.equal(runtime.includes("function createAtom("), false);
+
+      for (const runtimeImport of runtimeImports) {
+        assert.ok(runtime.includes(runtimeImport));
+      }
+    }
+  });
+
   it("keeps package manifests pointed at generated exports", () => {
     // Given
-    const packages = ["packages/core", "packages/persist"];
+    const packages = publishablePackagePaths;
 
     // When
     const missingTargets = packages.flatMap((packagePath) => {
-      const manifest = JSON.parse(readFileSync(join(rootPath, packagePath, "package.json"), "utf8"));
+      const manifest = JSON.parse(
+        readFileSync(join(rootPath, packagePath, "package.json"), "utf8"),
+      );
       const importTarget = manifest.exports["."].import.slice(2);
       const typesTarget = manifest.exports["."].types.slice(2);
 
@@ -97,11 +137,27 @@ describe("build artifacts", () => {
       "packages/freeze": { "@zhuangtai-js/core": "^0.5.0" },
       "packages/immer": { "@zhuangtai-js/core": "^0.5.0" },
       "packages/persist": { "@zhuangtai-js/core": "^0.5.0" },
+      "packages/preact": {
+        "@zhuangtai-js/core": "^0.5.0",
+        preact: ">=10.9 <11",
+      },
       "packages/react": {
         "@zhuangtai-js/core": "^0.5.0",
         react: ">=18 <20",
       },
+      "packages/solid": {
+        "@zhuangtai-js/core": "^0.5.0",
+        "solid-js": ">=1.5 <2",
+      },
+      "packages/svelte": {
+        "@zhuangtai-js/core": "^0.5.0",
+        svelte: ">=4.2 <6",
+      },
       "packages/sync": { "@zhuangtai-js/core": "^0.5.0" },
+      "packages/vue": {
+        "@zhuangtai-js/core": "^0.5.0",
+        vue: ">=3.2 <4",
+      },
     };
 
     // When / Then
@@ -125,10 +181,21 @@ describe("build artifacts", () => {
     assert.ok(readme.includes(CORE_BUNDLE_BADGE_URL));
   });
 
-  it("smokes core and persist consumer APIs from built outputs", async () => {
-    const [{ atom, computed, createAtom }, { persist }] = await Promise.all([
+  it("smokes core, persist, and framework adapter APIs from built outputs", async () => {
+    const [
+      { atom, computed, createAtom },
+      { persist },
+      preactAdapter,
+      solidAdapter,
+      svelteAdapter,
+      vueAdapter,
+    ] = await Promise.all([
       import("../packages/core/dist/index.js"),
       import("../packages/persist/dist/index.js"),
+      import("../packages/preact/dist/index.js"),
+      import("../packages/solid/dist/index.js"),
+      import("../packages/svelte/dist/index.js"),
+      import("../packages/vue/dist/index.js"),
     ]);
 
     const state = atom(0);
@@ -161,6 +228,21 @@ describe("build artifacts", () => {
     assert.equal(persisted.get(), 5);
     persisted.set(6);
     assert.equal(data.get("counter"), "6");
+
+    const useCount = preactAdapter.createAtomHook(state);
+    const useDerived = preactAdapter.createComputedHook(derived);
+    assert.equal(typeof useCount, "function");
+    assert.equal(typeof useDerived, "function");
+
+    const svelteStore = svelteAdapter.toWritable(state);
+    svelteStore.update((value) => value + 1);
+    assert.equal(state.get(), 2);
+
+    vueAdapter.useSetAtom(state)(3);
+    assert.equal(state.get(), 3);
+
+    solidAdapter.createSetAtom(state)(4);
+    assert.equal(state.get(), 4);
   });
 
   it("builds docs workspace dependencies before deployment", () => {
@@ -181,7 +263,10 @@ describe("build artifacts", () => {
 
     for (const [relativePath, destination] of Object.entries(redirects)) {
       const redirectPage = readFileSync(join(rootPath, "packages/docs/dist", relativePath), "utf8");
-      assert.ok(redirectPage.includes(destination), `${relativePath} does not redirect to ${destination}`);
+      assert.ok(
+        redirectPage.includes(destination),
+        `${relativePath} does not redirect to ${destination}`,
+      );
     }
   });
 });
