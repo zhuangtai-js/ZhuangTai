@@ -56,7 +56,7 @@ function createPreferencesStorage(storage: PersistStorage): PersistStorage {
   return {
     getItem(key) {
       const rawValue = storage.getItem(key);
-      if (rawValue === null) return null;
+      if (typeof rawValue !== "string") return null;
 
       try {
         const decoded: unknown = JSON.parse(rawValue);

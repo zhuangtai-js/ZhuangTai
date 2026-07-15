@@ -1,7 +1,9 @@
+export type MaybePromise<Value> = Value | PromiseLike<Value>;
+
 export type PersistStorage = {
-  readonly getItem: (key: string) => string | null;
-  readonly setItem: (key: string, value: string) => void;
-  readonly removeItem: (key: string) => void;
+  readonly getItem: (key: string) => MaybePromise<string | null>;
+  readonly setItem: (key: string, value: string) => MaybePromise<void>;
+  readonly removeItem: (key: string) => MaybePromise<void>;
 };
 
 export type PersistCodec = {

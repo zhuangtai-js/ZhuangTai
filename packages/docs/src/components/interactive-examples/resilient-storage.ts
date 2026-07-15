@@ -19,6 +19,11 @@ export function createResilientStorage(
 
       try {
         const value = persistentStorage.getItem(key);
+        if (value !== null && typeof value !== "string") {
+          disablePersistence();
+          return memory.get(key) ?? null;
+        }
+
         if (value === null) memory.delete(key);
         else memory.set(key, value);
         return value;

@@ -13,7 +13,13 @@ import {
 } from "./versioned.js";
 
 export { definePersistMigration } from "./types.js";
-export type { PersistCodec, PersistMigration, PersistOptions, PersistStorage } from "./types.js";
+export type {
+  MaybePromise,
+  PersistCodec,
+  PersistMigration,
+  PersistOptions,
+  PersistStorage,
+} from "./types.js";
 
 const PACKAGE_NAME = "@zhuangtai-js/persist";
 
@@ -38,6 +44,12 @@ function createPersistedAtom<Value>(
   const storage = resolveStorage(options.storage);
   const codec = options.codec ?? jsonCodec;
   const storedValue = storage.getItem(options.key);
+
+  if (storedValue !== null && typeof storedValue !== "string") {
+    throw new TypeError(
+      `[${PACKAGE_NAME}] PromiseLike storage results are not supported by the synchronous persist runtime.`,
+    );
+  }
 
   if (options.version === undefined) {
     const initialValue =
