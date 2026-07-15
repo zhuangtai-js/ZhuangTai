@@ -53,7 +53,13 @@ export const guides = [
     packageName: "@zhuangtai-js/preact",
     peerPackage: "preact",
     peerPattern: /Preact\s+>=10\.9\s+<11/,
-    adapterExports: ["useAtomValue", "useSetAtom", "useAtom"],
+    adapterExports: [
+      "useAtomValue",
+      "useSetAtom",
+      "useAtom",
+      "createAtomHook",
+      "createComputedHook",
+    ],
     referencePath: "/reference/preact/",
   },
   {

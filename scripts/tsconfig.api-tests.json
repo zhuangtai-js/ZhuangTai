@@ -5,10 +5,17 @@
     "noEmit": true,
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
+    "jsx": "preserve",
     "paths": {
       "@zhuangtai-js/core": ["../packages/core/dist/index.d.ts"],
-      "@zhuangtai-js/persist": ["../packages/persist/dist/index.d.ts"]
+      "@zhuangtai-js/persist": ["../packages/persist/dist/index.d.ts"],
+      "@zhuangtai-js/react": ["../packages/react/dist/index.d.ts"]
     }
   },
-  "include": ["./api-types.test.ts"]
+  "include": [
+    "./api-types.test.ts",
+    "./docs-examples.test.ts",
+    "./docs-examples-react-native.d.ts",
+    "./docs-examples-react-native.test.tsx"
+  ]
 }

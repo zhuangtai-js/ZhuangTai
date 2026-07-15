@@ -28,7 +28,7 @@ describe("framework guide files and locale routes", () => {
     ).not.toThrow();
   });
 
-  it("keeps the chooser and framework sidebar bilingual and Todo5-only", () => {
+  it("keeps the chooser and framework sidebar bilingual", () => {
     expect(chooserErrors("zh", chooser.zh)).toEqual([]);
     expect(chooserErrors("en", chooser.en)).toEqual([]);
     expect(extractHeadings(chooser.zh).map(({ level }) => level)).toEqual(
@@ -40,6 +40,7 @@ describe("framework guide files and locale routes", () => {
     expect(frameworkSection?.items?.map(({ slug }) => slug)).toEqual([
       "guides/framework-adapters",
       "guides/react",
+      "guides/react-native-expo",
       "guides/preact",
       "guides/vue",
       "guides/svelte",

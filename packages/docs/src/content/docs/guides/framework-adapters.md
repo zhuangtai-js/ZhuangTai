@@ -1,6 +1,6 @@
 ---
 title: 选择框架适配器
-description: 用一页选择 React、Preact、Vue、Svelte 或 Solid 的 ZhuàngTài adapter，并快速进入对应指南。
+description: 用一页选择 React、Preact、Vue、Svelte、Solid，或在 React Native / Expo 中使用 React adapter，并快速进入对应指南。
 ---
 
 如果组件需要框架原生订阅、响应式读取和生命周期清理，就选择对应的 ZhuàngTài adapter；否则直接使用 `@zhuangtai-js/core`。
@@ -42,6 +42,10 @@ counterAtom.set((state) => ({
 
 使用 `@zhuangtai-js/react` 的 `useAtomValue`、`useSetAtom` 和 `useAtom`；它通过 React 的 `useSyncExternalStore` 对接 Core。先看 [React 快速指南](/guides/react/)，再查 [React 参考](/reference/react/)。
 
+### React Native / Expo
+
+React Native / Expo 直接使用同一个 `@zhuangtai-js/react`，不需要 Provider 或原生专用 adapter。React peer 范围说明兼容性，但不代表每一种 native renderer 都经过独立测试。前往 [React Native / Expo 指南](/guides/react-native-expo/) 查看原生 UI 和 AsyncStorage 持久化路径。
+
 ### Preact
 
 使用 `@zhuangtai-js/preact` 的原生 hooks 和 `preact/compat` snapshot bridge。先看 [Preact 快速指南](/guides/preact/)，再查 [Preact 参考](/reference/preact/)。
@@ -60,13 +64,14 @@ counterAtom.set((state) => ({
 
 ## 快速对比
 
-| 框架   | package                | 只读              | 只写            | 读写               | 生命周期边界             |
-| ------ | ---------------------- | ----------------- | --------------- | ------------------ | ------------------------ |
-| React  | `@zhuangtai-js/react`  | `useAtomValue`    | `useSetAtom`    | `useAtom`          | React component          |
-| Preact | `@zhuangtai-js/preact` | `useAtomValue`    | `useSetAtom`    | `useAtom`          | Preact component         |
-| Vue    | `@zhuangtai-js/vue`    | `useAtomValue`    | `useSetAtom`    | `useAtom`          | effect scope / component |
-| Svelte | `@zhuangtai-js/svelte` | `toReadable`      | `atom.set`      | `toWritable`       | store subscription       |
-| Solid  | `@zhuangtai-js/solid`  | `createAtomValue` | `createSetAtom` | `createAtomSignal` | owner / `createRoot`     |
+| 框架                | package                | 只读              | 只写            | 读写               | 生命周期边界             |
+| ------------------- | ---------------------- | ----------------- | --------------- | ------------------ | ------------------------ |
+| React               | `@zhuangtai-js/react`  | `useAtomValue`    | `useSetAtom`    | `useAtom`          | React component          |
+| React Native / Expo | `@zhuangtai-js/react`  | `useAtomValue`    | `useSetAtom`    | `useAtom`          | React Native component   |
+| Preact              | `@zhuangtai-js/preact` | `useAtomValue`    | `useSetAtom`    | `useAtom`          | Preact component         |
+| Vue                 | `@zhuangtai-js/vue`    | `useAtomValue`    | `useSetAtom`    | `useAtom`          | effect scope / component |
+| Svelte              | `@zhuangtai-js/svelte` | `toReadable`      | `atom.set`      | `toWritable`       | store subscription       |
+| Solid               | `@zhuangtai-js/solid`  | `createAtomValue` | `createSetAtom` | `createAtomSignal` | owner / `createRoot`     |
 
 ## 下一步
 

@@ -77,6 +77,13 @@ export const sidebar = [
         },
       },
       {
+        slug: "guides/react-native-expo",
+        label: "React Native / Expo 快速指南",
+        translations: {
+          en: "React Native / Expo Quick Start",
+        },
+      },
+      {
         slug: "guides/preact",
         label: "Preact 快速指南",
         translations: {

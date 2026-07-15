@@ -1,6 +1,6 @@
 ---
 title: Choose a framework adapter
-description: Choose the ZhuàngTài adapter for React, Preact, Vue, Svelte, or Solid and move directly to the matching guide.
+description: Choose the ZhuàngTài adapter for React, Preact, Vue, Svelte, or Solid, or use the React adapter in React Native / Expo.
 ---
 
 Choose a ZhuàngTài framework adapter when a component needs native subscriptions, reactive reads, and lifecycle cleanup; otherwise use `@zhuangtai-js/core` directly.
@@ -42,6 +42,10 @@ Use the cleanup boundary provided by a component, hook, store, effect scope, or 
 
 Use `useAtomValue`, `useSetAtom`, and `useAtom` from `@zhuangtai-js/react`; it bridges Core through React's `useSyncExternalStore`. Start with the [React quick start](/en/guides/react/), then see the [React reference](/en/reference/react/).
 
+### React Native / Expo
+
+React Native / Expo uses the same `@zhuangtai-js/react` directly, with no Provider or native-specific adapter. The React peer range describes compatibility; it does not claim that every native renderer is independently tested. Open the [React Native / Expo guide](/en/guides/react-native-expo/) for native UI and AsyncStorage persistence.
+
 ### Preact
 
 Use the native hooks and `preact/compat` snapshot bridge from `@zhuangtai-js/preact`. Start with the [Preact quick start](/en/guides/preact/), then see the [Preact reference](/en/reference/preact/).
@@ -60,13 +64,14 @@ Use `createAtomValue`, `createSetAtom`, and `createAtomSignal` from `@zhuangtai-
 
 ## Quick comparison
 
-| Framework | Package                | Read-only         | Setter-only     | Read-write         | Lifecycle boundary       |
-| --------- | ---------------------- | ----------------- | --------------- | ------------------ | ------------------------ |
-| React     | `@zhuangtai-js/react`  | `useAtomValue`    | `useSetAtom`    | `useAtom`          | React component          |
-| Preact    | `@zhuangtai-js/preact` | `useAtomValue`    | `useSetAtom`    | `useAtom`          | Preact component         |
-| Vue       | `@zhuangtai-js/vue`    | `useAtomValue`    | `useSetAtom`    | `useAtom`          | effect scope / component |
-| Svelte    | `@zhuangtai-js/svelte` | `toReadable`      | `atom.set`      | `toWritable`       | store subscription       |
-| Solid     | `@zhuangtai-js/solid`  | `createAtomValue` | `createSetAtom` | `createAtomSignal` | owner / `createRoot`     |
+| Framework           | Package                | Read-only         | Setter-only     | Read-write         | Lifecycle boundary       |
+| ------------------- | ---------------------- | ----------------- | --------------- | ------------------ | ------------------------ |
+| React               | `@zhuangtai-js/react`  | `useAtomValue`    | `useSetAtom`    | `useAtom`          | React component          |
+| React Native / Expo | `@zhuangtai-js/react`  | `useAtomValue`    | `useSetAtom`    | `useAtom`          | React Native component   |
+| Preact              | `@zhuangtai-js/preact` | `useAtomValue`    | `useSetAtom`    | `useAtom`          | Preact component         |
+| Vue                 | `@zhuangtai-js/vue`    | `useAtomValue`    | `useSetAtom`    | `useAtom`          | effect scope / component |
+| Svelte              | `@zhuangtai-js/svelte` | `toReadable`      | `atom.set`      | `toWritable`       | store subscription       |
+| Solid               | `@zhuangtai-js/solid`  | `createAtomValue` | `createSetAtom` | `createAtomSignal` | owner / `createRoot`     |
 
 ## Next steps
 
