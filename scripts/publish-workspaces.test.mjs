@@ -468,6 +468,46 @@ describe("publishWorkspaces", () => {
     assert.equal(recorder.calls[0].args[1], "@zhuangtai-js/persist@0.1.0");
   });
 
+  it("maps the persist 0.5.0 stable release to the latest tag", () => {
+    const recorder = commandRecorder([
+      { status: 1, stdout: "", stderr: "npm ERR! code E404" },
+      { status: 0, stdout: "zhuangtai-js-persist-0.5.0.tgz", stderr: "" },
+      { status: 0, stdout: "", stderr: "" },
+    ]);
+    const summary = publishWorkspaces({
+      workspacePackages: [
+        {
+          dir: "/repo/packages/persist",
+          manifest: {
+            name: "@zhuangtai-js/persist",
+            version: "0.5.0",
+            peerDependencies: { "@zhuangtai-js/core": "^0.5.0" },
+          },
+        },
+      ],
+      channel: "stable",
+      dryRun: true,
+      packageName: "@zhuangtai-js/persist",
+      runCommand: recorder.run,
+      log: () => {},
+      readReleaseNotes: ({ manifest }) => `${manifest.name} ${manifest.version} notes`,
+    });
+
+    assert.deepEqual(summary.published, ["@zhuangtai-js/persist@0.5.0"]);
+    assert.deepEqual(summary.releases, [
+      {
+        npmTag: "latest",
+        packageName: "@zhuangtai-js/persist",
+        peerDependencies: { "@zhuangtai-js/core": "^0.5.0" },
+        prerelease: false,
+        tag: "persist-v0.5.0",
+        notes: "@zhuangtai-js/persist 0.5.0 notes",
+        title: "persist v0.5.0",
+        version: "0.5.0",
+      },
+    ]);
+  });
+
   it("allows workspace package versions to release independently", () => {
     const recorder = commandRecorder([
       { status: 1, stdout: "", stderr: "npm ERR! code E404" },

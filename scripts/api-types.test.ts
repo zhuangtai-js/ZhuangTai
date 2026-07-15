@@ -6,6 +6,7 @@ import {
   type AtomValue,
   type Computed,
   type NextValue,
+  type ReadableAtom,
 } from "@zhuangtai-js/core";
 // @ts-expect-error AtomCreatorArgs is internal type plumbing, not public API.
 import type { AtomCreatorArgs } from "@zhuangtai-js/core";
@@ -14,7 +15,9 @@ import type { AtomCreatorOptions } from "@zhuangtai-js/core";
 import {
   definePersistMigration,
   persist,
+  type MaybePromise,
   type PersistCodec,
+  type PersistControls,
   type PersistMigration,
   type PersistOptions,
   type PersistStorage,
@@ -76,6 +79,21 @@ type _MultiComputed = Expect<Equal<typeof multiComputed, Computed<string>>>;
 computed((value: number) => value * 2);
 
 const createPersistedAtom = createAtom().use(persist);
+
+type _MaybePromise = Expect<
+  Equal<MaybePromise<string>, string | PromiseLike<string>>
+>;
+type _PersistControls = Expect<
+  Equal<
+    PersistControls,
+    {
+      readonly ready: (atom: ReadableAtom<unknown>) => Promise<void>;
+      readonly flush: (atom: ReadableAtom<unknown>) => Promise<void>;
+      readonly rehydrate: (atom: ReadableAtom<unknown>) => Promise<void>;
+      readonly clear: (atom: ReadableAtom<unknown>) => Promise<void>;
+    }
+  >
+>;
 
 type _PersistedCreatorOptions = Expect<
   Equal<

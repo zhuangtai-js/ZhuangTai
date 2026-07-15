@@ -109,6 +109,20 @@ describe("build artifacts", () => {
     }
   });
 
+  it("pins the persist 0.5.0 public release surface", () => {
+    const manifest = readManifest("packages/persist");
+    const runtime = readFileSync(join(rootPath, "packages/persist/dist/index.js"), "utf8");
+    const declarations = readFileSync(join(rootPath, "packages/persist/dist/index.d.ts"), "utf8");
+
+    assert.equal(manifest.version, "0.5.0");
+    assert.equal(manifest.dependencies?.["@react-native-async-storage/async-storage"], undefined);
+    assert.equal(manifest.peerDependencies?.["@react-native-async-storage/async-storage"], undefined);
+    assert.equal(runtime.includes("AsyncStorage"), false);
+    assert.equal(runtime.includes("async-storage"), false);
+    assert.equal(declarations.includes("AsyncStorage"), false);
+    assert.equal(declarations.includes("async-storage"), false);
+  });
+
   it("keeps package manifests pointed at generated exports", () => {
     // Given
     const packages = publishablePackagePaths;

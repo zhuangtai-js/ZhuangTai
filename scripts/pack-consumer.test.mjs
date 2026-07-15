@@ -53,6 +53,29 @@ function assertPackedFiles(tarballPath) {
   );
 }
 
+function assertPersistPackedFiles(tarballPath) {
+  const files = run("tar", ["-tzf", tarballPath]).stdout.trim().split("\n").toSorted();
+
+  assert.deepEqual(files, [
+    "package/CHANGELOG.md",
+    "package/LICENSE",
+    "package/README.md",
+    "package/dist/index.d.ts",
+    "package/dist/index.js",
+    "package/package.json",
+  ]);
+
+  const runtime = run("tar", ["-xOzf", tarballPath, "package/dist/index.js"]).stdout;
+  const declarations = run("tar", ["-xOzf", tarballPath, "package/dist/index.d.ts"]).stdout;
+
+  assert.equal(runtime.includes("function atom("), false);
+  assert.equal(runtime.includes("function createAtom("), false);
+  assert.equal(runtime.includes("AsyncStorage"), false);
+  assert.equal(runtime.includes("async-storage"), false);
+  assert.equal(declarations.includes("AsyncStorage"), false);
+  assert.equal(declarations.includes("async-storage"), false);
+}
+
 function packWorkspacePackage(packagePath, destinationPath) {
   const manifest = readManifest(packagePath);
   run("pnpm", ["--filter", manifest.name, "pack", "--pack-destination", destinationPath]);
@@ -214,6 +237,7 @@ describe("packed package consumer", () => {
     try {
       const coreManifest = readManifest("packages/core");
       const persistManifest = readManifest("packages/persist");
+      assert.equal(persistManifest.version, "0.5.0");
       const reactManifest = readManifest("packages/react");
       const freezeManifest = readManifest("packages/freeze");
       const immerManifest = readManifest("packages/immer");
@@ -244,6 +268,7 @@ describe("packed package consumer", () => {
       assert.equal(existsSync(syncTarballPath), true);
       assertPackedFiles(coreTarballPath);
       assertPackedFiles(persistTarballPath);
+      assertPersistPackedFiles(persistTarballPath);
       assertPackedFiles(reactTarballPath);
       assertPackedFiles(freezeTarballPath);
       assertPackedFiles(immerTarballPath);
@@ -313,6 +338,22 @@ const persisted = createState(1, { persist: { key: "count", storage } });
 persisted.set(3);
 if (data.get("count") !== "3") throw new Error("persist smoke failed");
 
+const asyncData = new Map();
+const asyncStorage = {
+  getItem: async (key) => asyncData.get(key) ?? null,
+  setItem: async (key, value) => {
+    asyncData.set(key, value);
+  },
+  removeItem: async (key) => {
+    asyncData.delete(key);
+  },
+};
+const asyncPersisted = createState(1, { persist: { key: "async-count", storage: asyncStorage } });
+await persist.ready(asyncPersisted);
+asyncPersisted.set(4);
+await persist.flush(asyncPersisted);
+if (asyncData.get("async-count") !== "4") throw new Error("async persist smoke failed");
+
 const frozenCreate = createAtom().use(freeze);
 const frozen = frozenCreate({ n: 1 }, { freeze: { enabled: true } });
 if (!Object.isFrozen(frozen.get())) throw new Error("freeze smoke failed");
@@ -348,7 +389,7 @@ if (typeof useDouble !== "function") throw new Error("react createComputedHook s
       writeFileSync(
         join(tempPath, "smoke.ts"),
         `import { atom, computed, createAtom, type Atom, type ReadableAtom } from "@zhuangtai-js/core";
-import { persist, type PersistStorage } from "@zhuangtai-js/persist";
+import { persist, type MaybePromise, type PersistControls, type PersistStorage } from "@zhuangtai-js/persist";
 import { freeze, type FreezeOptions } from "@zhuangtai-js/freeze";
 import { immer, type ImmerAtom } from "@zhuangtai-js/immer";
 import { sync, type SyncChannel } from "@zhuangtai-js/sync";
@@ -368,6 +409,13 @@ const storage: PersistStorage = {
   setItem: () => {},
   removeItem: () => {},
 };
+const asyncStorage: PersistStorage = {
+  getItem: async () => null,
+  setItem: async () => {},
+  removeItem: async () => {},
+};
+const controls: PersistControls = persist;
+const maybeValue: MaybePromise<string> = Promise.resolve("ready");
 
 const double: ReadableAtom<number> = computed(() => count.get() * 2);
 const useCount: () => readonly [number, (nextValue: number | ((prev: number) => number)) => void] =
@@ -391,6 +439,9 @@ syncedState.set((prev) => ({ count: prev.count + 1 }));
 
 void persist;
 void storage;
+void asyncStorage;
+void controls;
+void maybeValue;
 void useAtom;
 void useAtomValue;
 void useSetAtom;

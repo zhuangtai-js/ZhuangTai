@@ -89,7 +89,7 @@ Extension packages declare only verified peer versions. The current release line
 | ----------------------------- | -------------------- | --------------------------------- |
 | `@zhuangtai-js/freeze@0.2.x`  | `^0.5.0`             | —                                 |
 | `@zhuangtai-js/immer@0.2.x`   | `^0.5.0`             | — (Immer is a regular dependency) |
-| `@zhuangtai-js/persist@0.4.x` | `^0.5.0`             | —                                 |
+| `@zhuangtai-js/persist@0.5.x` | `^0.5.0`             | —                                 |
 | `@zhuangtai-js/preact@0.1.x`  | `^0.5.0`             | Preact `>=10.9 <11`               |
 | `@zhuangtai-js/react@0.2.x`   | `^0.5.0`             | React `>=18 <20`                  |
 | `@zhuangtai-js/solid@0.1.x`   | `^0.5.0`             | Solid `>=1.5 <2`                  |

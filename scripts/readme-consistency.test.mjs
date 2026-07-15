@@ -816,7 +816,7 @@ describe("README consistency", () => {
     );
   });
 
-  it("documents versioned Persist migration and synchronous failure semantics", () => {
+  it("documents Persist sync/async lifecycle, migration, and failure semantics", () => {
     const persistReferencePaths = [
       "packages/docs/src/content/docs/reference/persist.md",
       "packages/docs/src/content/docs/en/reference/persist.md",
@@ -833,6 +833,14 @@ describe("README consistency", () => {
           "cause",
           "Object.is",
           "PersistMigration",
+          "PersistStorage",
+          "PersistControls",
+          "ready",
+          "flush",
+          "rehydrate",
+          "clear",
+          "PromiseLike",
+          "SSR",
         ],
         relativePath,
       );
@@ -840,7 +848,19 @@ describe("README consistency", () => {
 
     assertContainsAll(
       readText("packages/docs/src/content/docs/reference/persist.md"),
-      ["正安全整数", "逐步", "同步抛错", "写回", "内存状态保持不变"],
+      [
+        "正安全整数",
+        "逐步",
+        "同步抛错",
+        "写回",
+        "内存状态保持不变",
+        "异步",
+        "hydration",
+        "const state = createAtom().use(persist)(0",
+        "`set()` 同步 fail-closed",
+        "`rehydrate()` 和 `clear()` 始终是 lifecycle Promise",
+        "queued deferred write error",
+      ],
       "packages/docs/src/content/docs/reference/persist.md",
     );
     assertContainsAll(
@@ -851,6 +871,12 @@ describe("README consistency", () => {
         "throws synchronously",
         "write-back",
         "in-memory state stays unchanged",
+        "asynchronous",
+        "hydration",
+        "const state = createAtom().use(persist)(0",
+        "fails closed synchronously",
+        "`rehydrate()` and `clear()` are always lifecycle Promises",
+        "queued deferred write error",
       ],
       "packages/docs/src/content/docs/en/reference/persist.md",
     );

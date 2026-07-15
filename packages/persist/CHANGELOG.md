@@ -1,5 +1,41 @@
 # persist 更新日志 / Changelog
 
+## 0.5.0 - 2026-07-16
+
+### 新增
+
+- `PersistStorage` 现在是通用的结构化同步或异步 storage 契约；`getItem`、`setItem` 和 `removeItem` 每次调用都接受普通返回值或 `PromiseLike` 返回值，同一个 storage 可以混合两种结果。
+- 异步 storage 支持确定性的 hydration 生命周期与 controller：`persist.ready`、`persist.flush`、`persist.rehydrate` 和 `persist.clear`。
+- 异步写入按本地更新顺序串行执行；写入失败会保留、通过 `onError` 报告，并在 `flush` 中可观察，后续写入仍会继续。
+
+### 语义
+
+- 异步 hydration 先使用 `initialValue`；本地更新在读取竞态中获胜，过期 hydration generation 不会覆盖新结果，最新本地值会在读取完成后写入。
+- migration 回调继续同步、按连续版本顺序执行；异步 storage 只让读取和 migration write-back 异步，并在 write-back 完成后才提交迁移值和 resolve `ready`。
+- 同步 storage 保持原有的 restore-before-return、write-before-commit、同步 watcher 与 `Object.is` no-op 语义。异步 `set()` 仍同步提交内存值；队列中延后的 `setItem` 抛错属于异步失败，由 `onError` 与 `flush` 报告。
+
+### 错误处理
+
+- 异步 hydration、异步或排队写入、migration write-back、`rehydrate` 和 `clear` 失败都带有 package、operation 与 key 上下文；原始错误保留在 `cause`。
+- atom creator 或本地 `set()` 的原始同步调用路径会同步 fail-closed；`rehydrate` 与 `clear` 始终通过 lifecycle Promise reject。这些 lifecycle 与队列失败由 `onError` 按操作报告，并由 `flush` 暴露第一条保留失败后清空这批失败。
+
+### Added
+
+- `PersistStorage` is now a generic structural sync-or-async storage contract. Each `getItem`, `setItem`, and `removeItem` call accepts either a plain result or a `PromiseLike` result, so one storage object may mix both result kinds.
+- Asynchronous storage now has deterministic hydration lifecycle controls through `persist.ready`, `persist.flush`, `persist.rehydrate`, and `persist.clear`.
+- Asynchronous writes are serialized in local-update order. Failures are retained, reported through `onError`, and exposed by `flush`; later writes continue.
+
+### Semantics
+
+- Asynchronous hydration starts from `initialValue`; local updates win hydration races, stale hydration generations cannot overwrite newer results, and the latest local value is written after the read completes.
+- Migration callbacks remain synchronous and run through consecutive versions in order. With asynchronous storage, only reads and migration write-back become asynchronous; the migrated value is committed and `ready` resolves after write-back completes.
+- Synchronous storage keeps the existing restore-before-return, write-before-commit, synchronous watcher, and `Object.is` no-op semantics. An asynchronous-storage `set()` still commits memory synchronously; a deferred `setItem` throw is an asynchronous failure reported by `onError` and `flush`.
+
+### Error handling
+
+- Asynchronous hydration, asynchronous or queued writes, migration write-back, `rehydrate`, and `clear` failures include package, operation, and key context; the original error is preserved in `cause`.
+- The original synchronous call paths of the atom creator and local `set()` fail closed synchronously; `rehydrate` and `clear` always reject through lifecycle Promises. `onError` reports each lifecycle or queued failure, and `flush` exposes the first retained failure before clearing that batch.
+
 ## 0.4.0 - 2026-07-13
 
 ### 新增
