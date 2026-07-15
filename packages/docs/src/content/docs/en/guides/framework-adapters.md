@@ -1,186 +1,75 @@
 ---
-title: Framework Adapter Best Practices
-description: Use native Preact, Svelte, Vue, and Solid APIs with correct lifecycle, SSR, and request-isolation boundaries.
+title: Choose a framework adapter
+description: Choose the ZhuàngTài adapter for React, Preact, Vue, Svelte, or Solid and move directly to the matching guide.
 ---
 
-ZhuàngTài adapters only connect Core `get`, `set`, and `watch` to each framework's native reactive interface. Core still decides when state changes: `set` applies immediately, `watch` runs synchronously, equality uses `Object.is`, and objects and arrays require immutable updates.
+Choose a ZhuàngTài framework adapter when a component needs native subscriptions, reactive reads, and lifecycle cleanup; otherwise use `@zhuangtai-js/core` directly.
 
-## Choose a package and API
+## Choose an install target
 
-Every adapter requires `@zhuangtai-js/core ^0.5.0` and declares only the framework peer range shown below.
+- **Use Core directly**: state lives in an SDK, data layer, command, event handler, or server module without a framework rendering lifecycle.
+- **Use a framework adapter**: a component should update when an atom changes and let the framework own subscription and cleanup.
+- **Keep one state model**: put `atom` and `computed` in a framework-independent state module, and connect an adapter only at the UI boundary.
 
-| Framework | Package                | Peer range          | Native API                                                                                     |
-| --------- | ---------------------- | ------------------- | ---------------------------------------------------------------------------------------------- |
-| Preact    | `@zhuangtai-js/preact` | Preact `>=10.9 <11` | `useAtomValue`, `useSetAtom`, `useAtom`, `createAtomHook`, `createComputedHook`                |
-| Svelte    | `@zhuangtai-js/svelte` | Svelte `>=4.2 <6`   | `toReadable` and `toWritable`, returning `svelte/store` objects                                |
-| Vue       | `@zhuangtai-js/vue`    | Vue `>=3.2 <4`      | `useAtomValue`, `useSetAtom`, and `useAtom`, returning a `ComputedRef` and setter              |
-| Solid     | `@zhuangtai-js/solid`  | Solid `>=1.5 <2`    | `createAtomValue`, `createSetAtom`, and `createAtomSignal`, returning an `Accessor` and setter |
-
-If state is only used outside framework lifecycle, install and use `@zhuangtai-js/core` directly.
+Every adapter requires `@zhuangtai-js/core ^0.5.0`. Adapters add no batching, deferring, transactions, or second equality check; Core applies `set` immediately, runs `watch` synchronously, and uses `Object.is` for equality.
 
 ## Shared principles
 
-### Let the framework own subscription lifecycle
+### Choose access by component responsibility
 
-- Use a read-only API for read-only components and a setter-only API for write-only components to avoid unnecessary subscriptions.
-- Let Preact hooks, Svelte `$store`, Vue effect scopes, or Solid client owners manage cleanup.
-- Keep and call the returned unsubscribe function when using Svelte `subscribe` manually.
-- When you create a Vue `effectScope()` or Solid `createRoot()` manually, call `scope.stop()` or `dispose()` when that lifecycle ends.
-- Adapters add no scheduling, batching, deferring, or transactions. A framework may defer DOM commits, but the Core value and adapter snapshot update during the synchronous notification.
+- **Read-only**: use a read-only API such as `useAtomValue`, `toReadable`, or `createAtomValue` for derived display values.
+- **Setter-only**: use a setter-only API for command buttons so they do not create an unnecessary subscription.
+- **Read-write**: use a read-write API for forms or counters that need both the current value and an updater.
 
-### Preserve `Object.is` and immutable updates
+### Update objects and arrays immutably
 
-Core is the only change gate. Repeated `NaN` values do not notify, while `0` and `-0` are distinct. Objects and arrays are compared by reference:
+Core compares objects and arrays by reference. Do not mutate a value in place and pass the same reference back; use object spread, a new array, or `map` to return a new value:
 
 ```ts
-const todos = atom([{ id: 1, done: false }]);
-
-// Correct: create a new array and a new object.
-todos.set((items) => items.map((item) => (item.id === 1 ? { ...item, done: true } : item)));
+counterAtom.set((state) => ({
+  ...state,
+  history: [...state.history, state.count + 1],
+}));
 ```
 
-Do not mutate a value in place and return the same reference. An adapter does not add a deep comparison after Core.
+### Let the framework own lifecycle
 
-### Isolate SSR state per request
+Use the cleanup boundary provided by a component, hook, store, effect scope, or owner. When subscribing manually, keep the stopper; when creating a Vue `effectScope()` or Solid `createRoot()` manually, call `scope.stop()` or `dispose()` at the boundary. Create independent mutable atoms/stores per SSR request and never share mutable server module-scope state.
 
-Mutable server state belongs to the request lifecycle. Do not share user-specific or request-specific atoms from server module scope:
+## Framework cards
 
-```ts
-import { atom } from "@zhuangtai-js/core";
+### React
 
-export function createRequestState(initialCount: number) {
-  return {
-    count: atom(initialCount),
-  };
-}
-```
+Use `useAtomValue`, `useSetAtom`, and `useAtom` from `@zhuangtai-js/react`; it bridges Core through React's `useSyncExternalStore`. Start with the [React quick start](/en/guides/react/), then see the [React reference](/en/reference/react/).
 
-Create the state once per request, then pass the same request-owned atoms through that component tree. The client initial value must match the server output during hydration. `@zhuangtai-js/persist` reads `localStorage` by default; on the server, pass explicit synchronous storage or create the persisted atom only on the client.
+### Preact
 
-## Preact
+Use the native hooks and `preact/compat` snapshot bridge from `@zhuangtai-js/preact`. Start with the [Preact quick start](/en/guides/preact/), then see the [Preact reference](/en/reference/preact/).
 
-```sh
-pnpm add @zhuangtai-js/core @zhuangtai-js/preact preact
-```
+### Vue
 
-`@zhuangtai-js/preact` uses `preact/hooks` and the two-argument `useSyncExternalStore` from `preact/compat`. `useAtomValue` and `useAtom` subscribe to values; `useSetAtom` returns only a stable setter. `createAtomHook` and `createComputedHook` bind a fixed atom into an argument-free hook.
+Use `useAtomValue`, `useSetAtom`, and `useAtom` from `@zhuangtai-js/vue`; call read APIs from `setup()` or an active effect scope. Start with the [Vue quick start](/en/guides/vue/), then see the [Vue reference](/en/reference/vue/).
 
-```tsx
-import { atom, computed } from "@zhuangtai-js/core";
-import { useAtom, useAtomValue, useSetAtom } from "@zhuangtai-js/preact";
+### Svelte
 
-const countAtom = atom(0);
-const doubleAtom = computed(() => countAtom.get() * 2);
+Use `toReadable` and `toWritable` from `@zhuangtai-js/svelte` to create standard `svelte/store` values. Start with the [Svelte quick start](/en/guides/svelte/), then see the [Svelte reference](/en/reference/svelte/).
 
-function Counter() {
-  const [count, setCount] = useAtom(countAtom);
-  const double = useAtomValue(doubleAtom);
-  const reset = useSetAtom(countAtom);
+### Solid
 
-  return (
-    <button onClick={() => setCount((value) => value + 1)}>
-      {count}:{double}
-    </button>
-  );
-}
-```
+Use `createAtomValue`, `createSetAtom`, and `createAtomSignal` from `@zhuangtai-js/solid`; client reads bind to the current owner. Start with the [Solid quick start](/en/guides/solid/), then see the [Solid reference](/en/reference/solid/).
 
-The adapter caches snapshots so a computed that creates a fresh object on each `get()` does not create a read loop. Server rendering uses the same browser-independent snapshot reader and creates no subscription. The application must still create atoms per request and keep hydration state consistent.
+## Quick comparison
 
-## Svelte
-
-```sh
-pnpm add @zhuangtai-js/core @zhuangtai-js/svelte svelte
-```
-
-`toReadable` converts a `ReadableAtom` into a standard `Readable`. `toWritable` converts a writable atom into a standard `Writable`. They work with `$store`, `derived`, `get`, and `readonly` and do not use runes.
-
-```svelte
-<script lang="ts">
-  import { atom, computed } from "@zhuangtai-js/core";
-  import { toReadable, toWritable } from "@zhuangtai-js/svelte";
-
-  const countAtom = atom(0);
-  const count = toWritable(countAtom);
-  const double = toReadable(computed(() => countAtom.get() * 2));
-</script>
-
-<button on:click={() => count.update((value) => value + 1)}>
-  {$count} × 2 = {$double}
-</button>
-```
-
-`$store` lets Svelte own subscription and cleanup. A manual `subscribe` call must be paired with its stopper. The adapter itself uses no browser API, so the SSR boundary comes from the underlying atom: create atoms and stores per request instead of sharing mutable server module instances.
-
-## Vue
-
-```sh
-pnpm add @zhuangtai-js/core @zhuangtai-js/vue vue
-```
-
-`useAtomValue` returns a read-only `ComputedRef<Value>`. `useAtom` returns `[ComputedRef<Value>, setter]`, and `useSetAtom` returns only a setter. Read APIs must run inside component `setup()`, `<script setup>`, `effectScope().run()`, or another active effect scope. Without an active scope, they throw synchronously before reading or subscribing.
-
-The adapter uses a shallow snapshot, preserving the exact object and array references held by Core instead of creating deep Vue proxies. `.value` updates synchronously during a Core notification; component DOM rendering still follows Vue's scheduler.
-
-The final Vue SSR boundary is: when `useAtomValue` runs in a `createSSRApp` component `setup()`, the `renderToString` path only reads an `atom.get()` snapshot and does not install a Core watcher or create a subscription. Only read APIs in an active client effect scope subscribe to Core, and the scope cleanup registered with `onScopeDispose` releases them. Do not add a manual `effectScope` solely for component SSR; stop a scope yourself only when you explicitly create a client scope outside the component scope.
-
-```ts
-import { renderToString } from "@vue/server-renderer";
-import { createSSRApp, h } from "vue";
-import { useAtomValue } from "@zhuangtai-js/vue";
-
-const requestState = createRequestState(1);
-const app = createSSRApp({
-  setup() {
-    const count = useAtomValue(requestState.count);
-    return () => h("span", String(count.value));
-  },
-});
-
-await renderToString(app); // SSR reads the snapshot without creating a Core subscription.
-```
-
-You must still create `requestState` per request. SSR creates no subscription, and client scope cleanup does not isolate a module-level atom.
-
-## Solid
-
-```sh
-pnpm add @zhuangtai-js/core @zhuangtai-js/solid solid-js
-```
-
-`createAtomValue` returns an `Accessor<Value>`. `createAtomSignal` returns `[Accessor<Value>, setter]`, and `createSetAtom` returns only a setter. Client read APIs must run in a component or `createRoot`; without a client owner, they throw synchronously before reading or subscribing. A standard server `renderToString` callback does not require an owner.
-
-```ts
-import { createRoot } from "solid-js";
-import { atom } from "@zhuangtai-js/core";
-import { createAtomSignal } from "@zhuangtai-js/solid";
-
-const countAtom = atom(0);
-const owned = createRoot((dispose) => {
-  const [count, setCount] = createAtomSignal(countAtom);
-  return { count, setCount, dispose };
-});
-
-owned.setCount((value) => value + 1);
-owned.dispose();
-```
-
-The internal signal uses `{ equals: false }`, leaving Core's `Object.is` as the only notification gate and preserving exact function, object, and array references. The server first uses the public `isServer` signal from `solid-js/web`; standard `renderToString(() => createAtomValue(source)...)` reads a snapshot without checking for an owner or creating a Core watcher, and Solid 1.5 needs no manual `createRoot` wrapper. Client component/root owners subscribe to Core and `onCleanup` stops them, while manual client roots must be explicitly disposed. Create independent atoms per request.
-
-## When to use Core directly
-
-An adapter is usually unnecessary when:
-
-- An SDK, data layer, command, event handler, Web Component, or server module does not need framework rendering.
-- You only need synchronous `get()` / `set()` / `watch()` and already have a clear manual cleanup boundary.
-- You want to reuse one state model across frameworks. Keep Core atoms in a framework-independent module and wrap them only at each UI boundary.
-
-Use an adapter at the UI boundary only when a component needs native subscriptions, automatic cleanup, and template or reactive integration.
+| Framework | Package                | Read-only         | Setter-only     | Read-write         | Lifecycle boundary       |
+| --------- | ---------------------- | ----------------- | --------------- | ------------------ | ------------------------ |
+| React     | `@zhuangtai-js/react`  | `useAtomValue`    | `useSetAtom`    | `useAtom`          | React component          |
+| Preact    | `@zhuangtai-js/preact` | `useAtomValue`    | `useSetAtom`    | `useAtom`          | Preact component         |
+| Vue       | `@zhuangtai-js/vue`    | `useAtomValue`    | `useSetAtom`    | `useAtom`          | effect scope / component |
+| Svelte    | `@zhuangtai-js/svelte` | `toReadable`      | `atom.set`      | `toWritable`       | store subscription       |
+| Solid     | `@zhuangtai-js/solid`  | `createAtomValue` | `createSetAtom` | `createAtomSignal` | owner / `createRoot`     |
 
 ## Next steps
 
-- [Preact reference](/en/reference/preact/)
-- [Svelte reference](/en/reference/svelte/)
-- [Vue reference](/en/reference/vue/)
-- [Solid reference](/en/reference/solid/)
-- [Integrations and compatibility](/en/integrations/)
+- Choose a [framework quick start](/en/guides/react/), copy the minimal counter, and replace its state module with your own.
+- Return to [Core Concepts](/en/guides/core-concepts/) for synchronous `get`, `set`, `watch`, and `computed`.
+- When state must be restored after a reload, read the [Persist reference](/en/reference/persist/).
