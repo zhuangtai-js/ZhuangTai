@@ -4,12 +4,14 @@ import { PersistFailureTracker } from "./failure-tracker.js";
 import { PersistOperationQueue } from "./operation-queue.js";
 import { isPromiseLike } from "./storage.js";
 import type { MaybePromise, PersistOptions, PersistStorage } from "./types.js";
+import type { MigrationPlan, RestorePlan } from "./versioned-plan.js";
 
 type PersistControllerParams<Value> = {
   readonly state: Atom<Value>;
   readonly storage: PersistStorage;
   readonly key: string;
-  readonly restore: (rawValue: string) => MaybePromise<Value>;
+  readonly read: () => MaybePromise<string | null>;
+  readonly restore: (rawValue: string) => RestorePlan<Value>;
   readonly encode: (value: Value) => string;
   readonly write: (encodedValue: string) => MaybePromise<void>;
   readonly onError: PersistOptions["onError"];
@@ -41,14 +43,15 @@ export class AsyncPersistController<Value> {
     };
   }
 
-  startInitialHydration(result: PromiseLike<string | null>): void {
+  readonly startInitialHydration = (result: PromiseLike<string | null>): void => {
     void this.startHydration(result, "hydrate");
-  }
-  startInitialValueHydration(result: PromiseLike<Value>): void {
+  };
+
+  startInitialMigration(plan: MigrationPlan<Value>, result: PromiseLike<void>): void {
     const generation = this.nextHydrationGeneration();
     const revision = this.localRevision;
     const task = Promise.resolve(result).then(
-      (value) => this.commitHydratedValue(value, generation, revision),
+      () => this.finishMigration(plan, generation, revision),
       (cause: unknown) => {
         if (generation === this.hydrationGeneration) {
           throw this.failures.record("hydrate", cause);
@@ -58,9 +61,7 @@ export class AsyncPersistController<Value> {
     this.trackHydration(generation, task);
   }
 
-  ready(): Promise<void> {
-    return this.latestHydration;
-  }
+  readonly ready = (): Promise<void> => this.latestHydration;
 
   async flush(): Promise<void> {
     await this.waitForAllOperations();
@@ -76,12 +77,7 @@ export class AsyncPersistController<Value> {
     const revision = this.localRevision;
 
     try {
-      return this.startHydration(
-        this.params.storage.getItem(this.params.key),
-        "rehydrate",
-        generation,
-        revision,
-      );
+      return this.startHydration(this.params.read(), "rehydrate", generation, revision);
     } catch (cause) {
       const failureCause = cause instanceof Error ? cause : createNonErrorCause(cause);
       return this.failHydration(generation, "rehydrate", failureCause);
@@ -90,11 +86,7 @@ export class AsyncPersistController<Value> {
 
   clear(): Promise<void> {
     const task = this.performClear();
-    this.pendingControls.add(task);
-    void task.then(
-      () => this.pendingControls.delete(task),
-      () => this.pendingControls.delete(task),
-    );
+    this.trackPending(task);
     return task;
   }
 
@@ -179,19 +171,39 @@ export class AsyncPersistController<Value> {
     if (rawValue === null) {
       return;
     }
-    const restoredValue = this.params.restore(rawValue);
-    if (isPromiseLike(restoredValue)) {
-      return Promise.resolve(restoredValue).then((value) =>
-        this.commitHydratedValue(value, generation, revision),
+    const plan = this.params.restore(rawValue);
+    if (plan.kind === "value") {
+      this.commitHydratedValue(plan.value, generation, revision);
+      return;
+    }
+    const writeBack = this.params.write(plan.writeBack);
+    if (isPromiseLike(writeBack)) {
+      return Promise.resolve(writeBack).then(() =>
+        this.finishMigration(plan, generation, revision),
       );
     }
-    this.commitHydratedValue(restoredValue, generation, revision);
+    this.finishMigration(plan, generation, revision);
   }
+
   private commitHydratedValue(value: Value, generation: number, revision: number): void {
     if (generation === this.hydrationGeneration && revision === this.localRevision) {
       this.params.state.set(value);
     } else if (generation === this.hydrationGeneration) {
       this.persistLatestLocalValue();
+    }
+  }
+
+  private finishMigration(plan: MigrationPlan<Value>, gen: number, rev: number): void {
+    if (gen === this.hydrationGeneration && rev === this.localRevision) {
+      this.params.state.set(plan.finalize());
+    } else if (gen === this.hydrationGeneration) {
+      this.persistLatestLocalValue();
+    } else {
+      this.queue.runBackgroundWrite(() =>
+        Promise.allSettled([this.latestHydration]).then(() =>
+          this.params.write(this.params.encode(this.params.state.get())),
+        ),
+      );
     }
   }
 
@@ -223,16 +235,18 @@ export class AsyncPersistController<Value> {
     }
 
     this.latestHydration = task;
+    this.trackPending(task);
+  }
+
+  private trackPending(task: Promise<void>): void {
+    this.pendingControls.add(task);
     void task.then(
-      () => undefined,
-      () => undefined,
+      () => this.pendingControls.delete(task),
+      () => this.pendingControls.delete(task),
     );
   }
 
-  private nextHydrationGeneration(): number {
-    this.hydrationGeneration += 1;
-    return this.hydrationGeneration;
-  }
+  private readonly nextHydrationGeneration = (): number => (this.hydrationGeneration += 1);
 
   private async performClear(): Promise<void> {
     await this.waitForHydrationAndWrites();

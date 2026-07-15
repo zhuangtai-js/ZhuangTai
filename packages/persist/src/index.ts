@@ -16,11 +16,12 @@ import type {
   PersistStorage,
 } from "./types.js";
 import {
-  assertPersistVersion,
   encodeVersioned,
-  restoreVersioned,
-  writeEncodedVersioned,
-} from "./versioned.js";
+  planUnversionedRestore,
+  planVersionedRestore,
+  type RestorePlan,
+} from "./versioned-plan.js";
+import { assertPersistVersion, readVersioned, writeEncodedVersioned } from "./versioned.js";
 
 export { definePersistMigration } from "./types.js";
 export type {
@@ -31,8 +32,6 @@ export type {
   PersistOptions,
   PersistStorage,
 } from "./types.js";
-
-const PACKAGE_NAME = "@zhuangtai-js/persist";
 
 export const persist: AtomCreatorPlugin<"persist", PersistOptions> & PersistControls = {
   id: "persist",
@@ -56,7 +55,8 @@ function controllerFor(atom: ReadableAtom<unknown>) {
 }
 
 type PersistencePlan<Value> = {
-  readonly restore: (rawValue: string) => MaybePromise<Value>;
+  readonly read: () => MaybePromise<string | null>;
+  readonly restore: (rawValue: string) => RestorePlan<Value>;
   readonly encode: (value: Value) => string;
   readonly write: (encodedValue: string) => MaybePromise<void>;
 };
@@ -96,7 +96,7 @@ function createPersistedAtom<Value>(
     storage,
     codec,
   });
-  const storedValue = storage.getItem(options.key);
+  const storedValue = plan.read();
 
   if (isPromiseLike(storedValue)) {
     const hydration = Promise.resolve(storedValue);
@@ -117,17 +117,24 @@ function createPersistedAtom<Value>(
     registerPersistController(controller.atom, controller);
     return controller.atom;
   }
-  const restoredValue = plan.restore(storedValue);
-  if (isPromiseLike(restoredValue)) {
-    const state = context.next(context.initialValue);
+  const restorePlan = plan.restore(storedValue);
+  if (restorePlan.kind === "value") {
+    const state = context.next(restorePlan.value);
     const controller = createController({ state, options, storage, plan });
     registerPersistController(controller.atom, controller);
-    controller.startInitialValueHydration(restoredValue);
     return controller.atom;
   }
-  const state = context.next(restoredValue);
+  const writeBack = plan.write(restorePlan.writeBack);
+  if (!isPromiseLike(writeBack)) {
+    const state = context.next(restorePlan.finalize());
+    const controller = createController({ state, options, storage, plan });
+    registerPersistController(controller.atom, controller);
+    return controller.atom;
+  }
+  const state = context.next(context.initialValue);
   const controller = createController({ state, options, storage, plan });
   registerPersistController(controller.atom, controller);
+  controller.startInitialMigration(restorePlan, writeBack);
   return controller.atom;
 }
 
@@ -141,6 +148,7 @@ function createController<Value>({
     state,
     storage,
     key: options.key,
+    read: plan.read,
     restore: plan.restore,
     encode: plan.encode,
     write: plan.write,
@@ -156,8 +164,11 @@ function createPersistencePlan<Value>({
 }: PersistencePlanParams<Value>): PersistencePlan<Value> {
   if (options.version === undefined) {
     return {
+      read() {
+        return storage.getItem(options.key);
+      },
       restore(rawValue) {
-        return decodeStored(codec, rawValue, initialValue, options.key);
+        return planUnversionedRestore(codec, rawValue, initialValue, options.key);
       },
       encode(value) {
         return codec.encode(value);
@@ -170,14 +181,16 @@ function createPersistencePlan<Value>({
 
   const version = options.version;
   return {
+    read() {
+      return readVersioned(storage, options.key, version);
+    },
     restore(rawValue) {
-      return restoreVersioned({
+      return planVersionedRestore({
         rawValue,
         initialValue,
         key: options.key,
         version,
         migrations: options.migrations,
-        storage,
         codec,
       });
     },
@@ -188,19 +201,4 @@ function createPersistencePlan<Value>({
       return writeEncodedVersioned(storage, options.key, version, encodedValue);
     },
   };
-}
-
-function decodeStored<Value>(
-  codec: PersistCodec,
-  rawValue: string,
-  initialValue: Value,
-  key: string,
-): Value {
-  try {
-    return codec.decode(rawValue, initialValue);
-  } catch (error) {
-    throw new Error(`[${PACKAGE_NAME}] Failed to decode the stored value for key "${key}".`, {
-      cause: error,
-    });
-  }
 }
