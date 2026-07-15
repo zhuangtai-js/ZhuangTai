@@ -3,17 +3,19 @@ import {
   computed,
   createAtom,
   type Atom,
+  type AtomCreatorPlugin,
   type AtomKind,
   type AtomOf,
   type AtomValue,
   type Computed,
   type NextValue,
+  type ReadableAtom,
   type StopWatch,
   type Watcher,
 } from "@zhuangtai-js/core";
 import { freeze } from "@zhuangtai-js/freeze";
 import { immer, type ImmerAtom, type ImmerNextValue } from "@zhuangtai-js/immer";
-import { persist } from "@zhuangtai-js/persist";
+import { persist, type PersistControls, type PersistOptions } from "@zhuangtai-js/persist";
 import { sync } from "@zhuangtai-js/sync";
 import { describe, expectTypeOf, it } from "vitest";
 
@@ -62,6 +64,21 @@ describe("core value types", () => {
   it("extracts values with AtomValue", () => {
     expectTypeOf<AtomValue<Atom<number>>>().toEqualTypeOf<number>();
     expectTypeOf<AtomValue<Computed<string>>>().toEqualTypeOf<string>();
+  });
+});
+
+describe("persist public controls", () => {
+  it("keeps the plugin kindless while exposing the exact lifecycle surface", () => {
+    expectTypeOf(persist).toEqualTypeOf<
+      AtomCreatorPlugin<"persist", PersistOptions> & PersistControls
+    >();
+    expectTypeOf(persist.ready).toEqualTypeOf<(atom: ReadableAtom<unknown>) => Promise<void>>();
+    expectTypeOf(persist.flush).toEqualTypeOf<(atom: ReadableAtom<unknown>) => Promise<void>>();
+    expectTypeOf(persist.rehydrate).toEqualTypeOf<(atom: ReadableAtom<unknown>) => Promise<void>>();
+    expectTypeOf(persist.clear).toEqualTypeOf<(atom: ReadableAtom<unknown>) => Promise<void>>();
+    expectTypeOf<PersistOptions["onError"]>().toEqualTypeOf<
+      ((error: unknown) => void) | undefined
+    >();
   });
 });
 

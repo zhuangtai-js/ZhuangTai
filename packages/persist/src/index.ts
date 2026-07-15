@@ -2,9 +2,19 @@ import type {
   Atom,
   AtomCreatorPlugin,
   AtomCreatorPluginContext,
-  NextValue,
+  ReadableAtom,
 } from "@zhuangtai-js/core";
-import type { PersistCodec, PersistOptions, PersistStorage } from "./types.js";
+import { AsyncPersistController } from "./async-controller.js";
+import { getPersistController, registerPersistController } from "./controller-registry.js";
+import { jsonCodec } from "./json-codec.js";
+import { isPromiseLike, resolveStorage } from "./storage.js";
+import type {
+  MaybePromise,
+  PersistCodec,
+  PersistControls,
+  PersistOptions,
+  PersistStorage,
+} from "./types.js";
 import {
   assertPersistVersion,
   encodeVersioned,
@@ -16,6 +26,7 @@ export { definePersistMigration } from "./types.js";
 export type {
   MaybePromise,
   PersistCodec,
+  PersistControls,
   PersistMigration,
   PersistOptions,
   PersistStorage,
@@ -23,9 +34,45 @@ export type {
 
 const PACKAGE_NAME = "@zhuangtai-js/persist";
 
-export const persist: AtomCreatorPlugin<"persist", PersistOptions> = {
+export const persist: AtomCreatorPlugin<"persist", PersistOptions> & PersistControls = {
   id: "persist",
   create: createPersistedAtom,
+  ready(atom) {
+    return controllerFor(atom).ready();
+  },
+  flush(atom) {
+    return controllerFor(atom).flush();
+  },
+  rehydrate(atom) {
+    return controllerFor(atom).rehydrate();
+  },
+  clear(atom) {
+    return controllerFor(atom).clear();
+  },
+};
+
+function controllerFor(atom: ReadableAtom<unknown>) {
+  return getPersistController(atom);
+}
+
+type PersistencePlan<Value> = {
+  readonly restore: (rawValue: string) => MaybePromise<Value>;
+  readonly encode: (value: Value) => string;
+  readonly write: (encodedValue: string) => MaybePromise<void>;
+};
+
+type PersistencePlanParams<Value> = {
+  readonly initialValue: Value;
+  readonly options: PersistOptions;
+  readonly storage: PersistStorage;
+  readonly codec: PersistCodec;
+};
+
+type ControllerParams<Value> = {
+  readonly state: Atom<Value>;
+  readonly options: PersistOptions;
+  readonly storage: PersistStorage;
+  readonly plan: PersistencePlan<Value>;
 };
 
 function createPersistedAtom<Value>(
@@ -43,57 +90,104 @@ function createPersistedAtom<Value>(
 
   const storage = resolveStorage(options.storage);
   const codec = options.codec ?? jsonCodec;
+  const plan = createPersistencePlan({
+    initialValue: context.initialValue,
+    options,
+    storage,
+    codec,
+  });
   const storedValue = storage.getItem(options.key);
 
-  if (storedValue !== null && typeof storedValue !== "string") {
-    throw new TypeError(
-      `[${PACKAGE_NAME}] PromiseLike storage results are not supported by the synchronous persist runtime.`,
+  if (isPromiseLike(storedValue)) {
+    const hydration = Promise.resolve(storedValue);
+    void hydration.then(
+      () => undefined,
+      () => undefined,
     );
+    const state = context.next(context.initialValue);
+    const controller = createController({ state, options, storage, plan });
+    registerPersistController(controller.atom, controller);
+    controller.startInitialHydration(hydration);
+    return controller.atom;
   }
 
-  if (options.version === undefined) {
-    const initialValue =
-      storedValue === null
-        ? context.initialValue
-        : decodeStored(codec, storedValue, context.initialValue, options.key);
-    const state = context.next(initialValue);
+  if (storedValue === null) {
+    const state = context.next(context.initialValue);
+    const controller = createController({ state, options, storage, plan });
+    registerPersistController(controller.atom, controller);
+    return controller.atom;
+  }
+  const restoredValue = plan.restore(storedValue);
+  if (isPromiseLike(restoredValue)) {
+    const state = context.next(context.initialValue);
+    const controller = createController({ state, options, storage, plan });
+    registerPersistController(controller.atom, controller);
+    controller.startInitialValueHydration(restoredValue);
+    return controller.atom;
+  }
+  const state = context.next(restoredValue);
+  const controller = createController({ state, options, storage, plan });
+  registerPersistController(controller.atom, controller);
+  return controller.atom;
+}
 
-    return persistAtom({
-      state,
-      storage,
-      key: options.key,
+function createController<Value>({
+  state,
+  options,
+  storage,
+  plan,
+}: ControllerParams<Value>): AsyncPersistController<Value> {
+  return new AsyncPersistController({
+    state,
+    storage,
+    key: options.key,
+    restore: plan.restore,
+    encode: plan.encode,
+    write: plan.write,
+    onError: options.onError,
+  });
+}
+
+function createPersistencePlan<Value>({
+  initialValue,
+  options,
+  storage,
+  codec,
+}: PersistencePlanParams<Value>): PersistencePlan<Value> {
+  if (options.version === undefined) {
+    return {
+      restore(rawValue) {
+        return decodeStored(codec, rawValue, initialValue, options.key);
+      },
       encode(value) {
         return codec.encode(value);
       },
-    });
+      write(encodedValue) {
+        return storage.setItem(options.key, encodedValue);
+      },
+    };
   }
 
-  const initialValue =
-    storedValue === null
-      ? context.initialValue
-      : restoreVersioned({
-          rawValue: storedValue,
-          initialValue: context.initialValue,
-          key: options.key,
-          version: options.version,
-          migrations: options.migrations,
-          storage,
-          codec,
-        });
-  const state = context.next(initialValue);
   const version = options.version;
-
-  return persistAtom({
-    state,
-    key: options.key,
-    storage,
+  return {
+    restore(rawValue) {
+      return restoreVersioned({
+        rawValue,
+        initialValue,
+        key: options.key,
+        version,
+        migrations: options.migrations,
+        storage,
+        codec,
+      });
+    },
     encode(value) {
       return encodeVersioned(codec, value, options.key, version);
     },
     write(encodedValue) {
-      writeEncodedVersioned(storage, options.key, version, encodedValue);
+      return writeEncodedVersioned(storage, options.key, version, encodedValue);
     },
-  });
+  };
 }
 
 function decodeStored<Value>(
@@ -108,141 +202,5 @@ function decodeStored<Value>(
     throw new Error(`[${PACKAGE_NAME}] Failed to decode the stored value for key "${key}".`, {
       cause: error,
     });
-  }
-}
-
-type PersistAtomParams<Value> = {
-  readonly state: Atom<Value>;
-  readonly storage: PersistStorage;
-  readonly encode: (value: Value) => string;
-  readonly key: string;
-  readonly write?: (encodedValue: string) => void;
-};
-
-function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue: Value) => Value {
-  return typeof nextValue === "function";
-}
-
-function persistAtom<Value>({
-  state,
-  storage,
-  encode,
-  key,
-  write,
-}: PersistAtomParams<Value>): Atom<Value> {
-  function set(nextValue: NextValue<Value>): void {
-    const prevValue = state.get();
-    const value = isUpdater(nextValue) ? nextValue(prevValue) : nextValue;
-
-    if (Object.is(value, prevValue)) {
-      return;
-    }
-
-    const encodedValue = encode(value);
-
-    if (write === undefined) {
-      storage.setItem(key, encodedValue);
-    } else {
-      write(encodedValue);
-    }
-
-    state.set(value);
-  }
-
-  return { get: state.get, set, watch: state.watch };
-}
-
-function resolveStorage(storage: PersistStorage | undefined): PersistStorage {
-  if (storage !== undefined) {
-    return storage;
-  }
-
-  let localStorage: PersistStorage | undefined;
-  try {
-    localStorage = globalThis.localStorage;
-  } catch (error) {
-    throw new Error(
-      `[${PACKAGE_NAME}] Reading globalThis.localStorage threw. Pass an explicit storage option instead.`,
-      { cause: error },
-    );
-  }
-
-  if (localStorage === undefined) {
-    throw new Error(
-      `[${PACKAGE_NAME}] No persist storage was provided, and globalThis.localStorage is unavailable.`,
-    );
-  }
-
-  return localStorage;
-}
-
-const jsonCodec: PersistCodec = {
-  encode(value) {
-    return encodeDefaultJson(value, PACKAGE_NAME);
-  },
-  decode(rawValue) {
-    return JSON.parse(rawValue);
-  },
-};
-
-function encodeDefaultJson(value: unknown, packageName: string): string {
-  assertDefaultJsonEncodable(value, packageName);
-
-  const encodedValue = JSON.stringify(value);
-
-  if (typeof encodedValue !== "string") {
-    throw new TypeError(
-      `[${packageName}] The default JSON codec can only encode JSON-serializable values.`,
-    );
-  }
-
-  return encodedValue;
-}
-
-function assertDefaultJsonEncodable(
-  value: unknown,
-  packageName: string,
-  seen: Set<object> = new Set(),
-): void {
-  if (typeof value === "number" && !Number.isFinite(value)) {
-    throw new TypeError(
-      `[${packageName}] The default JSON codec cannot encode non-finite numbers (NaN or ±Infinity). Use a custom codec if you need those values.`,
-    );
-  }
-
-  if (value === null || typeof value !== "object") {
-    return;
-  }
-
-  if (value instanceof Date) {
-    if (!Number.isFinite(value.getTime())) {
-      throw new TypeError(
-        `[${packageName}] The default JSON codec cannot encode invalid Date values. Use a custom codec if you need those values.`,
-      );
-    }
-
-    return;
-  }
-
-  if (seen.has(value)) {
-    return;
-  }
-
-  seen.add(value);
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      assertDefaultJsonEncodable(item, packageName, seen);
-    }
-
-    return;
-  }
-
-  for (const key of Reflect.ownKeys(value)) {
-    if (typeof key === "symbol") {
-      continue;
-    }
-
-    assertDefaultJsonEncodable(Reflect.get(value, key), packageName, seen);
   }
 }

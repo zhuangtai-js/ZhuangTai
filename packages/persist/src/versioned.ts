@@ -1,4 +1,12 @@
-import type { PersistCodec, PersistMigration, PersistOptions, PersistStorage } from "./types.js";
+import { createNonErrorCause } from "./errors.js";
+import { isPromiseLike } from "./storage.js";
+import type {
+  MaybePromise,
+  PersistCodec,
+  PersistMigration,
+  PersistOptions,
+  PersistStorage,
+} from "./types.js";
 
 const PACKAGE_NAME = "@zhuangtai-js/persist";
 const MARKER_KEY = "__zhuangtai_persist__";
@@ -35,19 +43,16 @@ export function restoreVersioned<Value>({
   migrations,
   storage,
   codec,
-}: RestoreVersionedParams<Value>): Value {
+}: RestoreVersionedParams<Value>): MaybePromise<Value> {
   const record = parseStoredRecord(rawValue, key, version);
-
   if (record.version > version) {
     throw new Error(
       `[${PACKAGE_NAME}] Stored value for key "${key}" uses future version ${record.version}, but the configured version ${version} is older.`,
     );
   }
-
   if (record.version === version) {
     return decodeVersioned(codec, record.payload, initialValue, key, version);
   }
-
   const migrationSteps = collectMigrations(migrations, record.version, version, key);
   let migratedValue = decodeVersioned<unknown>(
     codec,
@@ -56,7 +61,6 @@ export function restoreVersioned<Value>({
     key,
     record.version,
   );
-
   for (const step of migrationSteps) {
     try {
       migratedValue = step.migration(migratedValue);
@@ -67,10 +71,13 @@ export function restoreVersioned<Value>({
       );
     }
   }
-
   const payload = encodePayload(codec, migratedValue, key, version);
-  writeVersioned(storage, key, version, payload);
-
+  const writeResult = writeVersioned(storage, key, version, payload);
+  if (isPromiseLike(writeResult)) {
+    return Promise.resolve(writeResult).then(() =>
+      decodeVersioned(codec, payload, initialValue, key, version),
+    );
+  }
   return decodeVersioned(codec, payload, initialValue, key, version);
 }
 
@@ -90,15 +97,26 @@ export function writeEncodedVersioned(
   key: string,
   version: number,
   encodedValue: string,
-): void {
+): MaybePromise<void> {
+  let writeResult: MaybePromise<void>;
   try {
-    storage.setItem(key, encodedValue);
+    writeResult = storage.setItem(key, encodedValue);
   } catch (error) {
-    throw new Error(
-      `[${PACKAGE_NAME}] Failed to write the value for key "${key}" at version ${version}.`,
-      { cause: error },
-    );
+    const cause = error instanceof Error ? error : createNonErrorCause(error);
+    throw createVersionedWriteError(key, version, cause);
   }
+  if (!isPromiseLike(writeResult)) {
+    return writeResult;
+  }
+  return Promise.resolve(writeResult).catch((error: unknown) => {
+    throw createVersionedWriteError(key, version, error);
+  });
+}
+function createVersionedWriteError(key: string, version: number, cause: unknown): Error {
+  return new Error(
+    `[${PACKAGE_NAME}] Failed to write the value for key "${key}" at version ${version}.`,
+    { cause },
+  );
 }
 
 function encodePayload(codec: PersistCodec, value: unknown, key: string, version: number): string {
@@ -134,8 +152,8 @@ function writeVersioned(
   key: string,
   version: number,
   payload: string,
-): void {
-  writeEncodedVersioned(
+): MaybePromise<void> {
+  return writeEncodedVersioned(
     storage,
     key,
     version,

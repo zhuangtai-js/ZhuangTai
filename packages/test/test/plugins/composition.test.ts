@@ -1,4 +1,4 @@
-import { createAtom } from "@zhuangtai-js/core";
+import { createAtom, type ReadableAtom } from "@zhuangtai-js/core";
 import { freeze } from "@zhuangtai-js/freeze";
 import { immer } from "@zhuangtai-js/immer";
 import { persist, type PersistStorage } from "@zhuangtai-js/persist";
@@ -77,6 +77,14 @@ function createStorage(entries: readonly (readonly [string, string])[] = []): Pe
   };
 }
 
+function createPromiseStorage(): PersistStorage {
+  return {
+    getItem: () => Promise.resolve(null),
+    setItem: () => undefined,
+    removeItem: () => undefined,
+  };
+}
+
 describe("plugin composition contracts", () => {
   it("recommended order use(persist).use(sync) writes remote updates through persist", () => {
     const bus = new ChannelBus();
@@ -120,17 +128,58 @@ describe("plugin composition contracts", () => {
     expect(storageB.getItem("count")).toBeNull();
   });
 
+  it("finds persist controls through every wrapper order that preserves the getter", async () => {
+    const bus = new ChannelBus();
+    const storage = createPromiseStorage();
+    const states: readonly ReadableAtom<unknown>[] = [
+      createAtom().use(persist).use(freeze)(0, {
+        persist: { key: "persist-freeze", storage },
+        freeze: { enabled: true },
+      }),
+      createAtom().use(freeze).use(persist)(0, {
+        freeze: { enabled: true },
+        persist: { key: "freeze-persist", storage },
+      }),
+      createAtom().use(persist).use(immer)(0, {
+        persist: { key: "persist-immer", storage },
+      }),
+      createAtom().use(immer).use(persist)(0, {
+        persist: { key: "immer-persist", storage },
+      }),
+      createAtom().use(persist).use(sync)(0, {
+        persist: { key: "persist-sync", storage },
+        sync: { key: "persist-sync", channel: bus.create("persist-sync") },
+      }),
+      createAtom().use(sync).use(persist)(0, {
+        sync: { key: "sync-persist", channel: bus.create("sync-persist") },
+        persist: { key: "sync-persist", storage },
+      }),
+    ];
+
+    await Promise.all(states.map((state) => persist.ready(state)));
+
+    for (const state of states) {
+      await expect(persist.flush(state)).resolves.toBeUndefined();
+    }
+  });
+
   it("recommended order use(freeze).use(immer) applies recipes and freezes the result", () => {
     const createState = createAtom().use(freeze).use(immer);
     const state = createState([{ done: false }], { freeze: { enabled: true } });
 
     state.set((draft) => {
-      draft[0]!.done = true;
+      const first = draft[0];
+
+      if (first === undefined) {
+        throw new TypeError("[test] Expected one draft item.");
+      }
+
+      first.done = true;
     });
 
     expect(state.get()).toEqual([{ done: true }]);
     expect(Object.isFrozen(state.get())).toBe(true);
-    expect(Object.isFrozen(state.get()[0])).toBe(true);
+    expect(Object.isFrozen(state.get().at(0))).toBe(true);
   });
 
   it("anti-pattern use(immer).use(freeze) rejects draft recipes against frozen values", () => {
@@ -151,5 +200,11 @@ describe("plugin composition contracts", () => {
 });
 
 function mutateDoneFlag(draft: { done: boolean }[]): void {
-  draft[0]!.done = true;
+  const first = draft[0];
+
+  if (first === undefined) {
+    throw new TypeError("[test] Expected one draft item.");
+  }
+
+  first.done = true;
 }

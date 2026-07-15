@@ -1,3 +1,5 @@
+import type { ReadableAtom } from "@zhuangtai-js/core";
+
 export type MaybePromise<Value> = Value | PromiseLike<Value>;
 
 export type PersistStorage = {
@@ -25,4 +27,12 @@ export type PersistOptions = {
   readonly codec?: PersistCodec;
   readonly version?: number;
   readonly migrations?: Readonly<Record<number, PersistMigration>>;
+  readonly onError?: (error: unknown) => void;
+};
+
+export type PersistControls = {
+  readonly ready: (atom: ReadableAtom<unknown>) => Promise<void>;
+  readonly flush: (atom: ReadableAtom<unknown>) => Promise<void>;
+  readonly rehydrate: (atom: ReadableAtom<unknown>) => Promise<void>;
+  readonly clear: (atom: ReadableAtom<unknown>) => Promise<void>;
 };
