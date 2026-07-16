@@ -16,6 +16,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/preact preact
 
 peer dependency 要求 `@zhuangtai-js/core ^0.5.0` 和 `preact >=10.9 <11`。
 
+下一步：[Preact 快速指南](https://zhuangtai.yojigen.cn/guides/preact/)。
+
 ## 使用
 
 ```tsx
@@ -108,6 +110,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/preact preact
 ```
 
 The peer dependency range is `@zhuangtai-js/core ^0.5.0` and `preact >=10.9 <11`.
+
+Next: [Preact Quick Start](https://zhuangtai.yojigen.cn/en/guides/preact/).
 
 ## Usage
 

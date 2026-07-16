@@ -3,12 +3,22 @@ title: Complete Examples
 sidebar:
   label: Complete Examples
   order: 4
-description: Start with Vanilla JavaScript or React examples and bring ZhuàngTài into a real interface.
+description: Start with copy-ready website snippets and real Vite projects that exist in the repository.
 ---
 
-You do not need to clone the repository just to feel the API. Open the [interactive examples](/en/playground/) and use the counter, task list, and persisted preferences directly.
+You do not need to clone the repository just to feel the API. Open the [interactive examples](/en/playground/) and use the real counter, task list, and persisted preferences screens directly.
 
-## Vanilla JavaScript
+## Copy-ready website examples
+
+The [interactive examples](/en/playground/) are real React pages running in the documentation site. They include three scenarios you can inspect and copy:
+
+- **Counter**: store a value with `atom` and derive its double with `computed`.
+- **Task list**: add, complete, filter, and remove items with immutable new arrays and objects.
+- **Preferences**: persist theme and content density, with a fallback when browser storage is unavailable.
+
+The snippets below can be copied into the matching project.
+
+### Vanilla JavaScript
 
 Start here for Core's smallest model: `atom` stores state, `computed` derives state, and `watch` responds synchronously.
 
@@ -28,12 +38,10 @@ count.set((value) => value + 1);
 Install Core:
 
 ```sh
-npm install @zhuangtai-js/core
+pnpm add @zhuangtai-js/core
 ```
 
-The complete Vite Vanilla project is available in [`examples/vite-vanilla`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-vanilla).
-
-## React
+### React
 
 The React adapter keeps atoms outside components while providing a component experience close to `useState`.
 
@@ -59,13 +67,29 @@ export function Counter() {
 Install the React packages:
 
 ```sh
-npm install @zhuangtai-js/core @zhuangtai-js/react
+pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
-The complete Vite React project is available in [`examples/vite-react`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-react).
+## Runnable Vite projects
+
+Both projects run through the `dev` / `build` scripts in their `package.json`. `vite-vanilla` has no separate `vite.config` file and uses Vite's defaults; `vite-react` uses the configuration file in the repository:
+
+| Project      | Workspace package                    | Start command                                          | Source                                                                                               |
+| ------------ | ------------------------------------ | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Vite Vanilla | `@zhuangtai-js/example-vite-vanilla` | `pnpm --filter @zhuangtai-js/example-vite-vanilla dev` | [`examples/vite-vanilla`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-vanilla) |
+| Vite React   | `@zhuangtai-js/example-vite-react`   | `pnpm --filter @zhuangtai-js/example-vite-react dev`   | [`examples/vite-react`](https://github.com/zhuangtai-js/ZhuangTai/tree/main/examples/vite-react)     |
+
+## Framework quick starts
+
+- [React Quick Start](/en/guides/react/)
+- [Preact Quick Start](/en/guides/preact/)
+- [Vue Quick Start](/en/guides/vue/)
+- [Svelte Quick Start](/en/guides/svelte/)
+- [Solid Quick Start](/en/guides/solid/)
+- [React Native / Expo Quick Start](/en/guides/react-native-expo/)
 
 ## Next steps
 
 - Want to click and type first? Open the [interactive examples](/en/playground/).
-- Want the complete hooks guide? Read [Using with React](/en/guides/react/).
+- Want a framework-specific path? Start with one of the quick starts above.
 - Need environment-specific guidance? See [Integrations and Compatibility](/en/integrations/).

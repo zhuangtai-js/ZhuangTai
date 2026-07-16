@@ -58,14 +58,25 @@ stop();
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | [`@zhuangtai-js/core`](../../packages/core/README.md#english)       | Framework-agnostic state core with zero third-party runtime dependencies | [API reference](https://zhuangtai.yojigen.cn/en/reference/core/)    |
 | [`@zhuangtai-js/react`](../../packages/react/README.md#english)     | React hooks                                                              | [React guide](https://zhuangtai.yojigen.cn/en/guides/react/)        |
-| [`@zhuangtai-js/preact`](../../packages/preact/README.md#english)   | Preact hooks                                                             | [API reference](https://zhuangtai.yojigen.cn/en/reference/preact/)  |
-| [`@zhuangtai-js/svelte`](../../packages/svelte/README.md#english)   | Standard Svelte stores                                                   | [API reference](https://zhuangtai.yojigen.cn/en/reference/svelte/)  |
-| [`@zhuangtai-js/vue`](../../packages/vue/README.md#english)         | Read-only Vue computed refs and setters                                  | [API reference](https://zhuangtai.yojigen.cn/en/reference/vue/)     |
-| [`@zhuangtai-js/solid`](../../packages/solid/README.md#english)     | Solid accessors and setters                                              | [API reference](https://zhuangtai.yojigen.cn/en/reference/solid/)   |
-| [`@zhuangtai-js/persist`](../../packages/persist/README.md#english) | Persist and migrate atoms with synchronous storage                       | [API reference](https://zhuangtai.yojigen.cn/en/reference/persist/) |
+| [`@zhuangtai-js/preact`](../../packages/preact/README.md#english)   | Preact hooks                                                             | [Preact guide](https://zhuangtai.yojigen.cn/en/guides/preact/)        |
+| [`@zhuangtai-js/svelte`](../../packages/svelte/README.md#english)   | Standard Svelte stores                                                   | [Svelte guide](https://zhuangtai.yojigen.cn/en/guides/svelte/)        |
+| [`@zhuangtai-js/vue`](../../packages/vue/README.md#english)         | Read-only Vue computed refs and setters                                  | [Vue guide](https://zhuangtai.yojigen.cn/en/guides/vue/)             |
+| [`@zhuangtai-js/solid`](../../packages/solid/README.md#english)     | Solid accessors and setters                                              | [Solid guide](https://zhuangtai.yojigen.cn/en/guides/solid/)         |
+| [`@zhuangtai-js/persist`](../../packages/persist/README.md#english) | Persist and migrate atoms with sync or async storage                   | [API reference](https://zhuangtai.yojigen.cn/en/reference/persist/) |
 | [`@zhuangtai-js/freeze`](../../packages/freeze/README.md#english)   | Deep-freeze values during development to catch in-place mutation         | [API reference](https://zhuangtai.yojigen.cn/en/reference/freeze/)  |
 | [`@zhuangtai-js/immer`](../../packages/immer/README.md#english)     | Write immutable updates with Immer drafts                                | [API reference](https://zhuangtai.yojigen.cn/en/reference/immer/)   |
 | [`@zhuangtai-js/sync`](../../packages/sync/README.md#english)       | Sync across same-origin contexts with `BroadcastChannel`                 | [API reference](https://zhuangtai.yojigen.cn/en/reference/sync/)    |
+
+### Framework quick starts
+
+Start with the minimal Core example, then choose the quick start for the UI boundary:
+
+- [React Quick Start](https://zhuangtai.yojigen.cn/en/guides/react/)
+- [Preact Quick Start](https://zhuangtai.yojigen.cn/en/guides/preact/)
+- [Vue Quick Start](https://zhuangtai.yojigen.cn/en/guides/vue/)
+- [Svelte Quick Start](https://zhuangtai.yojigen.cn/en/guides/svelte/)
+- [Solid Quick Start](https://zhuangtai.yojigen.cn/en/guides/solid/)
+- [React Native / Expo Quick Start](https://zhuangtai.yojigen.cn/en/guides/react-native-expo/) (Expo uses `@zhuangtai-js/react`)
 
 Plugins are installed on creators made with `createAtom()`:
 
@@ -162,12 +173,12 @@ Read more on the [Philosophy](https://zhuangtai.yojigen.cn/en/philosophy/) page.
 ## Playground, examples, and integrations
 
 - [Interactive examples](https://zhuangtai.yojigen.cn/en/playground/): use a counter, task list, and preferences panel to observe real React state updates.
-- [Complete examples](https://zhuangtai.yojigen.cn/en/examples/): runnable Vite Vanilla and React projects ready to adapt.
+- [Complete examples](https://zhuangtai.yojigen.cn/en/examples/): real Vite Vanilla and React projects plus copy-ready website snippets.
 - [Why ZhuàngTài](https://zhuangtai.yojigen.cn/en/why-zhuangtai/): direct, synchronous, and type-safe design values.
 - [Integrations and compatibility](https://zhuangtai.yojigen.cn/en/integrations/): framework, runtime, SSR, and official adapter usage.
 - [Showcase](https://zhuangtai.yojigen.cn/en/showcase/): projects built with ZhuàngTài.
 
-Complete projects live in [`examples/`](../../examples). Bring questions and ideas to [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions); see [`CONTRIBUTING.md`](../../CONTRIBUTING.md) to contribute.
+Complete projects live in [`examples/`](../../examples); the complete examples page lists each workspace package and start command. Bring questions and ideas to [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions); see [`CONTRIBUTING.md`](../../CONTRIBUTING.md) to contribute.
 
 ## AI / agent integration
 

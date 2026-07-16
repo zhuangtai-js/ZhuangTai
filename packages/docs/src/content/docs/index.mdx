@@ -51,6 +51,56 @@ import Cta from "../../components/Cta.astro";
   </Card>
 </CardGrid>
 
+## 选择你的框架
+
+先用一个最小的 Core 路径理解状态，再选择与你的 UI 边界匹配的快速指南。首页只展示这段可复制代码，不会加载任何框架运行时。
+
+```ts
+import { atom } from "@zhuangtai-js/core";
+
+const count = atom(0);
+count.set((value) => value + 1);
+```
+
+<CardGrid>
+  <Card title="React">
+    使用 React hooks 订阅 atom，并保持组件外的状态模块。
+    <p>
+      <a href="/guides/react/">打开 React 快速指南 →</a>
+    </p>
+  </Card>
+  <Card title="Preact">
+    使用轻量 Preact hooks 接入同一个 Core 状态模型。
+    <p>
+      <a href="/guides/preact/">打开 Preact 快速指南 →</a>
+    </p>
+  </Card>
+  <Card title="Vue">
+    使用 effect scope 管理 Vue 组件中的读取与清理。
+    <p>
+      <a href="/guides/vue/">打开 Vue 快速指南 →</a>
+    </p>
+  </Card>
+  <Card title="Svelte">
+    把 atom 转为标准的 Svelte readable 或 writable store。
+    <p>
+      <a href="/guides/svelte/">打开 Svelte 快速指南 →</a>
+    </p>
+  </Card>
+  <Card title="Solid">
+    使用 accessor、setter 和 owner 生命周期连接 Solid。
+    <p>
+      <a href="/guides/solid/">打开 Solid 快速指南 →</a>
+    </p>
+  </Card>
+  <Card title="React Native / Expo">
+    Expo 使用 React adapter；应用可以把自己的 PromiseLike storage 交给 Persist。
+    <p>
+      <a href="/guides/react-native-expo/">打开 React Native / Expo 快速指南 →</a>
+    </p>
+  </Card>
+</CardGrid>
+
 <SplitCard
   title="安装"
   icon="puzzle">

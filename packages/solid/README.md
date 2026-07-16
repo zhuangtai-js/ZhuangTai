@@ -16,6 +16,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/solid solid-js
 
 peer dependency 要求 `@zhuangtai-js/core ^0.5.0` 和 `solid-js >=1.5 <2`。
 
+下一步：[Solid 快速指南](https://zhuangtai.yojigen.cn/guides/solid/)。
+
 ## 快速开始
 
 ```ts
@@ -129,6 +131,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/solid solid-js
 ```
 
 The peer dependency range is `@zhuangtai-js/core ^0.5.0` and `solid-js >=1.5 <2`.
+
+Next: [Solid Quick Start](https://zhuangtai.yojigen.cn/en/guides/solid/).
 
 ## Quick start
 

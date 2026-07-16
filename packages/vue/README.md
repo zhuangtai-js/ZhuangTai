@@ -16,6 +16,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/vue vue
 
 `@zhuangtai-js/core` 和 `vue` 都是 peer dependency。支持 core `^0.5.0` 和 Vue `>=3.2 <4`。
 
+下一步：[Vue 快速指南](https://zhuangtai.yojigen.cn/guides/vue/)。
+
 ## 使用
 
 ```vue
@@ -121,6 +123,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/vue vue
 ```
 
 Both `@zhuangtai-js/core` and `vue` are peer dependencies. Core `^0.5.0` and Vue `>=3.2 <4` are supported.
+
+Next: [Vue Quick Start](https://zhuangtai.yojigen.cn/en/guides/vue/).
 
 ## Usage
 

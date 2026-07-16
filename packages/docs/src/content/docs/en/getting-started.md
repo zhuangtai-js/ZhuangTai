@@ -5,6 +5,17 @@ description: Install ZhuàngTài, create your first atom, and add persistence wh
 
 This guide walks through the smallest useful ZhuàngTài flow: install the core package, create state, watch changes, and add the persistence plugin when you need it.
 
+## Choose a framework quick start
+
+The Core example works in any project. When a component needs native subscriptions and lifecycle cleanup, open the guide for its UI framework:
+
+- [React Quick Start](/en/guides/react/)
+- [Preact Quick Start](/en/guides/preact/)
+- [Vue Quick Start](/en/guides/vue/)
+- [Svelte Quick Start](/en/guides/svelte/)
+- [Solid Quick Start](/en/guides/solid/)
+- [React Native / Expo Quick Start](/en/guides/react-native-expo/) (Expo uses `@zhuangtai-js/react`)
+
 ## Install the core package
 
 Install `@zhuangtai-js/core` with your package manager:
@@ -66,7 +77,7 @@ Do not call `set()` for the same atom from inside that atom's watcher; self-reen
 
 ## Add persistence
 
-Install `@zhuangtai-js/persist` when you need to save state to synchronous storage:
+Install `@zhuangtai-js/persist` when you need to save state to storage. Storage methods may return plain values or `PromiseLike` values; Core `set` and `watch` remain synchronous:
 
 ```sh
 pnpm add @zhuangtai-js/core @zhuangtai-js/persist
@@ -95,3 +106,4 @@ If you do not pass `storage`, the plugin uses `globalThis.localStorage`. For cus
 
 - Read the [Core Reference](/en/reference/core/) for the full core API.
 - Read the [Persist Reference](/en/reference/persist/) to configure storage and codecs.
+- For persisted preferences in Expo, see the [React Native / Expo Quick Start](/en/guides/react-native-expo/).

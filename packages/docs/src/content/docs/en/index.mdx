@@ -52,6 +52,56 @@ import Cta from "../../../components/Cta.astro";
   </Card>
 </CardGrid>
 
+## Choose your framework
+
+Start with one minimal Core path, then choose the quick start that matches your UI boundary. The homepage keeps this copy-ready snippet static and does not load any framework runtime.
+
+```ts
+import { atom } from "@zhuangtai-js/core";
+
+const count = atom(0);
+count.set((value) => value + 1);
+```
+
+<CardGrid>
+  <Card title="React">
+    Subscribe to atoms with React hooks while keeping the state module outside components.
+    <p>
+      <a href="/en/guides/react/">Open the React Quick Start →</a>
+    </p>
+  </Card>
+  <Card title="Preact">
+    Connect the same Core state model with lightweight Preact hooks.
+    <p>
+      <a href="/en/guides/preact/">Open the Preact Quick Start →</a>
+    </p>
+  </Card>
+  <Card title="Vue">
+    Use effect scopes to manage Vue reads and cleanup inside components.
+    <p>
+      <a href="/en/guides/vue/">Open the Vue Quick Start →</a>
+    </p>
+  </Card>
+  <Card title="Svelte">
+    Convert atoms to standard Svelte readable or writable stores.
+    <p>
+      <a href="/en/guides/svelte/">Open the Svelte Quick Start →</a>
+    </p>
+  </Card>
+  <Card title="Solid">
+    Connect Solid with accessors, setters, and owner lifecycle cleanup.
+    <p>
+      <a href="/en/guides/solid/">Open the Solid Quick Start →</a>
+    </p>
+  </Card>
+  <Card title="React Native / Expo">
+    Expo uses the React adapter; the app can pass its own PromiseLike storage to Persist.
+    <p>
+      <a href="/en/guides/react-native-expo/">Open the React Native / Expo Quick Start →</a>
+    </p>
+  </Card>
+</CardGrid>
+
 <SplitCard
   title="Install"
   icon="puzzle">

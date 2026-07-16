@@ -14,6 +14,17 @@ npm install @zhuangtai-js/core @zhuangtai-js/persist
 pnpm add @zhuangtai-js/core @zhuangtai-js/persist
 ```
 
+## 框架快速开始
+
+- [React 快速指南](https://zhuangtai.yojigen.cn/guides/react/)
+- [Preact 快速指南](https://zhuangtai.yojigen.cn/guides/preact/)
+- [Vue 快速指南](https://zhuangtai.yojigen.cn/guides/vue/)
+- [Svelte 快速指南](https://zhuangtai.yojigen.cn/guides/svelte/)
+- [Solid 快速指南](https://zhuangtai.yojigen.cn/guides/solid/)
+- [React Native / Expo 快速指南](https://zhuangtai.yojigen.cn/guides/react-native-expo/)
+
+React Native / Expo 使用 `@zhuangtai-js/react`；应用消费者可以单独提供自己的 PromiseLike storage，例如 AsyncStorage。这里没有 ZhuàngTài 专用的 AsyncStorage 包。
+
 ## 基本用法
 
 ```ts
@@ -86,7 +97,7 @@ await persist.clear(theme);
 
 ## SSR 与 hydration
 
-默认 storage 是 `globalThis.localStorage`。SSR 环境没有可用的 `localStorage` 时，请传入请求或客户端明确拥有的 storage，或只在客户端创建持久化 atom。
+浏览器中默认 storage 是 `globalThis.localStorage`，也可以传入方法返回 `PromiseLike` 的 storage。SSR 环境没有可用的浏览器 storage 时，请传入请求或客户端明确拥有的 storage，或只在客户端创建持久化 atom。
 
 异步 storage 会先使用 `initialValue`，直到 hydration 完成。需要稳定 SSR 输出时，让服务端和客户端先使用相同的初始状态，再在客户端根据 `persist.ready(atom)` 显示已恢复内容；不要在服务端渲染阶段直接读取浏览器专属 storage。
 
@@ -208,6 +219,17 @@ npm install @zhuangtai-js/core @zhuangtai-js/persist
 pnpm add @zhuangtai-js/core @zhuangtai-js/persist
 ```
 
+## Framework quick starts
+
+- [React Quick Start](https://zhuangtai.yojigen.cn/en/guides/react/)
+- [Preact Quick Start](https://zhuangtai.yojigen.cn/en/guides/preact/)
+- [Vue Quick Start](https://zhuangtai.yojigen.cn/en/guides/vue/)
+- [Svelte Quick Start](https://zhuangtai.yojigen.cn/en/guides/svelte/)
+- [Solid Quick Start](https://zhuangtai.yojigen.cn/en/guides/solid/)
+- [React Native / Expo Quick Start](https://zhuangtai.yojigen.cn/en/guides/react-native-expo/)
+
+React Native / Expo uses `@zhuangtai-js/react`; the app consumer can provide its own PromiseLike storage, such as AsyncStorage, separately. There is no ZhuàngTài-specific AsyncStorage package.
+
 ## Basic usage
 
 ```ts
@@ -280,7 +302,7 @@ Asynchronous writes are serialized in logical `set()` order. One rejected write 
 
 ## SSR and hydration
 
-The default storage is `globalThis.localStorage`. When SSR has no usable `localStorage`, pass a storage explicitly owned by the request or client, or create the persisted atom only on the client.
+The default browser storage is `globalThis.localStorage`, and custom storage methods may return `PromiseLike` values. When SSR has no usable browser storage, pass storage explicitly owned by the request or client, or create the persisted atom only on the client.
 
 Asynchronous storage starts from `initialValue` until hydration finishes. For stable SSR output, let server and client start from the same initial state, then show restored content on the client after `persist.ready(atom)`; do not read browser-only storage during server rendering.
 
