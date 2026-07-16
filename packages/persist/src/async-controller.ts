@@ -200,8 +200,9 @@ export class AsyncPersistController<Value> {
       this.persistLatestLocalValue();
     } else {
       this.queue.runBackgroundWrite(() =>
-        Promise.allSettled([this.latestHydration]).then(() =>
-          this.params.write(this.params.encode(this.params.state.get())),
+        this.latestHydration.then(
+          () => this.params.write(this.params.encode(this.params.state.get())),
+          () => undefined,
         ),
       );
     }
@@ -230,12 +231,9 @@ export class AsyncPersistController<Value> {
   }
 
   private trackHydration(generation: number, task: Promise<void>): void {
-    if (generation !== this.hydrationGeneration) {
-      return;
-    }
-
-    this.latestHydration = task;
     this.trackPending(task);
+    if (generation !== this.hydrationGeneration) return;
+    this.latestHydration = task;
   }
 
   private trackPending(task: Promise<void>): void {
@@ -249,6 +247,7 @@ export class AsyncPersistController<Value> {
   private readonly nextHydrationGeneration = (): number => (this.hydrationGeneration += 1);
 
   private async performClear(): Promise<void> {
+    await Promise.allSettled(Array.from(this.pendingControls));
     await this.waitForHydrationAndWrites();
     await this.queue.enqueueObserved(
       () => this.params.storage.removeItem(this.params.key),

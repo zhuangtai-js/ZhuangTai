@@ -4,6 +4,7 @@ import {
   PersistOperationError,
   type PersistOperation,
 } from "./errors.js";
+import { isPromiseLike } from "./storage.js";
 import type { PersistOptions } from "./types.js";
 
 export class PersistFailureTracker {
@@ -20,11 +21,14 @@ export class PersistFailureTracker {
 
     if (this.onError !== undefined) {
       try {
-        this.onError(failure);
+        const result = this.onError(failure);
+        if (isPromiseLike(result)) {
+          void Promise.resolve(result).catch((callbackCause: unknown) => {
+            this.retainCallbackFailure(callbackCause);
+          });
+        }
       } catch (callbackCause) {
-        const failureCause =
-          callbackCause instanceof Error ? callbackCause : createNonErrorCause(callbackCause);
-        this.retainedFailures.push(new PersistOnErrorCallbackError(this.key, failureCause));
+        this.retainCallbackFailure(callbackCause);
       }
     }
 
@@ -35,5 +39,10 @@ export class PersistFailureTracker {
     const firstFailure = this.retainedFailures[0];
     this.retainedFailures.length = 0;
     return firstFailure;
+  }
+
+  private retainCallbackFailure(cause: unknown): void {
+    const failureCause = cause instanceof Error ? cause : createNonErrorCause(cause);
+    this.retainedFailures.push(new PersistOnErrorCallbackError(this.key, failureCause));
   }
 }
