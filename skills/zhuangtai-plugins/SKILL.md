@@ -1,6 +1,6 @@
 ---
 name: zhuangtai-plugins
-description: Use this skill for createAtom().use(plugin), plugin ordering, and @zhuangtai-js/persist, @zhuangtai-js/freeze, @zhuangtai-js/immer, or @zhuangtai-js/sync, including versioned Persist migrations and synchronous failure semantics.
+description: Use this skill for createAtom().use(plugin), plugin ordering, and @zhuangtai-js/persist, @zhuangtai-js/freeze, @zhuangtai-js/immer, or @zhuangtai-js/sync, including structural sync/async storage, lifecycle controls, versioned migrations, and error semantics.
 ---
 
 # ZhuàngTài Plugins
@@ -39,7 +39,7 @@ const theme = atom("light", {
 
 ### Persist
 
-`@zhuangtai-js/persist` 使用同步 Web Storage 风格接口。更新顺序是 encode → storage write → 内存提交 → 同步 watcher。encode 或写入失败时，内存状态不变；`Object.is` no-op 不写 storage。
+`@zhuangtai-js/persist` 接受同步 storage，也接受方法返回 `PromiseLike` 的结构化异步 storage。同步调用保留 encode → storage write → 内存提交 → 同步 watcher 的快速路径；异步写入排队，但 Core 的 `set` 与 `watch` 仍同步。
 
 ```ts
 import { definePersistMigration, persist } from "@zhuangtai-js/persist";
@@ -79,7 +79,7 @@ const settings = atom(
 - future version、缺失步骤、畸形 marked record 会同步抛错。
 - migration、codec 与版本化写入错误包含 key/版本上下文，并在 `cause` 保留原错误。
 - migration 或 write-back 失败时不创建新 atom；普通更新失败时内存状态和 watcher 保持不变。
-- 默认 JSON codec 拒绝 `NaN`、`±Infinity` 与无效 `Date`。异步 storage 不受支持。
+- 默认 JSON codec 拒绝 `NaN`、`±Infinity` 与无效 `Date`。首屏依赖 hydration 时等待 `persist.ready`；持久化边界等待并处理 `persist.flush`；按需使用 `persist.rehydrate`、`persist.clear` 与 `onError`。
 
 ### Freeze
 
@@ -127,7 +127,7 @@ const theme = atom("light", {
 
 ### Persist
 
-`@zhuangtai-js/persist` uses a synchronous Web Storage-style interface. Update order is encode → storage write → memory commit → synchronous watchers. Encode or write failure leaves memory unchanged, and an `Object.is` no-op does not write storage.
+`@zhuangtai-js/persist` accepts synchronous storage and structural asynchronous storage whose methods return `PromiseLike` values. Synchronous calls keep the encode → storage write → memory commit → synchronous watcher fast path; asynchronous writes queue while Core `set` and `watch` remain synchronous.
 
 ```ts
 import { definePersistMigration, persist } from "@zhuangtai-js/persist";
@@ -167,7 +167,7 @@ const settings = atom(
 - A future version, missing step, or malformed marked record throws synchronously.
 - Migration, codec, and versioned-write errors include key/version context and preserve the original error as `cause`.
 - Migration or write-back failure does not create a new atom. Normal update failure leaves memory and watchers unchanged.
-- The default JSON codec rejects `NaN`, `±Infinity`, and invalid `Date` values. Async storage is unsupported.
+- The default JSON codec rejects `NaN`, `±Infinity`, and invalid `Date` values. Await `persist.ready` when first render depends on hydration; await and handle `persist.flush` at durable boundaries; use `persist.rehydrate`, `persist.clear`, and `onError` deliberately.
 
 ### Freeze
 
@@ -180,3 +180,15 @@ const settings = atom(
 ### Sync
 
 `sync` uses `BroadcastChannel` across same-origin contexts. Local updates encode, commit memory, then broadcast. Remote updates write inner state without echo broadcasting. Under SSR or without `BroadcastChannel`, it degrades to a plain atom. Remote decode failure leaves state unchanged.
+
+## 跨框架与异步持久化决策
+
+- UI/组件生命周期之外直接使用 `@zhuangtai-js/core`；组件内选择对应 adapter。Expo 使用 `@zhuangtai-js/react`。
+- 指南：`/guides/react/`、`/guides/preact/`、`/guides/vue/`、`/guides/svelte/`、`/guides/solid/`、`/guides/react-native-expo/`；英文路径在前面加 `/en`。
+- `PersistStorage` 是结构契约，普通返回值或 `PromiseLike` 都兼容。AsyncStorage 仅由使用方提供，不存在 ZhuàngTài 专用 AsyncStorage 包。
+- 首屏依赖 hydration 时等待 `persist.ready(atom)`；在持久化边界等待 `persist.flush(atom)` 并处理错误。按需使用 `persist.rehydrate(atom)`、`persist.clear(atom)` 与 `onError`。
+- migration 输入按 `unknown` 解析并逐版本同步执行；SSR 为每个请求创建独立 atom，并显式提供 storage 或仅在客户端创建。
+
+### English mirror
+
+Use Core directly outside UI/component lifecycles and the matching adapter inside components; Expo uses `@zhuangtai-js/react`. The six guides are `/en/guides/react/`, `/en/guides/preact/`, `/en/guides/vue/`, `/en/guides/svelte/`, `/en/guides/solid/`, and `/en/guides/react-native-expo/`. `PersistStorage` structurally accepts plain or `PromiseLike` results. AsyncStorage is consumer-provided, with no ZhuàngTài-specific package. Await `persist.ready(atom)` when first render depends on hydration; await and handle `persist.flush(atom)` at durable boundaries; use `persist.rehydrate(atom)`, `persist.clear(atom)`, and `onError`. Parse `unknown` migration input, run migrations synchronously one version at a time, and create an independent atom per SSR request.

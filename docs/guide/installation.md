@@ -33,7 +33,15 @@
 - [Solid 快速指南](https://zhuangtai.yojigen.cn/guides/solid/)
 - [React Native / Expo 快速指南](https://zhuangtai.yojigen.cn/guides/react-native-expo/)（Expo 使用 `@zhuangtai-js/react`）
 
-React Native / Expo 应用可以单独安装自己的 storage 实现，例如 AsyncStorage；它只是消费者依赖，不是 ZhuàngTài 包。
+React Native / Expo 应用可以单独安装自己的 storage 实现，例如 AsyncStorage；它只是由使用方提供的消费者依赖，不是 ZhuàngTài 包，也不存在专用 AsyncStorage package。
+
+### 异步持久化检查表
+
+- `PersistStorage` 是结构契约：storage 方法返回普通值或 `PromiseLike` 都结构兼容。
+- 如果首屏依赖 hydration 后的持久化状态，先 `await persist.ready(atom)`。
+- 在退出、提交或其他持久化边界 `await persist.flush(atom)`，并处理 rejection/错误。
+- 用 `persist.rehydrate(atom)` 重新读取，用 `persist.clear(atom)` 删除持久化值，用 `onError` 接收异步失败。
+- migration 输入始终按 `unknown` 解析并收窄，逐版本同步执行；SSR 为每个请求创建独立 atom，并显式提供 storage 或仅在客户端创建。
 
 需要选择框架 API、处理组件生命周期或 SSR 时，阅读[框架适配器最佳实践](https://zhuangtai.yojigen.cn/guides/framework-adapters/)；需要版本化持久化时，阅读[Persist 参考](https://zhuangtai.yojigen.cn/reference/persist/)。
 
@@ -63,7 +71,7 @@ npx skills add zhuangtai-js/ZhuangTai
    - Solid：`createAtomValue`、`createSetAtom`、`createAtomSignal`；读取 API 必须位于活动 owner。
 4. **保留 Core 语义。** `set` 立即生效，`watch` 同步执行，相等性使用 `Object.is`。对象和数组按引用判断，必须用不可变更新。adapter 不添加调度、批处理、延迟或事务。
 5. **处理生命周期与 SSR。** 让框架管理订阅清理；手动调用 Svelte `subscribe` 时保留并调用取消函数，手动创建 Vue effect scope 或 Solid root 时负责停止或 dispose。服务端可变 atom 必须按请求创建，不能跨用户共享 module-level 实例。Preact SSR 读取 snapshot 而不订阅；Vue 在 `createSSRApp` 的 `setup()` 中创建的订阅会在 `renderToString` 完成时随组件 scope 自动释放。持久化在浏览器默认使用 `localStorage`，也接受返回 `PromiseLike` 的 storage；服务端应传入合适的 storage，或只在客户端创建持久化 atom。
-6. **配置插件。** 插件安装在 `createAtom().use(plugin)` 创建的 creator 上。Persist 的 `version` 必须是正安全整数；`migrations[n]` 同步执行从版本 `n` 到 `n + 1` 的迁移。迁移回调输入来自 storage，始终是 `unknown`，必须先解析或收窄；`definePersistMigration<Value>` 的 `Value` 只约束返回值。
+6. **配置插件。** 插件安装在 `createAtom().use(plugin)` 创建的 creator 上。Promise storage 首屏依赖 hydration 时等待 `persist.ready`；在持久化边界等待并处理 `persist.flush` 失败；按需使用 `persist.rehydrate`、`persist.clear` 和 `onError`。Persist 的 `version` 必须是正安全整数；`migrations[n]` 同步执行从版本 `n` 到 `n + 1` 的迁移。迁移输入始终是 `unknown`，必须先解析或收窄。
 7. **检查项目。** 运行项目已有的格式化、类型检查和测试命令，确认导入路径、peer 依赖和示例代码符合当前框架。
 8. **提供后续资料。** 人类文档位于 https://zhuangtai.yojigen.cn ，机器可读入口是 https://zhuangtai.yojigen.cn/llms.txt 和 https://zhuangtai.yojigen.cn/llms-full.txt 。
 
@@ -90,12 +98,12 @@ This guide helps people and AI agents choose the smallest installation for the p
 | ----------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------- |
 | `@zhuangtai-js/core`    | Framework-agnostic state core with zero third-party runtime dependencies | `pnpm add @zhuangtai-js/core`                              |
 | `@zhuangtai-js/react`   | React hooks adapter                                                      | `pnpm add @zhuangtai-js/core @zhuangtai-js/react react`    |
-| React Native / Expo     | Uses `@zhuangtai-js/react`                                             | `pnpm add @zhuangtai-js/core @zhuangtai-js/react react`    |
+| React Native / Expo     | Uses `@zhuangtai-js/react`                                               | `pnpm add @zhuangtai-js/core @zhuangtai-js/react react`    |
 | `@zhuangtai-js/preact`  | Preact hooks adapter                                                     | `pnpm add @zhuangtai-js/core @zhuangtai-js/preact preact`  |
 | `@zhuangtai-js/svelte`  | Standard Svelte store adapter                                            | `pnpm add @zhuangtai-js/core @zhuangtai-js/svelte svelte`  |
 | `@zhuangtai-js/vue`     | Vue computed-ref adapter                                                 | `pnpm add @zhuangtai-js/core @zhuangtai-js/vue vue`        |
 | `@zhuangtai-js/solid`   | Solid accessor adapter                                                   | `pnpm add @zhuangtai-js/core @zhuangtai-js/solid solid-js` |
-| `@zhuangtai-js/persist` | Sync or async storage persistence and version migration                   | `pnpm add @zhuangtai-js/core @zhuangtai-js/persist`        |
+| `@zhuangtai-js/persist` | Sync or async storage persistence and version migration                  | `pnpm add @zhuangtai-js/core @zhuangtai-js/persist`        |
 | `@zhuangtai-js/freeze`  | Development-time deep freeze                                             | `pnpm add @zhuangtai-js/core @zhuangtai-js/freeze`         |
 | `@zhuangtai-js/immer`   | Immer draft updates                                                      | `pnpm add @zhuangtai-js/core @zhuangtai-js/immer`          |
 | `@zhuangtai-js/sync`    | Cross-context sync through `BroadcastChannel`                            | `pnpm add @zhuangtai-js/core @zhuangtai-js/sync`           |
@@ -111,7 +119,15 @@ Replace `pnpm` with the package manager already used by the project. Framework p
 - [Solid Quick Start](https://zhuangtai.yojigen.cn/en/guides/solid/)
 - [React Native / Expo Quick Start](https://zhuangtai.yojigen.cn/en/guides/react-native-expo/) (Expo uses `@zhuangtai-js/react`)
 
-A React Native / Expo app may install its own storage implementation, such as AsyncStorage, separately; it is a consumer dependency, not a ZhuàngTài package.
+A React Native / Expo app may install its own storage implementation, such as AsyncStorage, separately. AsyncStorage is consumer-provided, not a ZhuàngTài package, and there is no dedicated AsyncStorage package.
+
+### Async persistence checklist
+
+- `PersistStorage` is structural: storage methods returning plain values or `PromiseLike` values are structurally compatible.
+- If first render depends on hydrated persistent state, `await persist.ready(atom)`.
+- At exit, submit, or another durable boundary, `await persist.flush(atom)` and handle rejection/error.
+- Use `persist.rehydrate(atom)` to read again, `persist.clear(atom)` to remove the stored value, and `onError` for asynchronous failures.
+- Parse and narrow `unknown` migration input, run migrations synchronously one version at a time, and create an independent atom per SSR request with explicit storage or client-only creation.
 
 For framework API selection, component lifecycle, and SSR, read [Framework Adapter Best Practices](https://zhuangtai.yojigen.cn/en/guides/framework-adapters/). For versioned persistence, read the [Persist reference](https://zhuangtai.yojigen.cn/en/reference/persist/).
 
@@ -141,7 +157,7 @@ Please read https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/g
    - Solid: `createAtomValue`, `createSetAtom`, and `createAtomSignal`; read APIs require an active owner.
 4. **Preserve Core semantics.** `set` applies immediately, `watch` runs synchronously, and equality uses `Object.is`. Objects and arrays are reference-based and require immutable updates. Adapters add no scheduling, batching, deferring, or transactions.
 5. **Handle lifecycle and SSR.** Let the framework own subscription cleanup. Keep and call the unsubscribe function for manual Svelte `subscribe` calls; stop manually created Vue effect scopes and dispose manually created Solid roots. Create mutable server atoms per request instead of sharing module-level instances across users. Preact SSR reads a snapshot without subscribing. Vue subscriptions created inside `createSSRApp` `setup()` are automatically released with the component scope when `renderToString` completes. Persist uses browser `localStorage` by default and also accepts storage methods that return `PromiseLike` values; on the server, pass suitable storage or create the persisted atom only on the client.
-6. **Configure plugins.** Install plugins on a creator made with `createAtom().use(plugin)`. Persist `version` must be a positive safe integer. `migrations[n]` synchronously migrates version `n` to `n + 1`. Migration callback input comes from storage and is always `unknown`, so parse or narrow it first; `definePersistMigration<Value>` uses `Value` only to constrain the return value.
+6. **Configure plugins.** Install plugins on a creator made with `createAtom().use(plugin)`. With Promise storage, await `persist.ready` when first render depends on hydration; await and handle `persist.flush` failures at durable boundaries; use `persist.rehydrate`, `persist.clear`, and `onError` deliberately. Persist `version` must be a positive safe integer. `migrations[n]` synchronously migrates version `n` to `n + 1`, and migration input is always `unknown` until parsed or narrowed.
 7. **Check the project.** Run the project's existing formatter, typecheck, and test commands, and confirm imports, peer dependencies, and examples match the current framework.
 8. **Provide follow-up context.** Human documentation is at https://zhuangtai.yojigen.cn . Machine-readable entrypoints are https://zhuangtai.yojigen.cn/llms.txt and https://zhuangtai.yojigen.cn/llms-full.txt .
 

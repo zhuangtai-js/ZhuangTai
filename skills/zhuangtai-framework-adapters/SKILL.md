@@ -140,3 +140,15 @@ Do not claim support outside these peer ranges.
 ### When to use Core directly
 
 Use `@zhuangtai-js/core` directly in SDKs, server logic, data layers, event handlers, Web Components, or cross-framework shared state that does not need framework rendering. Wrap an adapter only at the UI boundary.
+
+## 跨框架与异步持久化决策
+
+- UI/组件生命周期之外直接使用 `@zhuangtai-js/core`；组件内选择对应 adapter。Expo 使用 `@zhuangtai-js/react`。
+- 指南：`/guides/react/`、`/guides/preact/`、`/guides/vue/`、`/guides/svelte/`、`/guides/solid/`、`/guides/react-native-expo/`；英文路径在前面加 `/en`。
+- `PersistStorage` 是结构契约，普通返回值或 `PromiseLike` 都兼容。AsyncStorage 仅由使用方提供，不存在 ZhuàngTài 专用 AsyncStorage 包。
+- 首屏依赖 hydration 时等待 `persist.ready(atom)`；在持久化边界等待 `persist.flush(atom)` 并处理错误。按需使用 `persist.rehydrate(atom)`、`persist.clear(atom)` 与 `onError`。
+- migration 输入按 `unknown` 解析并逐版本同步执行；SSR 为每个请求创建独立 atom，并显式提供 storage 或仅在客户端创建。
+
+### English mirror
+
+Use Core directly outside UI/component lifecycles and the matching adapter inside components; Expo uses `@zhuangtai-js/react`. The six guides are `/en/guides/react/`, `/en/guides/preact/`, `/en/guides/vue/`, `/en/guides/svelte/`, `/en/guides/solid/`, and `/en/guides/react-native-expo/`. `PersistStorage` structurally accepts plain or `PromiseLike` results. AsyncStorage is consumer-provided, with no ZhuàngTài-specific package. Await `persist.ready(atom)` when first render depends on hydration; await and handle `persist.flush(atom)` at durable boundaries; use `persist.rehydrate(atom)`, `persist.clear(atom)`, and `onError`. Parse `unknown` migration input, run migrations synchronously one version at a time, and create an independent atom per SSR request.

@@ -58,11 +58,11 @@ stop();
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | [`@zhuangtai-js/core`](../../packages/core/README.md#english)       | Framework-agnostic state core with zero third-party runtime dependencies | [API reference](https://zhuangtai.yojigen.cn/en/reference/core/)    |
 | [`@zhuangtai-js/react`](../../packages/react/README.md#english)     | React hooks                                                              | [React guide](https://zhuangtai.yojigen.cn/en/guides/react/)        |
-| [`@zhuangtai-js/preact`](../../packages/preact/README.md#english)   | Preact hooks                                                             | [Preact guide](https://zhuangtai.yojigen.cn/en/guides/preact/)        |
-| [`@zhuangtai-js/svelte`](../../packages/svelte/README.md#english)   | Standard Svelte stores                                                   | [Svelte guide](https://zhuangtai.yojigen.cn/en/guides/svelte/)        |
-| [`@zhuangtai-js/vue`](../../packages/vue/README.md#english)         | Read-only Vue computed refs and setters                                  | [Vue guide](https://zhuangtai.yojigen.cn/en/guides/vue/)             |
-| [`@zhuangtai-js/solid`](../../packages/solid/README.md#english)     | Solid accessors and setters                                              | [Solid guide](https://zhuangtai.yojigen.cn/en/guides/solid/)         |
-| [`@zhuangtai-js/persist`](../../packages/persist/README.md#english) | Persist and migrate atoms with sync or async storage                   | [API reference](https://zhuangtai.yojigen.cn/en/reference/persist/) |
+| [`@zhuangtai-js/preact`](../../packages/preact/README.md#english)   | Preact hooks                                                             | [Preact guide](https://zhuangtai.yojigen.cn/en/guides/preact/)      |
+| [`@zhuangtai-js/svelte`](../../packages/svelte/README.md#english)   | Standard Svelte stores                                                   | [Svelte guide](https://zhuangtai.yojigen.cn/en/guides/svelte/)      |
+| [`@zhuangtai-js/vue`](../../packages/vue/README.md#english)         | Read-only Vue computed refs and setters                                  | [Vue guide](https://zhuangtai.yojigen.cn/en/guides/vue/)            |
+| [`@zhuangtai-js/solid`](../../packages/solid/README.md#english)     | Solid accessors and setters                                              | [Solid guide](https://zhuangtai.yojigen.cn/en/guides/solid/)        |
+| [`@zhuangtai-js/persist`](../../packages/persist/README.md#english) | Persist and migrate atoms with sync or async storage                     | [API reference](https://zhuangtai.yojigen.cn/en/reference/persist/) |
 | [`@zhuangtai-js/freeze`](../../packages/freeze/README.md#english)   | Deep-freeze values during development to catch in-place mutation         | [API reference](https://zhuangtai.yojigen.cn/en/reference/freeze/)  |
 | [`@zhuangtai-js/immer`](../../packages/immer/README.md#english)     | Write immutable updates with Immer drafts                                | [API reference](https://zhuangtai.yojigen.cn/en/reference/immer/)   |
 | [`@zhuangtai-js/sync`](../../packages/sync/README.md#english)       | Sync across same-origin contexts with `BroadcastChannel`                 | [API reference](https://zhuangtai.yojigen.cn/en/reference/sync/)    |
@@ -77,6 +77,10 @@ Start with the minimal Core example, then choose the quick start for the UI boun
 - [Svelte Quick Start](https://zhuangtai.yojigen.cn/en/guides/svelte/)
 - [Solid Quick Start](https://zhuangtai.yojigen.cn/en/guides/solid/)
 - [React Native / Expo Quick Start](https://zhuangtai.yojigen.cn/en/guides/react-native-expo/) (Expo uses `@zhuangtai-js/react`)
+
+Use Core directly outside UI/component lifecycles and choose the matching adapter inside components. Expo uses the React adapter. AsyncStorage is consumer-provided to `@zhuangtai-js/persist`; there is no ZhuàngTài-specific AsyncStorage package.
+
+For Promise-returning storage, the structural `PersistStorage` contract accepts plain or `PromiseLike` results. If first render depends on hydration, await `persist.ready(atom)`. At a durable boundary, await `persist.flush(atom)` and handle rejection/error. Use `persist.rehydrate(atom)`, `persist.clear(atom)`, and `onError` deliberately. Parse and narrow `unknown` migration input, run migrations synchronously one version at a time, and create an independent atom per SSR request with explicit storage or client-only creation.
 
 Plugins are installed on creators made with `createAtom()`:
 
