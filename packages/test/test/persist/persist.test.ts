@@ -158,12 +158,7 @@ describe("persist", () => {
       encode(value) {
         return `value:${String(value)}`;
       },
-      decode<Value>(rawValue: string, initialValue: Value) {
-        expect(initialValue).toBe(1);
-
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- PersistCodec.decode is intentionally generic so custom codecs can restore/migrate values.
-        return Number.parseInt(rawValue.replace("value:", ""), 10) as unknown as Value;
-      },
+      decode: decodeValue,
     };
     const storage = createStorage([["count", "value:2"]]);
     const createState = createAtom().use(persist);
@@ -177,6 +172,18 @@ describe("persist", () => {
     expect(storage.getItem("count")).toBe("value:3");
   });
 });
+
+function decodeValue(rawValue: string, initialValue: number): number;
+function decodeValue<Value>(rawValue: string, initialValue: Value): Value;
+function decodeValue(rawValue: string, initialValue: unknown): unknown {
+  expect(initialValue).toBe(1);
+
+  if (typeof initialValue !== "number") {
+    return initialValue;
+  }
+
+  return Number.parseInt(rawValue.replace("value:", ""), 10);
+}
 
 type StorageFixture = PersistStorage & {
   readonly values: Map<string, string>;
