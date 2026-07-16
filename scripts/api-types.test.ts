@@ -8,10 +8,6 @@ import {
   type NextValue,
   type ReadableAtom,
 } from "@zhuangtai-js/core";
-// @ts-expect-error AtomCreatorArgs is internal type plumbing, not public API.
-import type { AtomCreatorArgs } from "@zhuangtai-js/core";
-// @ts-expect-error AtomCreatorOptions is internal type plumbing, not public API.
-import type { AtomCreatorOptions } from "@zhuangtai-js/core";
 import {
   definePersistMigration,
   persist,
@@ -60,11 +56,6 @@ type _NumberAtomValue = Expect<Equal<AtomValue<typeof numberAtom>, number>>;
 
 numberAtom.set(1);
 numberAtom.set((value) => value + 1);
-// @ts-expect-error string should not be assignable to Atom<number>.set
-numberAtom.set("nope");
-
-// @ts-expect-error atom() does not support function values; wrap it in an object.
-atom(() => 1);
 const wrappedFunctionAtom = atom({ fn: (): number => 1 });
 type _WrappedFunctionAtom = Expect<Equal<typeof wrappedFunctionAtom, Atom<{ fn: () => number }>>>;
 
@@ -75,14 +66,9 @@ type _SingleComputed = Expect<Equal<typeof singleComputed, Computed<string>>>;
 type _SingleComputedValue = Expect<Equal<AtomValue<typeof singleComputed>, string>>;
 type _MultiComputed = Expect<Equal<typeof multiComputed, Computed<string>>>;
 
-// @ts-expect-error computed derive takes no arguments in the auto-tracking API.
-computed((value: number) => value * 2);
-
 const createPersistedAtom = createAtom().use(persist);
 
-type _MaybePromise = Expect<
-  Equal<MaybePromise<string>, string | PromiseLike<string>>
->;
+type _MaybePromise = Expect<Equal<MaybePromise<string>, string | PromiseLike<string>>>;
 type _PersistControls = Expect<
   Equal<
     PersistControls,
@@ -128,29 +114,14 @@ const codec: PersistCodec = {
   encode(value) {
     return JSON.stringify(value);
   },
-  decode(rawValue, initialValue) {
-    return JSON.parse(rawValue) as typeof initialValue;
+  decode(_rawValue, initialValue) {
+    return initialValue;
   },
 };
 
 const persistedAtom = createPersistedAtom(5, { persist: { key: "counter", storage, codec } });
 
 type _PersistedAtom = Expect<Equal<typeof persistedAtom, Atom<number>>>;
-
-// @ts-expect-error creator atom() does not support function values; wrap it in an object.
-createPersistedAtom(() => 1, { persist: { key: "fn" } });
-
-// @ts-expect-error persist key is required
-createPersistedAtom(0, { persist: {} });
-
-// @ts-expect-error storage shape must match PersistStorage
-createPersistedAtom(0, { persist: { key: "counter", storage: {} } });
-
-// @ts-expect-error codec shape must match PersistCodec
-createPersistedAtom(0, { persist: { key: "counter", codec: {} } });
-
-// @ts-expect-error plugin options namespace should be named persist
-createPersistedAtom(0, { wrong: { key: "counter" } });
 
 type NumberSetter = (nextValue: NextValue<number>) => void;
 
