@@ -4,6 +4,7 @@ import { sidebar } from "./sidebar.mjs";
 export const starlightConfig = {
   title: "ZhuàngTài 状态",
   description: "简单、直接的 JavaScript 状态原语。",
+  routeMiddleware: "./src/route-data.ts",
   customCss: ["./src/styles/tailwind.css"],
   components: {
     Search: "./src/components/Search.astro",
