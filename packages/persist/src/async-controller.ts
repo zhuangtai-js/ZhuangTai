@@ -116,9 +116,7 @@ export class AsyncPersistController<Value> {
     }
     const task = Promise.resolve(result)
       .then((rawValue) => {
-        if (generation !== this.hydrationGeneration) {
-          return;
-        }
+        if (generation !== this.hydrationGeneration) return;
         return this.applyHydration(rawValue, generation, revision);
       })
       .catch((cause: unknown) => {
@@ -161,9 +159,7 @@ export class AsyncPersistController<Value> {
     generation: number,
     revision: number,
   ): MaybePromise<void> {
-    if (generation !== this.hydrationGeneration) {
-      return;
-    }
+    if (generation !== this.hydrationGeneration) return;
     if (revision !== this.localRevision) {
       this.persistLatestLocalValue();
       return;
@@ -199,9 +195,13 @@ export class AsyncPersistController<Value> {
     } else if (gen === this.hydrationGeneration) {
       this.persistLatestLocalValue();
     } else {
+      const hydration = this.latestHydration;
       this.queue.runBackgroundWrite(() =>
-        this.latestHydration.then(
-          () => this.params.write(this.params.encode(this.params.state.get())),
+        hydration.then(
+          () => {
+            if (hydration !== this.latestHydration) return;
+            return this.params.write(this.params.encode(this.params.state.get()));
+          },
           () => undefined,
         ),
       );
