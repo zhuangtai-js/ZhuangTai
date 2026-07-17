@@ -23,9 +23,7 @@ export class PersistFailureTracker {
       try {
         const result = this.onError(failure);
         if (isPromiseLike(result)) {
-          void Promise.resolve(result).catch((callbackCause: unknown) => {
-            this.retainCallbackFailure(callbackCause);
-          });
+          void Promise.resolve(result).catch(() => undefined);
         }
       } catch (callbackCause) {
         this.retainCallbackFailure(callbackCause);
