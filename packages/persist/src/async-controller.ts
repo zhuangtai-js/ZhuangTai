@@ -2,6 +2,7 @@ import type { Atom, NextValue } from "@zhuangtai-js/core";
 import { createNonErrorCause } from "./errors.js";
 import { PersistFailureTracker } from "./failure-tracker.js";
 import { PersistOperationQueue } from "./operation-queue.js";
+import { queueStaleRepair } from "./stale-repair.js";
 import { isPromiseLike } from "./storage.js";
 import type { MaybePromise, PersistOptions, PersistStorage } from "./types.js";
 import type { MigrationPlan, RestorePlan } from "./versioned-plan.js";
@@ -195,16 +196,13 @@ export class AsyncPersistController<Value> {
     } else if (gen === this.hydrationGeneration) {
       this.persistLatestLocalValue();
     } else {
-      const hydration = this.latestHydration;
-      this.queue.runBackgroundWrite(() =>
-        hydration.then(
-          () => {
-            if (hydration !== this.latestHydration) return;
-            return this.params.write(this.params.encode(this.params.state.get()));
-          },
-          () => undefined,
-        ),
-      );
+      queueStaleRepair({
+        hydration: this.latestHydration,
+        latestHydration: () => this.latestHydration,
+        encodeCurrent: () => this.params.encode(this.params.state.get()),
+        write: (encodedValue) => this.params.write(encodedValue),
+        runBackgroundWrite: (operation) => this.queue.runBackgroundWrite(operation),
+      });
     }
   }
 
