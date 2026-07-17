@@ -28,6 +28,7 @@ Core `set` applies immediately, `watch` runs synchronously, and equality uses `O
 
 - `PersistStorage` is a structural contract. `getItem`, `setItem`, and `removeItem` methods returning plain values or `PromiseLike` values are structurally compatible.
 - AsyncStorage is consumer-provided to `@zhuangtai-js/persist`; there is no ZhuàngTài-specific AsyncStorage package.
+- When wrapping storage with an in-memory fallback, preserve each call's synchronous or `PromiseLike` return shape; validate and cache async `getItem` after it settles, and observe async `setItem` / `removeItem` rejections before switching to the fallback instead of discarding the Promise.
 - If first render depends on hydrated persistent state, `await persist.ready(atom)` before showing UI that depends on it.
 - At exit, submit, or another durable boundary, `await persist.flush(atom)` and handle rejection/error. A synchronous `set` does not mean an asynchronous durable write has finished.
 - `persist.rehydrate(atom)` reads storage again, and `persist.clear(atom)` removes the persisted value. Use `onError` for asynchronous hydration, write, rehydrate, or clear failures.

@@ -57,6 +57,11 @@ const semanticEvidence: readonly RequiredEvidence[] = [
       /AsyncStorage[^。.;\n]{0,120}(?:consumer-provided|consumer only|consumer-only|由使用方|由消费者|应用侧)/i,
   },
   {
+    expected: "PromiseLike fallback wrappers observe async storage failures",
+    pattern:
+      /(?:内存回退包装|in-memory fallback)[^。.;\n]{0,320}(?:PromiseLike)[^。.;\n]{0,320}(?:rejection|rejections|拒绝)[^。.;\n]{0,120}(?:丢弃|discarding)/i,
+  },
+  {
     expected: "first-render hydration awaits persist.ready",
     pattern:
       /(?:首屏|首次渲染|first render)[^。.;\n]{0,140}(?:hydration|水合|持久化状态)[^。.;\n]{0,100}persist\.ready|persist\.ready[^。.;\n]{0,140}(?:首屏|首次渲染|first render)/i,

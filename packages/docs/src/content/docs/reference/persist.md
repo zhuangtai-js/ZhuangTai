@@ -54,6 +54,8 @@ const storage: PersistStorage = {
 
 异步 `set()` 不会等待 Promise。它先 encode 新值，再加入 storage 写入队列，然后同步提交内存值并通知 watcher。编码失败，或 `setItem` 在这次原始 `set()` 同步调用内抛错，都会同步 fail-closed：内存值不提交，watcher 不通知。如果写入排在已有异步工作之后，`setItem` 直到队列执行时才抛错；相对于原始 `set()`，这是 queued deferred failure，本地内存提交会保留，并由 `onError` 与 `flush()` 报告。
 
+- 如果用内存回退包装 storage，必须按每次调用保留同步值或 `PromiseLike` 返回形状；异步 `getItem` 在完成后再校验和缓存，异步 `setItem` / `removeItem` 要观察 rejection 后再切换回退，不能直接丢弃 Promise。
+
 ## 生命周期 controller
 
 `persist` 导出带有生命周期 controller 方法的插件对象：

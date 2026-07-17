@@ -91,6 +91,7 @@ const theme = atom("light", {
 ```
 
 更多组合方式和顺序语义见[插件与组合](https://zhuangtai.yojigen.cn/guides/plugins/)。
+- 如果用内存回退包装 storage，必须按每次调用保留同步值或 `PromiseLike` 返回形状；异步 `getItem` 在完成后再校验和缓存，异步 `setItem` / `removeItem` 要观察 rejection 后再切换回退，不能直接丢弃 Promise。
 
 ### 当前兼容范围
 

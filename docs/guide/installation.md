@@ -38,6 +38,7 @@ React Native / Expo 应用可以单独安装自己的 storage 实现，例如 As
 ### 异步持久化检查表
 
 - `PersistStorage` 是结构契约：storage 方法返回普通值或 `PromiseLike` 都结构兼容。
+- 如果用内存回退包装 storage，必须按每次调用保留同步值或 `PromiseLike` 返回形状；异步 `getItem` 在完成后再校验和缓存，异步 `setItem` / `removeItem` 要观察 rejection 后再切换回退，不能直接丢弃 Promise。
 - 如果首屏依赖 hydration 后的持久化状态，先 `await persist.ready(atom)`。
 - 在退出、提交或其他持久化边界 `await persist.flush(atom)`，并处理 rejection/错误。
 - 用 `persist.rehydrate(atom)` 重新读取，用 `persist.clear(atom)` 删除持久化值，用 `onError` 接收异步失败。
@@ -124,6 +125,7 @@ A React Native / Expo app may install its own storage implementation, such as As
 ### Async persistence checklist
 
 - `PersistStorage` is structural: storage methods returning plain values or `PromiseLike` values are structurally compatible.
+- When wrapping storage with an in-memory fallback, preserve each call's synchronous or `PromiseLike` return shape; validate and cache async `getItem` after it settles, and observe async `setItem` / `removeItem` rejections before switching to the fallback instead of discarding the Promise.
 - If first render depends on hydrated persistent state, `await persist.ready(atom)`.
 - At exit, submit, or another durable boundary, `await persist.flush(atom)` and handle rejection/error.
 - Use `persist.rehydrate(atom)` to read again, `persist.clear(atom)` to remove the stored value, and `onError` for asynchronous failures.

@@ -86,6 +86,41 @@ export function registerPublicDocumentationTests() {
     );
   });
 
+  it("keeps PromiseLike fallback guidance mirrored across public sources", () => {
+    const chineseGuidance =
+      "如果用内存回退包装 storage，必须按每次调用保留同步值或 `PromiseLike` 返回形状；异步 `getItem` 在完成后再校验和缓存，异步 `setItem` / `removeItem` 要观察 rejection 后再切换回退，不能直接丢弃 Promise。";
+    const englishGuidance =
+      "When wrapping storage with an in-memory fallback, preserve each call's synchronous or `PromiseLike` return shape; validate and cache async `getItem` after it settles, and observe async `setItem` / `removeItem` rejections before switching to the fallback instead of discarding the Promise.";
+
+    for (const relativePath of [
+      "README.md",
+      "docs/guide/installation.md",
+      "packages/persist/README.md",
+      "packages/docs/src/content/docs/ai.md",
+      "packages/docs/src/content/docs/reference/persist.md",
+      "skills/zhuangtai/SKILL.md",
+      "skills/zhuangtai-react/SKILL.md",
+      "skills/zhuangtai-plugins/SKILL.md",
+      "skills/zhuangtai-framework-adapters/SKILL.md",
+    ]) {
+      assertContainsAll(readText(relativePath), [chineseGuidance], relativePath);
+    }
+
+    for (const relativePath of [
+      "docs/guide/README.en.md",
+      "docs/guide/installation.md",
+      "packages/persist/README.md",
+      "packages/docs/src/content/docs/en/ai.md",
+      "packages/docs/src/content/docs/en/reference/persist.md",
+      "skills/zhuangtai/SKILL.md",
+      "skills/zhuangtai-react/SKILL.md",
+      "skills/zhuangtai-plugins/SKILL.md",
+      "skills/zhuangtai-framework-adapters/SKILL.md",
+    ]) {
+      assertContainsAll(readText(relativePath), [englishGuidance], relativePath);
+    }
+  });
+
   it("keeps the public playground interactive, bilingual, and Tailwind-only", () => {
     const playgroundPaths = [
       "packages/docs/src/content/docs/playground.mdx",

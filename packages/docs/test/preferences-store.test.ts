@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { persist } from "@zhuangtai-js/persist";
 import { describe, expect, it } from "vitest";
 import { createPreferencesStore } from "../src/components/interactive-examples/stores";
 
@@ -24,6 +25,21 @@ describe("preferences store", () => {
     expect(store.value.get()).toEqual(nextPreferences);
     expect(store.persisted.get()).toBe(false);
     assert.equal(writes.length, 1);
+  });
+
+  it("hydrates persisted preferences from asynchronous storage", async () => {
+    const storedPreferences = { theme: "dark", density: "compact" } as const;
+    const storage = {
+      getItem: async () => JSON.stringify(storedPreferences),
+      setItem: async () => undefined,
+      removeItem: async () => undefined,
+    };
+    const store = createPreferencesStore(storage);
+
+    await persist.ready(store.value);
+
+    expect(store.value.get()).toEqual(storedPreferences);
+    expect(store.persisted.get()).toBe(true);
   });
 
   it.each(["null", '{"theme":"sepia","density":"compact"}', "[]", "{"])(

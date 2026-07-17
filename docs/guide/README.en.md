@@ -81,6 +81,7 @@ Start with the minimal Core example, then choose the quick start for the UI boun
 Use Core directly outside UI/component lifecycles and choose the matching adapter inside components. Expo uses the React adapter. AsyncStorage is consumer-provided to `@zhuangtai-js/persist`; there is no ZhuàngTài-specific AsyncStorage package.
 
 For Promise-returning storage, the structural `PersistStorage` contract accepts plain or `PromiseLike` results. If first render depends on hydration, await `persist.ready(atom)`. At a durable boundary, await `persist.flush(atom)` and handle rejection/error. Use `persist.rehydrate(atom)`, `persist.clear(atom)`, and `onError` deliberately. Parse and narrow `unknown` migration input, run migrations synchronously one version at a time, and create an independent atom per SSR request with explicit storage or client-only creation.
+- When wrapping storage with an in-memory fallback, preserve each call's synchronous or `PromiseLike` return shape; validate and cache async `getItem` after it settles, and observe async `setItem` / `removeItem` rejections before switching to the fallback instead of discarding the Promise.
 
 Plugins are installed on creators made with `createAtom()`:
 

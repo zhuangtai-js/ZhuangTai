@@ -67,6 +67,8 @@ const storage: PersistStorage = {
 
 插件会按每次调用的返回值检测 thenable，因此同一个 storage 可以混合使用同步和异步方法。
 
+- 如果用内存回退包装 storage，必须按每次调用保留同步值或 `PromiseLike` 返回形状；异步 `getItem` 在完成后再校验和缓存，异步 `setItem` / `removeItem` 要观察 rejection 后再切换回退，不能直接丢弃 Promise。
+
 | 场景                                   | 行为                                                                                                   |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `getItem` 返回普通值                   | 在 atom creator 返回前完成恢复；更新保持同步的“encode → 写入 → 内存提交 → watcher”顺序。               |
@@ -271,6 +273,8 @@ const storage: PersistStorage = {
 ```
 
 The plugin detects thenables from each call, so one storage object may mix synchronous and asynchronous methods.
+
+- When wrapping storage with an in-memory fallback, preserve each call's synchronous or `PromiseLike` return shape; validate and cache async `getItem` after it settles, and observe async `setItem` / `removeItem` rejections before switching to the fallback instead of discarding the Promise.
 
 | Scenario                                    | Behavior                                                                                                                                                 |
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |

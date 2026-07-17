@@ -54,6 +54,8 @@ The plugin detects thenables from each call, so one storage object may mix synch
 
 An asynchronous `set()` does not wait for a Promise. It encodes the new value, queues the storage write, then synchronously commits memory and notifies watchers. An encode failure, or a `setItem` throw inside the original synchronous `set()` call, fails closed synchronously: memory is not committed and watchers are not notified. If the write is placed behind existing asynchronous work, `setItem` is not invoked until the queue runs it; a throw at that point is a queued deferred failure relative to the original `set()`, so the local memory commit remains and `onError` plus `flush()` report it.
 
+- When wrapping storage with an in-memory fallback, preserve each call's synchronous or `PromiseLike` return shape; validate and cache async `getItem` after it settles, and observe async `setItem` / `removeItem` rejections before switching to the fallback instead of discarding the Promise.
+
 ## Lifecycle controller
 
 `persist` exports a plugin object with lifecycle controller methods:

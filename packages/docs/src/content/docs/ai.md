@@ -28,6 +28,7 @@ Core 的 `set` 立即生效，`watch` 同步执行，等价性使用 `Object.is`
 
 - `PersistStorage` 是结构契约。`getItem`、`setItem`、`removeItem` 返回普通值或 `PromiseLike` 都结构兼容。
 - AsyncStorage 只由使用方传给 `@zhuangtai-js/persist`；不存在 ZhuàngTài 专用 AsyncStorage 包。
+- 如果用内存回退包装 storage，必须按每次调用保留同步值或 `PromiseLike` 返回形状；异步 `getItem` 在完成后再校验和缓存，异步 `setItem` / `removeItem` 要观察 rejection 后再切换回退，不能直接丢弃 Promise。
 - 如果首屏依赖 hydration 后的持久化状态，先 `await persist.ready(atom)`，再展示依赖该状态的 UI。
 - 在退出、提交或其他持久化边界执行 `await persist.flush(atom)`，并处理 rejection/错误；不要假设同步 `set` 已代表异步 durable write 完成。
 - `persist.rehydrate(atom)` 重新读取 storage，`persist.clear(atom)` 删除持久化值。用 `onError` 接收异步 hydration、写入、rehydrate 或 clear 失败。

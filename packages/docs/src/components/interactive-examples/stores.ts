@@ -1,7 +1,7 @@
 import { atom, computed, createAtom } from "@zhuangtai-js/core";
 import { persist } from "@zhuangtai-js/persist";
 import type { PersistStorage } from "@zhuangtai-js/persist";
-import { createResilientStorage } from "./resilient-storage";
+import { createResilientStorage, isPromiseLike } from "./resilient-storage";
 import type { Locale, Preferences, Task, TaskFilter } from "./types";
 
 export const countState = atom(3);
@@ -52,18 +52,25 @@ function isPreferences(value: unknown): value is Preferences {
   );
 }
 
+function decodePreferences(rawValue: unknown): string | null {
+  if (typeof rawValue !== "string") return null;
+
+  try {
+    const decoded: unknown = JSON.parse(rawValue);
+    return isPreferences(decoded) ? rawValue : null;
+  } catch {
+    return null;
+  }
+}
+
 function createPreferencesStorage(storage: PersistStorage): PersistStorage {
   return {
     getItem(key) {
       const rawValue = storage.getItem(key);
-      if (typeof rawValue !== "string") return null;
-
-      try {
-        const decoded: unknown = JSON.parse(rawValue);
-        return isPreferences(decoded) ? rawValue : null;
-      } catch {
-        return null;
+      if (isPromiseLike(rawValue)) {
+        return Promise.resolve(rawValue).then((resolvedValue) => decodePreferences(resolvedValue));
       }
+      return decodePreferences(rawValue);
     },
     setItem: storage.setItem,
     removeItem: storage.removeItem,
