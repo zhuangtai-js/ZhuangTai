@@ -2,7 +2,8 @@ import type { Atom, NextValue } from "@zhuangtai-js/core";
 import { createNonErrorCause } from "./errors.js";
 import { PersistFailureTracker } from "./failure-tracker.js";
 import { PersistOperationQueue } from "./operation-queue.js";
-import { queueStaleRepair } from "./stale-repair.js";
+import { waitForAllOperations, waitForHydrationAndWrites } from "./operation-waits.js";
+import { queueStaleRepair, type PersistHydrationTask } from "./stale-repair.js";
 import { isPromiseLike } from "./storage.js";
 import type { MaybePromise, PersistOptions, PersistStorage } from "./types.js";
 import type { MigrationPlan, RestorePlan } from "./versioned-plan.js";
@@ -29,8 +30,14 @@ export class AsyncPersistController<Value> {
   private hydrationGeneration = 0;
   private localRevision = 0;
   private latestLocalEncoded: string | undefined;
-  private latestHydration: Promise<void> = Promise.resolve();
+  private latestHydration: PersistHydrationTask = {
+    promise: Promise.resolve(),
+    readSequence: -1,
+    applied: () => false,
+  };
   private readonly pendingControls = new Set<Promise<void>>();
+  private readonly hydrationTasks = new Map<number, PersistHydrationTask>();
+  private readonly appliedHydrations = new Set<number>();
 
   constructor(private readonly params: PersistControllerParams<Value>) {
     this.failures = new PersistFailureTracker(params.key, params.onError);
@@ -45,7 +52,14 @@ export class AsyncPersistController<Value> {
   }
 
   readonly startInitialHydration = (result: PromiseLike<string | null>): void => {
-    void this.startHydration(result, "hydrate");
+    const readSequence = this.queue.readBarrier().sequence;
+    void this.startHydration(
+      result,
+      "hydrate",
+      this.nextHydrationGeneration(),
+      this.localRevision,
+      readSequence,
+    );
   };
 
   startInitialMigration(plan: MigrationPlan<Value>, result: PromiseLike<void>): void {
@@ -59,13 +73,17 @@ export class AsyncPersistController<Value> {
         }
       },
     );
-    this.trackHydration(generation, task);
+    this.trackHydration(generation, task, -1);
   }
 
-  readonly ready = (): Promise<void> => this.latestHydration;
+  readonly ready = (): Promise<void> => this.latestHydration.promise;
 
   async flush(): Promise<void> {
-    await this.waitForAllOperations();
+    await waitForAllOperations(
+      () => this.latestHydration,
+      this.pendingControls,
+      () => this.queue.wait(),
+    );
     const firstFailure = this.failures.consumeFirst();
 
     if (firstFailure !== undefined) {
@@ -76,13 +94,9 @@ export class AsyncPersistController<Value> {
   rehydrate(): Promise<void> {
     const generation = this.nextHydrationGeneration();
     const revision = this.localRevision;
-
-    try {
-      return this.startHydration(this.params.read(), "rehydrate", generation, revision);
-    } catch (cause) {
-      const failureCause = cause instanceof Error ? cause : createNonErrorCause(cause);
-      return this.failHydration(generation, "rehydrate", failureCause);
-    }
+    const readBarrier = this.queue.readBarrier();
+    const result = readBarrier.promise.then(() => this.params.read());
+    return this.startHydration(result, "rehydrate", generation, revision, readBarrier.sequence);
   }
 
   clear(): Promise<void> {
@@ -111,9 +125,16 @@ export class AsyncPersistController<Value> {
     operation: "hydrate" | "rehydrate",
     generation = this.nextHydrationGeneration(),
     revision = this.localRevision,
+    readSequence = -1,
   ): Promise<void> {
     if (!isPromiseLike(result)) {
-      return this.completeSynchronousHydration(result, operation, generation, revision);
+      return this.completeSynchronousHydration(
+        result,
+        operation,
+        generation,
+        revision,
+        readSequence,
+      );
     }
     const task = Promise.resolve(result)
       .then((rawValue) => {
@@ -126,7 +147,7 @@ export class AsyncPersistController<Value> {
           throw this.failures.record(operation, failureCause);
         }
       });
-    this.trackHydration(generation, task);
+    this.trackHydration(generation, task, readSequence);
     return task;
   }
 
@@ -135,6 +156,7 @@ export class AsyncPersistController<Value> {
     operation: "hydrate" | "rehydrate",
     generation: number,
     revision: number,
+    readSequence: number,
   ): Promise<void> {
     let task: Promise<void>;
     try {
@@ -151,7 +173,7 @@ export class AsyncPersistController<Value> {
       const failureCause = cause instanceof Error ? cause : createNonErrorCause(cause);
       task = Promise.reject(this.failures.record(operation, failureCause));
     }
-    this.trackHydration(generation, task);
+    this.trackHydration(generation, task, readSequence);
     return task;
   }
 
@@ -184,6 +206,7 @@ export class AsyncPersistController<Value> {
 
   private commitHydratedValue(value: Value, generation: number, revision: number): void {
     if (generation === this.hydrationGeneration && revision === this.localRevision) {
+      this.appliedHydrations.add(generation);
       this.params.state.set(value);
     } else if (generation === this.hydrationGeneration) {
       this.persistLatestLocalValue();
@@ -192,13 +215,14 @@ export class AsyncPersistController<Value> {
 
   private finishMigration(plan: MigrationPlan<Value>, gen: number, rev: number): void {
     if (gen === this.hydrationGeneration && rev === this.localRevision) {
+      this.appliedHydrations.add(gen);
       this.params.state.set(plan.finalize());
     } else if (gen === this.hydrationGeneration) {
       this.persistLatestLocalValue();
     } else {
       queueStaleRepair({
-        hydration: this.latestHydration,
         latestHydration: () => this.latestHydration,
+        hydration: this.hydrationTasks.get(gen + 1) ?? this.latestHydration,
         encodeCurrent: () => this.params.encode(this.params.state.get()),
         write: (encodedValue) => this.params.write(encodedValue),
         runBackgroundWrite: (operation) => this.queue.runBackgroundWrite(operation),
@@ -214,24 +238,16 @@ export class AsyncPersistController<Value> {
     }
   }
 
-  private failHydration(
-    generation: number,
-    operation: "hydrate" | "rehydrate",
-    cause: unknown,
-  ): Promise<void> {
-    if (generation !== this.hydrationGeneration) {
-      return Promise.resolve();
-    }
-
-    const task = Promise.reject(this.failures.record(operation, cause));
-    this.trackHydration(generation, task);
-    return task;
-  }
-
-  private trackHydration(generation: number, task: Promise<void>): void {
+  private trackHydration(generation: number, task: Promise<void>, readSequence: number): void {
     this.trackPending(task);
+    const hydration = {
+      promise: task,
+      readSequence,
+      applied: () => this.appliedHydrations.has(generation),
+    };
+    this.hydrationTasks.set(generation, hydration);
     if (generation !== this.hydrationGeneration) return;
-    this.latestHydration = task;
+    this.latestHydration = hydration;
   }
 
   private trackPending(task: Promise<void>): void {
@@ -246,35 +262,13 @@ export class AsyncPersistController<Value> {
 
   private async performClear(): Promise<void> {
     await Promise.allSettled(Array.from(this.pendingControls));
-    await this.waitForHydrationAndWrites();
+    await waitForHydrationAndWrites(
+      () => this.latestHydration,
+      () => this.queue.wait(),
+    );
     await this.queue.enqueueObserved(
       () => this.params.storage.removeItem(this.params.key),
       "clear",
     );
-  }
-
-  private async waitForHydrationAndWrites(): Promise<void> {
-    while (true) {
-      const hydration = this.latestHydration;
-      await Promise.allSettled([hydration]);
-      await this.queue.wait();
-
-      if (hydration === this.latestHydration) {
-        return;
-      }
-    }
-  }
-
-  private async waitForAllOperations(): Promise<void> {
-    while (true) {
-      const hydration = this.latestHydration;
-      const controls = Array.from(this.pendingControls);
-      await Promise.allSettled([hydration, ...controls]);
-      await this.queue.wait();
-
-      if (hydration === this.latestHydration && this.pendingControls.size === 0) {
-        return;
-      }
-    }
   }
 }
