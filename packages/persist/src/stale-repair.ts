@@ -1,4 +1,3 @@
-import { isPromiseLike } from "./storage.js";
 import type { MaybePromise } from "./types.js";
 
 type StaleRepairParams = {
@@ -9,34 +8,34 @@ type StaleRepairParams = {
   readonly runBackgroundWrite: (operation: () => MaybePromise<void>) => void;
 };
 
-export function queueStaleRepair({
-  hydration,
-  latestHydration,
-  encodeCurrent,
-  write,
-  runBackgroundWrite,
-}: StaleRepairParams): void {
-  runBackgroundWrite(() =>
-    hydration.then(
-      () => {
-        if (hydration !== latestHydration()) return Promise.resolve();
-        const writeResult = write(encodeCurrent());
-        if (!isPromiseLike(writeResult)) return Promise.resolve();
-        return Promise.resolve(writeResult).then(() => {
-          const latest = latestHydration();
-          if (hydration === latest) return;
-          runBackgroundWrite(() =>
-            latest.then(
-              () => {
-                if (latest !== latestHydration()) return Promise.resolve();
-                return Promise.resolve(write(encodeCurrent()));
-              },
-              () => undefined,
-            ),
-          );
-        });
-      },
-      () => undefined,
-    ),
-  );
+export function queueStaleRepair(params: StaleRepairParams): void {
+  params.runBackgroundWrite(() => repairUntilStable(params, params.hydration, true));
+}
+
+async function repairUntilStable(
+  params: StaleRepairParams,
+  hydration: Promise<void>,
+  skipIfSuperseded: boolean,
+): Promise<void> {
+  try {
+    await hydration;
+  } catch {
+    return;
+  }
+
+  const latest = params.latestHydration();
+  if (hydration !== latest) {
+    if (skipIfSuperseded) {
+      return;
+    }
+    await repairUntilStable(params, latest, false);
+    return;
+  }
+
+  await params.write(params.encodeCurrent());
+  const settledLatest = params.latestHydration();
+  if (hydration === settledLatest) {
+    return;
+  }
+  await repairUntilStable(params, settledLatest, false);
 }

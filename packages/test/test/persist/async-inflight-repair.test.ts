@@ -21,14 +21,19 @@ type InflightRepairFailures = {
 class InflightRepairDriver implements PersistStorage {
   readonly migrationWrite = new Deferred<void>();
   readonly repairWrite = new Deferred<void>();
+  readonly pendingWrites = new Map<number, Deferred<void>>();
   readonly writes: string[] = [];
+  private readonly pendingWriteNumbers: ReadonlySet<number>;
   private storedValue: string | null = "1";
   private readCount = 0;
 
   constructor(
     private readonly hydrationValues: readonly number[],
     private readonly failures: InflightRepairFailures = {},
-  ) {}
+    pendingWriteNumbers: readonly number[] = [],
+  ) {
+    this.pendingWriteNumbers = new Set(pendingWriteNumbers);
+  }
 
   get stored(): string | null {
     return this.storedValue;
@@ -50,13 +55,13 @@ class InflightRepairDriver implements PersistStorage {
   }
 
   setItem(_key: string, value: string): Promise<void> {
-    this.writes.push(value);
-    if (this.writes.length === 1) {
+    const writeNumber = this.writes.push(value);
+    if (writeNumber === 1) {
       return this.migrationWrite.promise.then(() => {
         this.storedValue = value;
       });
     }
-    if (this.writes.length === 2) {
+    if (writeNumber === 2) {
       return this.repairWrite.promise.then(() => {
         if (this.failures.repairCause !== undefined) {
           throw this.failures.repairCause;
@@ -64,12 +69,30 @@ class InflightRepairDriver implements PersistStorage {
         this.storedValue = value;
       });
     }
-    if (this.writes.length === 3 && this.failures.compensationCause !== undefined) {
+    if (writeNumber === 3 && this.failures.compensationCause !== undefined) {
       return Promise.reject(this.failures.compensationCause);
+    }
+
+    const pendingWrite = this.pendingWriteNumbers.has(writeNumber)
+      ? new Deferred<void>()
+      : undefined;
+    if (pendingWrite !== undefined) {
+      this.pendingWrites.set(writeNumber, pendingWrite);
+      return pendingWrite.promise.then(() => {
+        this.storedValue = value;
+      });
     }
 
     this.storedValue = value;
     return Promise.resolve();
+  }
+
+  resolvePendingWrite(writeNumber: number): void {
+    const pendingWrite = this.pendingWrites.get(writeNumber);
+    if (pendingWrite === undefined) {
+      throw new Error(`Write ${writeNumber} is not pending.`);
+    }
+    pendingWrite.resolve(undefined);
   }
 
   removeItem(): Promise<void> {
@@ -148,6 +171,85 @@ describe("persist in-flight stale migration repair", () => {
     },
   );
 
+  it("keeps the final value durable through nested pending compensations", async () => {
+    const hydrationValues = [7, 9, 11, 13, 15, 17];
+    const driver = new InflightRepairDriver(hydrationValues, {}, [3, 4, 5]);
+    const state = await prepareInflightRepair(driver);
+
+    await persist.rehydrate(state);
+    await persist.rehydrate(state);
+    driver.repairWrite.resolve(undefined);
+    await waitUntil(() => driver.writes.length === 3);
+    expect(driver.writes[2]).toBe(envelope(1, "11"));
+
+    await persist.rehydrate(state);
+    driver.resolvePendingWrite(3);
+    await waitUntil(() => driver.writes.length === 4);
+    expect(driver.writes[3]).toBe(envelope(1, "13"));
+
+    await persist.rehydrate(state);
+    driver.resolvePendingWrite(4);
+    await waitUntil(() => driver.writes.length === 5);
+    expect(driver.writes[4]).toBe(envelope(1, "15"));
+
+    await persist.rehydrate(state);
+    driver.resolvePendingWrite(5);
+    await persist.flush(state);
+
+    expect(state.get()).toBe(17);
+    expect(driver.stored).toBe(envelope(1, "17"));
+    expect(driver.writes).toEqual([
+      envelope(1, "2"),
+      envelope(1, "7"),
+      envelope(1, "11"),
+      envelope(1, "13"),
+      envelope(1, "15"),
+      envelope(1, "17"),
+    ]);
+
+    const reopened = await reopen(driver);
+    expect(reopened.get()).toBe(17);
+
+    await persist.clear(state);
+    await persist.flush(state);
+    const cleared = await reopen(driver);
+    expect(driver.stored).toBeNull();
+    expect(cleared.get()).toBe(0);
+  });
+
+  it("waits for a nested compensation before clear removes durable data", async () => {
+    const driver = new InflightRepairDriver([7, 9, 11, 13], {}, [3]);
+    const state = await prepareInflightRepair(driver);
+
+    await persist.rehydrate(state);
+    await persist.rehydrate(state);
+    driver.repairWrite.resolve(undefined);
+    await waitUntil(() => driver.writes.length === 3);
+    await persist.rehydrate(state);
+
+    let clearResolved = false;
+    const cleared = persist.clear(state).then(() => {
+      clearResolved = true;
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(clearResolved).toBe(false);
+
+    driver.resolvePendingWrite(3);
+    await cleared;
+    await persist.flush(state);
+
+    expect(driver.writes).toEqual([
+      envelope(1, "2"),
+      envelope(1, "7"),
+      envelope(1, "11"),
+      envelope(1, "13"),
+    ]);
+    expect(driver.stored).toBeNull();
+    const reopened = await reopen(driver);
+    expect(reopened.get()).toBe(0);
+  });
+
   it("reports a failed completion compensation and lets a later write recover", async () => {
     await expectNoUnhandled(async () => {
       const cause = new Error("compensation failed");
@@ -164,6 +266,7 @@ describe("persist in-flight stale migration repair", () => {
       expect(errors).toEqual([error]);
       expect(state.get()).toBe(9);
       expect(driver.stored).toBe(envelope(1, "7"));
+      expect(driver.writes).toEqual([envelope(1, "2"), envelope(1, "7"), envelope(1, "9")]);
 
       state.set(10);
       await persist.flush(state);
