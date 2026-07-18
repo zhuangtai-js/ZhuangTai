@@ -67,7 +67,7 @@ export class AsyncPersistController<Value> {
         }
       },
     );
-    this.queue.trackRegistration(task);
+    this.queue.trackRegistration(task, revision);
     this.trackHydration(generation, task, () => -1);
   }
 
@@ -89,7 +89,11 @@ export class AsyncPersistController<Value> {
   rehydrate(): Promise<void> {
     const generation = this.nextHydrationGeneration();
     const revision = this.localRevision;
-    const read = this.queue.runRead(this.params.read, this.hydrations.successful().applied());
+    const read = this.queue.runRead(
+      this.params.read,
+      revision,
+      this.hydrations.successful().applied(),
+    );
     return this.startHydration(read.result, "rehydrate", generation, revision, read.sequence);
   }
 
@@ -194,7 +198,7 @@ export class AsyncPersistController<Value> {
       const task = Promise.resolve(writeBack).then(() =>
         this.finishMigration(plan, generation, revision),
       );
-      this.queue.trackRegistration(task);
+      this.queue.trackRegistration(task, revision);
       return task;
     }
     this.finishMigration(plan, generation, revision);
@@ -210,22 +214,24 @@ export class AsyncPersistController<Value> {
   }
 
   private finishMigration(plan: MigrationPlan<Value>, gen: number, rev: number): void {
-    if (gen === this.hydrationGeneration && rev === this.localRevision) {
+    if (rev !== this.localRevision) {
+      this.persistLatestLocalValue();
+      return;
+    }
+    if (gen === this.hydrationGeneration) {
       this.hydrations.markApplied(gen);
       this.params.state.set(plan.finalize());
-    } else if (gen === this.hydrationGeneration) {
-      this.persistLatestLocalValue();
-    } else {
-      const successful = this.hydrations.successful();
-      queueStaleRepair({
-        latestHydration: () => this.hydrations.latest(),
-        latestSuccessfulHydration: () => this.hydrations.successful(),
-        hydration: successful.applied() ? successful : this.hydrations.latest(),
-        encodeCurrent: () => this.params.encode(this.params.state.get()),
-        write: (encodedValue) => this.params.write(encodedValue),
-        runBackgroundWrite: (operation) => this.queue.runBackgroundWrite(operation),
-      });
+      return;
     }
+    const successful = this.hydrations.successful();
+    queueStaleRepair({
+      latestHydration: () => this.hydrations.latest(),
+      latestSuccessfulHydration: () => this.hydrations.successful(),
+      hydration: successful.applied() ? successful : this.hydrations.latest(),
+      encodeCurrent: () => this.params.encode(this.params.state.get()),
+      write: (encodedValue) => this.params.write(encodedValue),
+      runBackgroundWrite: (operation) => this.queue.runBackgroundWrite(operation),
+    });
   }
 
   private persistLatestLocalValue(): void {

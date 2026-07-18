@@ -16,11 +16,16 @@ type QueuedRead<Value> = {
   readonly sequence: () => number | undefined;
 };
 
+type RegistrationFence = {
+  readonly promise: Promise<void>;
+  readonly revision: number;
+};
+
 export class PersistOperationQueue {
   private tail: Promise<void> = Promise.resolve();
   private busy = false;
   private sequence = 0;
-  private readonly registrationFences = new Set<Promise<void>>();
+  private readonly registrationFences = new Set<RegistrationFence>();
 
   constructor(private readonly handleFailure: FailureHandler) {}
 
@@ -67,20 +72,22 @@ export class PersistOperationQueue {
     return { sequence: this.sequence, promise: this.tail };
   }
 
-  trackRegistration(task: Promise<void>): void {
-    const fence = task.then(
+  trackRegistration(task: Promise<void>, revision: number): void {
+    const promise = task.then(
       () => undefined,
       () => undefined,
     );
+    const fence = { promise, revision };
     this.registrationFences.add(fence);
-    void fence.then(() => this.registrationFences.delete(fence));
+    void promise.then(() => this.registrationFences.delete(fence));
   }
 
   runRead<Value>(
     operation: () => MaybePromise<Value>,
-    waitForRegistrations: boolean,
+    revision: number,
+    waitForCurrentRevision: boolean,
   ): QueuedRead<Value> {
-    const registration = waitForRegistrations ? this.registrationBarrier() : undefined;
+    const registration = this.registrationBarrier(revision, waitForCurrentRevision);
     if (registration === undefined) {
       const barrier = this.readBarrier();
       return { result: barrier.promise.then(operation), sequence: () => barrier.sequence };
@@ -163,9 +170,18 @@ export class PersistOperationQueue {
     });
   }
 
-  private registrationBarrier(): Promise<void> | undefined {
-    if (this.registrationFences.size === 0) return undefined;
-    return Promise.allSettled(Array.from(this.registrationFences)).then(() => undefined);
+  private registrationBarrier(
+    revision: number,
+    waitForCurrentRevision: boolean,
+  ): Promise<void> | undefined {
+    const promises: Promise<void>[] = [];
+    for (const fence of this.registrationFences) {
+      if (fence.revision < revision || (waitForCurrentRevision && fence.revision === revision)) {
+        promises.push(fence.promise);
+      }
+    }
+    if (promises.length === 0) return undefined;
+    return Promise.allSettled(promises).then(() => undefined);
   }
 
   private nextSequence(): number {
