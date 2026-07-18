@@ -11,10 +11,16 @@ export type PersistReadBarrier = {
   readonly promise: Promise<void>;
 };
 
+type QueuedRead<Value> = {
+  readonly result: Promise<Value>;
+  readonly sequence: () => number | undefined;
+};
+
 export class PersistOperationQueue {
   private tail: Promise<void> = Promise.resolve();
   private busy = false;
   private sequence = 0;
+  private readonly registrationFences = new Set<Promise<void>>();
 
   constructor(private readonly handleFailure: FailureHandler) {}
 
@@ -39,12 +45,13 @@ export class PersistOperationQueue {
     this.track(task, this.nextSequence());
   }
 
-  runBackgroundWrite(operation: BackgroundOperation): void {
+  runBackgroundWrite(operation: BackgroundOperation): number {
     const sequence = this.nextSequence();
     const task = this.busy
       ? this.tail.then(() => this.invokeHandledWrite(() => operation(sequence)))
       : Promise.resolve().then(() => this.invokeHandledWrite(() => operation(sequence)));
     this.track(task, sequence);
+    return sequence;
   }
 
   enqueueObserved(operation: StorageOperation, operationName: PersistOperation): Promise<void> {
@@ -58,6 +65,34 @@ export class PersistOperationQueue {
 
   readBarrier(): PersistReadBarrier {
     return { sequence: this.sequence, promise: this.tail };
+  }
+
+  trackRegistration(task: Promise<void>): void {
+    const fence = task.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.registrationFences.add(fence);
+    void fence.then(() => this.registrationFences.delete(fence));
+  }
+
+  runRead<Value>(
+    operation: () => MaybePromise<Value>,
+    waitForRegistrations: boolean,
+  ): QueuedRead<Value> {
+    const registration = waitForRegistrations ? this.registrationBarrier() : undefined;
+    if (registration === undefined) {
+      const barrier = this.readBarrier();
+      return { result: barrier.promise.then(operation), sequence: () => barrier.sequence };
+    }
+
+    let sequence: number | undefined;
+    const result = registration.then(() => {
+      const barrier = this.readBarrier();
+      sequence = barrier.sequence;
+      return barrier.promise.then(operation);
+    });
+    return { result, sequence: () => sequence };
   }
 
   async wait(): Promise<void> {
@@ -126,6 +161,11 @@ export class PersistOperationQueue {
         this.busy = false;
       }
     });
+  }
+
+  private registrationBarrier(): Promise<void> | undefined {
+    if (this.registrationFences.size === 0) return undefined;
+    return Promise.allSettled(Array.from(this.registrationFences)).then(() => undefined);
   }
 
   private nextSequence(): number {
