@@ -4,6 +4,7 @@ import { createNonErrorCause } from "./errors.js";
 import { PersistFailureTracker } from "./failure-tracker.js";
 import { PersistOperationQueue } from "./operation-queue.js";
 import { waitForAllOperations } from "./operation-waits.js";
+import { PersistSetCoordinator } from "./set-coordinator.js";
 import { PersistHydrationTracker, queueStaleRepair } from "./stale-repair.js";
 import { isPromiseLike } from "./storage.js";
 import type { MaybePromise, PersistOptions, PersistStorage } from "./types.js";
@@ -20,15 +21,12 @@ type PersistControllerParams<Value> = {
   readonly onError: PersistOptions["onError"];
 };
 
-function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue: Value) => Value {
-  return typeof nextValue === "function";
-}
-
 export class AsyncPersistController<Value> {
   readonly atom: Atom<Value>;
   private readonly clears = new PersistClearCoordinator();
   private readonly failures: PersistFailureTracker;
   private readonly queue: PersistOperationQueue;
+  private readonly setCoordinator = new PersistSetCoordinator<Value>();
   private hydrationGeneration = 0;
   private localRevision = 0;
   private latestLocalEncoded: string | undefined;
@@ -113,13 +111,11 @@ export class AsyncPersistController<Value> {
   }
 
   private set(nextValue: NextValue<Value>): void {
-    const prevValue = this.params.state.get();
-    const value = isUpdater(nextValue) ? nextValue(prevValue) : nextValue;
+    this.params.state.set(this.params.state.get());
+    this.setCoordinator.run(nextValue, this.params.state.get, (value) => this.commit(value));
+  }
 
-    if (Object.is(value, prevValue)) {
-      return;
-    }
-
+  private commit(value: Value): void {
     const encodedValue = this.params.encode(value);
     this.clears.write(this.queue, () => this.params.write(encodedValue));
     this.localRevision += 1;
