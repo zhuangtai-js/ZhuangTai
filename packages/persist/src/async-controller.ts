@@ -4,7 +4,7 @@ import { createNonErrorCause } from "./errors.js";
 import { PersistFailureTracker } from "./failure-tracker.js";
 import { PersistOperationQueue } from "./operation-queue.js";
 import { waitForAllOperations } from "./operation-waits.js";
-import { PersistSetCoordinator } from "./set-coordinator.js";
+import * as coordinator from "./set-coordinator.js";
 import { PersistHydrationTracker, queueStaleRepair } from "./stale-repair.js";
 import { isPromiseLike } from "./storage.js";
 import type { MaybePromise, PersistOptions, PersistStorage } from "./types.js";
@@ -26,7 +26,7 @@ export class AsyncPersistController<Value> {
   private readonly clears = new PersistClearCoordinator();
   private readonly failures: PersistFailureTracker;
   private readonly queue: PersistOperationQueue;
-  private readonly setCoordinator = new PersistSetCoordinator<Value>();
+  private readonly setCoordinator = new coordinator.PersistSetCoordinator();
   private hydrationGeneration = 0;
   private localRevision = 0;
   private latestLocalEncoded: string | undefined;
@@ -57,8 +57,7 @@ export class AsyncPersistController<Value> {
   };
 
   startInitialMigration(plan: MigrationPlan<Value>, result: PromiseLike<void>): void {
-    const generation = this.nextHydrationGeneration();
-    const revision = this.localRevision;
+    const [generation, revision] = [this.nextHydrationGeneration(), this.localRevision];
     const task = Promise.resolve(result).then(
       () => this.finishMigration(plan, generation, revision),
       (cause: unknown) => {
@@ -112,12 +111,17 @@ export class AsyncPersistController<Value> {
 
   private set(nextValue: NextValue<Value>): void {
     this.params.state.set(this.params.state.get());
-    this.setCoordinator.run(nextValue, this.params.state.get, (value) => this.commit(value));
+    const value = coordinator.resolveNextValue(nextValue, this.params.state.get());
+    if (Object.is(value, this.params.state.get())) return;
+    this.setCoordinator.run((context) => this.commit(value, context));
   }
 
-  private commit(value: Value): void {
+  private commit(value: Value, context: coordinator.PersistSetContext): void {
+    if (!context.requiresStorageRepair && Object.is(value, this.params.state.get())) return;
     const encodedValue = this.params.encode(value);
-    this.clears.write(this.queue, () => this.params.write(encodedValue));
+    context.writeStorage(() =>
+      this.clears.write(this.queue, () => this.params.write(encodedValue)),
+    );
     this.localRevision += 1;
     this.latestLocalEncoded = encodedValue;
     this.params.state.set(value);

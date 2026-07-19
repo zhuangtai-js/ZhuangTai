@@ -1,45 +1,57 @@
 import type { NextValue } from "@zhuangtai-js/core";
 
-type QueuedSet<Value> = {
-  readonly nextValue: NextValue<Value>;
-};
-
-type Commit<Value> = (value: Value) => void;
-
-function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue: Value) => Value {
+export function isUpdater<Value>(
+  nextValue: NextValue<Value>,
+): nextValue is (prevValue: Value) => Value {
   return typeof nextValue === "function";
 }
 
-export class PersistSetCoordinator<Value> {
-  private active = false;
-  private readonly queued: QueuedSet<Value>[] = [];
+export function resolveNextValue<Value>(nextValue: NextValue<Value>, prevValue: Value): Value {
+  return isUpdater(nextValue) ? nextValue(prevValue) : nextValue;
+}
 
-  run(nextValue: NextValue<Value>, getCurrent: () => Value, commit: Commit<Value>): void {
+export type PersistSetContext = {
+  readonly requiresStorageRepair: boolean;
+  readonly writeStorage: (operation: () => void) => void;
+};
+
+type CommitOperation = (context: PersistSetContext) => void;
+
+export class PersistSetCoordinator {
+  private active = false;
+  private readonly queued: CommitOperation[] = [];
+
+  run(operation: CommitOperation): void {
     if (this.active) {
-      this.queued.push({ nextValue });
+      this.queued.push(operation);
       return;
     }
 
     this.active = true;
-    this.queued.push({ nextValue });
+    this.queued.push(operation);
     const failures: unknown[] = [];
+    let storageUncertain = false;
 
     try {
       while (this.queued.length > 0) {
-        const queued = this.queued.shift();
-        if (queued === undefined) {
+        const queuedOperation = this.queued.shift();
+        if (queuedOperation === undefined) {
           continue;
         }
 
         try {
-          const prevValue = getCurrent();
-          const value = isUpdater(queued.nextValue)
-            ? queued.nextValue(prevValue)
-            : queued.nextValue;
-
-          if (!Object.is(value, prevValue)) {
-            commit(value);
-          }
+          queuedOperation({
+            requiresStorageRepair: storageUncertain,
+            writeStorage: (storageOperation) => {
+              try {
+                storageOperation();
+              } catch (cause) {
+                storageUncertain = true;
+                throw cause;
+              }
+              storageUncertain = false;
+            },
+          });
         } catch (cause) {
           failures.push(cause);
         }
