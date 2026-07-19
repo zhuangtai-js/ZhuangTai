@@ -1,8 +1,9 @@
 import type { Atom, NextValue } from "@zhuangtai-js/core";
+import { PersistClearCoordinator } from "./clear-coordinator.js";
 import { createNonErrorCause } from "./errors.js";
 import { PersistFailureTracker } from "./failure-tracker.js";
 import { PersistOperationQueue } from "./operation-queue.js";
-import { waitForAllOperations, waitForHydrationAndWrites } from "./operation-waits.js";
+import { waitForAllOperations } from "./operation-waits.js";
 import { PersistHydrationTracker, queueStaleRepair } from "./stale-repair.js";
 import { isPromiseLike } from "./storage.js";
 import type { MaybePromise, PersistOptions, PersistStorage } from "./types.js";
@@ -25,6 +26,7 @@ function isUpdater<Value>(nextValue: NextValue<Value>): nextValue is (prevValue:
 
 export class AsyncPersistController<Value> {
   readonly atom: Atom<Value>;
+  private readonly clears = new PersistClearCoordinator();
   private readonly failures: PersistFailureTracker;
   private readonly queue: PersistOperationQueue;
   private hydrationGeneration = 0;
@@ -87,18 +89,25 @@ export class AsyncPersistController<Value> {
   }
 
   rehydrate(): Promise<void> {
-    const generation = this.nextHydrationGeneration();
-    const revision = this.localRevision;
-    const read = this.queue.runRead(
-      this.params.read,
-      revision,
-      this.hydrations.successful().applied(),
-    );
-    return this.startHydration(read.result, "rehydrate", generation, revision, read.sequence);
+    return this.clears.afterClear(() => {
+      const generation = this.nextHydrationGeneration();
+      const revision = this.localRevision;
+      const read = this.queue.runRead(
+        this.params.read,
+        revision,
+        this.hydrations.successful().applied(),
+      );
+      return this.startHydration(read.result, "rehydrate", generation, revision, read.sequence);
+    });
   }
 
   clear(): Promise<void> {
-    const task = this.performClear();
+    const task = this.clears.clear(
+      this.pendingControls,
+      () => this.hydrations.latest(),
+      this.queue,
+      () => this.params.storage.removeItem(this.params.key),
+    );
     this.trackPending(task);
     return task;
   }
@@ -112,7 +121,7 @@ export class AsyncPersistController<Value> {
     }
 
     const encodedValue = this.params.encode(value);
-    this.queue.runLocalWrite(() => this.params.write(encodedValue));
+    this.clears.write(this.queue, () => this.params.write(encodedValue));
     this.localRevision += 1;
     this.latestLocalEncoded = encodedValue;
     this.params.state.set(value);
@@ -260,16 +269,4 @@ export class AsyncPersistController<Value> {
   }
 
   private readonly nextHydrationGeneration = (): number => (this.hydrationGeneration += 1);
-
-  private async performClear(): Promise<void> {
-    await Promise.allSettled(Array.from(this.pendingControls));
-    await waitForHydrationAndWrites(
-      () => this.hydrations.latest(),
-      () => this.queue.wait(),
-    );
-    await this.queue.enqueueObserved(
-      () => this.params.storage.removeItem(this.params.key),
-      "clear",
-    );
-  }
 }
