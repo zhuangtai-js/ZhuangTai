@@ -16,6 +16,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/svelte svelte
 
 `@zhuangtai-js/core` 和 `svelte` 都是 peer dependency。支持 core `^0.5.0`，以及 Svelte 4.2 及以上版本和 Svelte 5。
 
+下一步：[Svelte 快速指南](https://zhuangtai.yojigen.cn/guides/svelte/)。
+
 ## 使用
 
 ```svelte
@@ -98,6 +100,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/svelte svelte
 ```
 
 Both `@zhuangtai-js/core` and `svelte` are peer dependencies. Core `^0.5.0` and Svelte 4.2+ and 5 are supported.
+
+Next: [Svelte Quick Start](https://zhuangtai.yojigen.cn/en/guides/svelte/).
 
 ## Usage
 

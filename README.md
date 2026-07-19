@@ -58,14 +58,25 @@ stop();
 | ------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------- |
 | [`@zhuangtai-js/core`](./packages/core/README.md)       | 框架无关的状态核心，零第三方运行时依赖   | [API 参考](https://zhuangtai.yojigen.cn/reference/core/)    |
 | [`@zhuangtai-js/react`](./packages/react/README.md)     | React hooks                              | [React 指南](https://zhuangtai.yojigen.cn/guides/react/)    |
-| [`@zhuangtai-js/preact`](./packages/preact/README.md)   | Preact hooks                             | [API 参考](https://zhuangtai.yojigen.cn/reference/preact/)  |
-| [`@zhuangtai-js/svelte`](./packages/svelte/README.md)   | 标准 Svelte store                        | [API 参考](https://zhuangtai.yojigen.cn/reference/svelte/)  |
-| [`@zhuangtai-js/vue`](./packages/vue/README.md)         | 只读 Vue computed ref 与 setter          | [API 参考](https://zhuangtai.yojigen.cn/reference/vue/)     |
-| [`@zhuangtai-js/solid`](./packages/solid/README.md)     | Solid accessor 与 setter                 | [API 参考](https://zhuangtai.yojigen.cn/reference/solid/)   |
-| [`@zhuangtai-js/persist`](./packages/persist/README.md) | 使用同步 storage 持久化并迁移 atom       | [API 参考](https://zhuangtai.yojigen.cn/reference/persist/) |
+| [`@zhuangtai-js/preact`](./packages/preact/README.md)   | Preact hooks                             | [Preact 指南](https://zhuangtai.yojigen.cn/guides/preact/)  |
+| [`@zhuangtai-js/svelte`](./packages/svelte/README.md)   | 标准 Svelte store                        | [Svelte 指南](https://zhuangtai.yojigen.cn/guides/svelte/)  |
+| [`@zhuangtai-js/vue`](./packages/vue/README.md)         | 只读 Vue computed ref 与 setter          | [Vue 指南](https://zhuangtai.yojigen.cn/guides/vue/)        |
+| [`@zhuangtai-js/solid`](./packages/solid/README.md)     | Solid accessor 与 setter                 | [Solid 指南](https://zhuangtai.yojigen.cn/guides/solid/)    |
+| [`@zhuangtai-js/persist`](./packages/persist/README.md) | 使用同步或异步 storage 持久化并迁移 atom | [API 参考](https://zhuangtai.yojigen.cn/reference/persist/) |
 | [`@zhuangtai-js/freeze`](./packages/freeze/README.md)   | 开发期深冻结，尽早发现原地修改           | [API 参考](https://zhuangtai.yojigen.cn/reference/freeze/)  |
 | [`@zhuangtai-js/immer`](./packages/immer/README.md)     | 使用 Immer 草稿编写不可变更新            | [API 参考](https://zhuangtai.yojigen.cn/reference/immer/)   |
 | [`@zhuangtai-js/sync`](./packages/sync/README.md)       | 通过 `BroadcastChannel` 跨同源上下文同步 | [API 参考](https://zhuangtai.yojigen.cn/reference/sync/)    |
+
+### 框架快速开始
+
+从一个最小的 Core 示例开始，再按 UI 边界选择对应的快速指南：
+
+- [React 快速指南](https://zhuangtai.yojigen.cn/guides/react/)
+- [Preact 快速指南](https://zhuangtai.yojigen.cn/guides/preact/)
+- [Vue 快速指南](https://zhuangtai.yojigen.cn/guides/vue/)
+- [Svelte 快速指南](https://zhuangtai.yojigen.cn/guides/svelte/)
+- [Solid 快速指南](https://zhuangtai.yojigen.cn/guides/solid/)
+- [React Native / Expo 快速指南](https://zhuangtai.yojigen.cn/guides/react-native-expo/)（Expo 使用 `@zhuangtai-js/react`）
 
 插件安装在 `createAtom()` 创建的 creator 上：
 
@@ -80,6 +91,7 @@ const theme = atom("light", {
 ```
 
 更多组合方式和顺序语义见[插件与组合](https://zhuangtai.yojigen.cn/guides/plugins/)。
+- 如果用内存回退包装 storage，必须按每次调用保留同步值或 `PromiseLike` 返回形状；异步 `getItem` 在完成后再校验和缓存，异步 `setItem` / `removeItem` 要观察 rejection 后再切换回退，不能直接丢弃 Promise。
 
 ### 当前兼容范围
 
@@ -89,7 +101,7 @@ const theme = atom("light", {
 | ----------------------------- | -------------------- | ---------------------------- |
 | `@zhuangtai-js/freeze@0.2.x`  | `^0.5.0`             | —                            |
 | `@zhuangtai-js/immer@0.2.x`   | `^0.5.0`             | —（Immer 是普通 dependency） |
-| `@zhuangtai-js/persist@0.4.x` | `^0.5.0`             | —                            |
+| `@zhuangtai-js/persist@0.5.x` | `^0.5.0`             | —                            |
 | `@zhuangtai-js/preact@0.1.x`  | `^0.5.0`             | Preact `>=10.9 <11`          |
 | `@zhuangtai-js/react@0.2.x`   | `^0.5.0`             | React `>=18 <20`             |
 | `@zhuangtai-js/solid@0.1.x`   | `^0.5.0`             | Solid `>=1.5 <2`             |
@@ -162,12 +174,12 @@ ZhuàngTài 把 API 维持得很小，让每一行状态代码都能直接推演
 ## 体验、示例与集成
 
 - [在线示例](https://zhuangtai.yojigen.cn/playground/)：直接操作计数器、任务清单与偏好设置，观察真实 React 状态更新。
-- [完整示例](https://zhuangtai.yojigen.cn/examples/)：可直接运行和改造的 Vite Vanilla 与 React 工程。
+- [完整示例](https://zhuangtai.yojigen.cn/examples/)：真实存在的 Vite Vanilla 与 React 工程，以及可复制的网站片段。
 - [为什么是 ZhuàngTài](https://zhuangtai.yojigen.cn/why-zhuangtai/)：直接、同步和类型安全的设计价值。
 - [集成与兼容性](https://zhuangtai.yojigen.cn/integrations/)：查看框架、运行时、SSR 与官方适配器的使用方式。
 - [Showcase](https://zhuangtai.yojigen.cn/showcase/)：查看使用 ZhuàngTài 构建的项目。
 
-完整工程在 [`examples/`](./examples)。问题和想法请到 [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions)，贡献方式见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+完整工程在 [`examples/`](./examples)，每个工程的 workspace package 和启动命令见完整示例页。问题和想法请到 [Discussions](https://github.com/zhuangtai-js/ZhuangTai/discussions)，贡献方式见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
 
 ## AI / Agent 集成
 

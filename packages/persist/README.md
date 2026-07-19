@@ -4,7 +4,7 @@
 
 ZhuàngTài atom 的持久化插件。
 
-`@zhuangtai-js/persist` 扩展来自 `@zhuangtai-js/core` 的 atom creator。它会在 atom 创建前恢复已存储的值，并在每次更新时先写入 storage、成功后再提交内存状态。
+`@zhuangtai-js/persist` 为 `@zhuangtai-js/core` 的 atom creator 增加持久化。它支持同步 storage，也支持返回 `PromiseLike` 的通用异步 storage；Core 的 `set` 和 `watch` 语义仍保持同步。
 
 ## 安装
 
@@ -14,7 +14,18 @@ npm install @zhuangtai-js/core @zhuangtai-js/persist
 pnpm add @zhuangtai-js/core @zhuangtai-js/persist
 ```
 
-## 使用
+## 框架快速开始
+
+- [React 快速指南](https://zhuangtai.yojigen.cn/guides/react/)
+- [Preact 快速指南](https://zhuangtai.yojigen.cn/guides/preact/)
+- [Vue 快速指南](https://zhuangtai.yojigen.cn/guides/vue/)
+- [Svelte 快速指南](https://zhuangtai.yojigen.cn/guides/svelte/)
+- [Solid 快速指南](https://zhuangtai.yojigen.cn/guides/solid/)
+- [React Native / Expo 快速指南](https://zhuangtai.yojigen.cn/guides/react-native-expo/)
+
+React Native / Expo 使用 `@zhuangtai-js/react`；应用消费者可以单独提供自己的 PromiseLike storage，例如 AsyncStorage。这里没有 ZhuàngTài 专用的 AsyncStorage 包。
+
+## 基本用法
 
 ```ts
 import { createAtom } from "@zhuangtai-js/core";
@@ -32,30 +43,65 @@ theme.get();
 theme.set("dark");
 ```
 
-## Storage
+## 同步与异步 storage
 
-持久化使用同步的 Web Storage 兼容存储。自定义 `storage` 需要实现 `getItem`、`setItem` 和 `removeItem`，与 `localStorage` 的同步方法保持一致。
+`PersistStorage` 是结构化契约，不绑定某个存储库或运行时。`getItem`、`setItem` 和 `removeItem` 每次调用都可以返回普通值或 `PromiseLike` 值：
 
 ```ts
+import type { PersistStorage } from "@zhuangtai-js/persist";
+
 const memory = new Map<string, string>();
 
-const count = atom(0, {
-  persist: {
-    key: "count",
-    storage: {
-      getItem: (key) => memory.get(key) ?? null,
-      setItem: (key, value) => {
-        memory.set(key, value);
-      },
-      removeItem: (key) => {
-        memory.delete(key);
-      },
-    },
-  },
-});
+const storage: PersistStorage = {
+  getItem: (key) => Promise.resolve(memory.get(key) ?? null),
+  setItem: (key, value) =>
+    Promise.resolve().then(() => {
+      memory.set(key, value);
+    }),
+  removeItem: (key) =>
+    Promise.resolve().then(() => {
+      memory.delete(key);
+    }),
+};
 ```
 
-如果省略 `storage`，插件会使用 `globalThis.localStorage`。如果两者都不可用，atom 创建会抛错。
+插件会按每次调用的返回值检测 thenable，因此同一个 storage 可以混合使用同步和异步方法。
+
+- 如果用内存回退包装 storage，必须按每次调用保留同步值或 `PromiseLike` 返回形状；异步 `getItem` 在完成后再校验和缓存，异步 `setItem` / `removeItem` 要观察 rejection 后再切换回退，不能直接丢弃 Promise。
+
+| 场景                                   | 行为                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `getItem` 返回普通值                   | 在 atom creator 返回前完成恢复；更新保持同步的“encode → 写入 → 内存提交 → watcher”顺序。               |
+| `getItem` 返回 thenable                | 立即用 `initialValue` 创建 atom，再进行异步 hydration；`persist.ready(atom)` 等待当前 hydration 完成。 |
+| `setItem` / `removeItem` 返回 thenable | `set`、`watch` 仍同步执行；写入按调用顺序排队，异步失败通过 `onError` 和 `persist.flush()` 观察。      |
+
+使用异步 storage 时，`set()` 不会等待 Promise。它先编码新值，再把 storage 写入加入队列，然后同步提交内存值并通知 watcher。编码失败，或 `setItem` 在这次原始 `set()` 同步调用内抛错，都会同步 fail-closed：内存值不提交，watcher 不通知。如果写入排在已有异步工作之后，`setItem` 直到队列执行时才抛错；相对于原始 `set()`，这是 queued deferred failure，本地内存提交会保留，并由 `onError` 与 `flush()` 报告。
+
+## 生命周期 controller
+
+`persist` 导出同一个带 controller 方法的插件对象：
+
+```ts
+await persist.ready(theme);
+await persist.flush(theme);
+await persist.rehydrate(theme);
+await persist.clear(theme);
+```
+
+- `ready(atom)` 等待最新一代 hydration。异步读取、迁移或迁移写回失败时会 reject。
+- `flush(atom)` 等待 hydration、controller 操作和所有排队写入；如果有保留的失败，它 reject 第一个失败，然后清空这批失败记录。
+- `rehydrate(atom)` 返回 lifecycle Promise 并开始新一代读取。旧一代的迟到结果不会覆盖新结果；内部 `getItem` 即使同步抛错，也会表现为这个 Promise reject。
+- hydration 期间发生本地更新时，本地值获胜；读取结束后会把最新本地值写入 storage。
+- `clear(atom)` 返回 lifecycle Promise，等待 hydration 和排队写入完成后再调用 `removeItem`。内部 `removeItem` 即使同步抛错，也会表现为这个 Promise reject；它不会重置内存中的 atom 值。
+- 对没有由本插件创建的 atom 使用这些方法会抛出 `TypeError`。
+
+异步写入按 `set()` 的逻辑顺序串行执行。某次写入失败不会阻止后续写入；失败会保留到下一次 `flush()`，并可通过每个 atom 的 `onError` 逐次接收。
+
+## SSR 与 hydration
+
+浏览器中默认 storage 是 `globalThis.localStorage`，也可以传入方法返回 `PromiseLike` 的 storage。SSR 环境没有可用的浏览器 storage 时，请传入请求或客户端明确拥有的 storage，或只在客户端创建持久化 atom。
+
+异步 storage 会先使用 `initialValue`，直到 hydration 完成。需要稳定 SSR 输出时，让服务端和客户端先使用相同的初始状态，再在客户端根据 `persist.ready(atom)` 显示已恢复内容；不要在服务端渲染阶段直接读取浏览器专属 storage。
 
 ## Codec
 
@@ -80,9 +126,9 @@ const count = atom(0, {
 });
 ```
 
-## 版本化持久化
+## 版本化持久化与迁移
 
-版本化持久化是可选功能。传入正安全整数 `version` 后，插件会把 codec 生成的字符串 payload 包装在带标记的 JSON 记录中。未传 `version` 时，现有原始存储字节和行为保持不变。
+版本化持久化是可选功能。传入正安全整数 `version` 后，插件会把 codec 生成的字符串 payload 包装在带标记的 JSON 记录中。没有版本标记的旧数据按版本 `0` 处理。
 
 ```ts
 import { definePersistMigration } from "@zhuangtai-js/persist";
@@ -119,28 +165,39 @@ const settings = atom<Settings>(
 );
 ```
 
-- 没有版本标记的旧数据视为版本 `0`。
-- `migrations[n]` 负责把版本 `n` 前向迁移到版本 `n + 1`；所有步骤都会同步、按顺序执行。
-- 迁移完成后，插件会先用 codec 编码迁移结果并写回当前版本记录；写入成功后再解码该 payload，得到内存 `Value` 并创建 atom。
-- 当前版本记录会直接恢复，不迁移也不重写。
-- 未来版本、缺失的迁移步骤和形状不精确的带标记记录会同步抛错。
-- 迁移、codec 或 storage 失败时，错误会包含 key 和相关版本；原错误保留在 `cause`。
+- `migrations[n]` 把版本 `n` 前向迁移到版本 `n + 1`；每一步都同步、确定且按顺序运行。
+- 异步 storage 只让读取和写回异步；migration 回调本身仍然同步。
+- 迁移完成后，插件先 encode 并写回当前版本记录，再把 payload decode 成内存 `Value`。异步写回完成前，hydrated 值不会提交，`persist.ready()` 也不会 resolve。
+- 如果本地更新在 hydration 或迁移期间获胜，不会应用或写回过期的迁移结果；插件会保存最新本地值。
+- 当前版本记录直接恢复，不迁移也不重写。未来版本、缺失步骤和形状不精确的带标记记录会在恢复边界失败：同步 creator 路径会同步抛错，异步 hydration 或 `rehydrate()` 路径会让对应 Promise reject。
 - 自定义 codec 只负责 envelope 内的 `payload`；envelope 本身始终是精确的 JSON 对象：`{"__zhuangtai_persist__":true,"version":1,"payload":"..."}`。
 
-`PersistMigration` 的输入和返回值都位于 storage 边界，类型分别是 `unknown`。迁移函数必须先解析或收窄输入，再访问旧结构；不能把窄输入函数（例如 `(value: string) => unknown`）直接放进 migrations。`definePersistMigration<Value>` 是运行时 identity helper：回调参数始终是 `unknown`，可选的 `Value` 泛型只约束返回值，不做运行时校验，也不把 atom 的 `Value` 泛型放进插件选项类型。
+`PersistMigration` 的输入来自 storage 边界，类型是 `unknown`。迁移函数必须先解析或收窄输入，再访问旧结构；不能把窄输入函数（例如 `(value: string) => unknown`）直接放进 `migrations`。`definePersistMigration<Value>` 是运行时 identity helper：回调参数始终是 `unknown`，可选的 `Value` 泛型只约束返回值，不做运行时校验，也不把 atom 的 `Value` 泛型放进插件选项类型。
 
-## 语义
+## 错误处理与语义
 
 - 省略 `persist` 选项时，atom 保持不变。
-- 已存储的值会在第一次 `get()` 前恢复。传入 `version` 时会启用同步的前向迁移和写回。
-- 更新会先持久化：先用 codec 编码并写入 storage，成功后才提交内存状态并同步通知 watcher。
-- 如果 encode 或 storage 写入失败，内存状态保持不变，并抛出错误。
-- 默认 JSON codec 拒绝非有限数字和无效 `Date`，避免 JSON 把它们静默变成 `null`。
-- watcher 在提交阶段抛错时，值已经持久化且内存状态已更新（仅通知失败，不回滚）。
+- `onError(error)` 按 atom 配置，针对每一次失败的异步 hydration、异步或排队写入、迁移写回、`rehydrate` 或 `clear` 调用一次；creator 或本地 `set()` 原始同步调用内的抛错会直接传播，不经过 `onError`。
+- 异步错误会包装为带有操作和 key 上下文的错误，原始错误保留在 `cause`；不会产生未处理的 rejection。
+- atom creator 调用中的同步 `getItem`、恢复、migration 或 migration write-back 失败会同步 fail-closed：旧 storage 保持不变，也不会返回 atom。
+- 本地 `set()` 中，encode 或立即调用的 `setItem` 同步抛错时，`set()` 同步 fail-closed：内存状态保持不变，watcher 不会收到通知。
+- `rehydrate()` 和 `clear()` 始终返回 lifecycle Promise；内部 `getItem` 或 `removeItem` 即使同步抛错，也会让返回的 Promise reject，并通过 `onError` 记录。
+- 排在已有异步工作之后的 `setItem` 在队列执行时同步抛错或返回 rejected Promise，属于 queued deferred write error：原始 `set()` 已提交的内存值会保留，错误由 `onError` 和下一次 `flush()` 暴露，后续写入仍会继续。
 - `Object.is` 判定为无变化的更新不会写入 storage。
-- 恢复已存储值时，若 codec decode 抛错，会包装成带出错 key 的错误（原错误保留在 `cause`），而不会静默回退到初始值。
-- 省略 `storage` 且读取 `globalThis.localStorage` 抛错（如 SecurityError）时，会抛出提示传入显式 storage 的清晰错误（原错误保留在 `cause`）。
-- 不支持异步 storage。
+- watcher 在提交阶段抛错时，storage 和内存已经更新，不会回滚。
+- 恢复已存储值时，如果 codec decode 抛错，会包装成带 key 的错误，原错误保留在 `cause`，不会静默回退到初始值。
+- 省略 `storage` 且读取 `globalThis.localStorage` 抛错时，会提示传入显式 storage，并保留原错误为 `cause`。
+
+## Public types
+
+- `MaybePromise<Value>`
+- `PersistStorage`
+- `PersistOptions`
+- `PersistControls`
+- `PersistCodec`
+- `PersistMigration`
+
+`PersistControls` 提供 `ready`、`flush`、`rehydrate` 和 `clear`。所有 storage 方法都使用 `MaybePromise`，所以既能接受同步实现，也能接受返回 `PromiseLike` 的实现。
 
 ## 许可证
 
@@ -154,7 +211,7 @@ const settings = atom<Settings>(
 
 Persistence plugin for ZhuàngTài atoms.
 
-`@zhuangtai-js/persist` extends atom creators from `@zhuangtai-js/core`. It restores a stored value before the atom is created and persists each update to storage before committing the in-memory state.
+`@zhuangtai-js/persist` adds persistence to atom creators from `@zhuangtai-js/core`. It supports synchronous storage and generic storage methods that return `PromiseLike` values, while Core `set` and `watch` semantics remain synchronous.
 
 ## Install
 
@@ -164,7 +221,18 @@ npm install @zhuangtai-js/core @zhuangtai-js/persist
 pnpm add @zhuangtai-js/core @zhuangtai-js/persist
 ```
 
-## Usage
+## Framework quick starts
+
+- [React Quick Start](https://zhuangtai.yojigen.cn/en/guides/react/)
+- [Preact Quick Start](https://zhuangtai.yojigen.cn/en/guides/preact/)
+- [Vue Quick Start](https://zhuangtai.yojigen.cn/en/guides/vue/)
+- [Svelte Quick Start](https://zhuangtai.yojigen.cn/en/guides/svelte/)
+- [Solid Quick Start](https://zhuangtai.yojigen.cn/en/guides/solid/)
+- [React Native / Expo Quick Start](https://zhuangtai.yojigen.cn/en/guides/react-native-expo/)
+
+React Native / Expo uses `@zhuangtai-js/react`; the app consumer can provide its own PromiseLike storage, such as AsyncStorage, separately. There is no ZhuàngTài-specific AsyncStorage package.
+
+## Basic usage
 
 ```ts
 import { createAtom } from "@zhuangtai-js/core";
@@ -182,39 +250,74 @@ theme.get();
 theme.set("dark");
 ```
 
-## Storage
+## Synchronous and asynchronous storage
 
-Persistence uses synchronous Web Storage-compatible storage. Custom `storage` objects need to implement `getItem`, `setItem`, and `removeItem`, matching the synchronous methods on `localStorage`.
+`PersistStorage` is a structural contract and is not tied to a storage library or runtime. Each call to `getItem`, `setItem`, and `removeItem` may return either a plain value or a `PromiseLike` value:
 
 ```ts
+import type { PersistStorage } from "@zhuangtai-js/persist";
+
 const memory = new Map<string, string>();
 
-const count = atom(0, {
-  persist: {
-    key: "count",
-    storage: {
-      getItem: (key) => memory.get(key) ?? null,
-      setItem: (key, value) => {
-        memory.set(key, value);
-      },
-      removeItem: (key) => {
-        memory.delete(key);
-      },
-    },
-  },
-});
+const storage: PersistStorage = {
+  getItem: (key) => Promise.resolve(memory.get(key) ?? null),
+  setItem: (key, value) =>
+    Promise.resolve().then(() => {
+      memory.set(key, value);
+    }),
+  removeItem: (key) =>
+    Promise.resolve().then(() => {
+      memory.delete(key);
+    }),
+};
 ```
 
-If `storage` is omitted, the plugin uses `globalThis.localStorage`. If neither is available, atom creation throws.
+The plugin detects thenables from each call, so one storage object may mix synchronous and asynchronous methods.
+
+- When wrapping storage with an in-memory fallback, preserve each call's synchronous or `PromiseLike` return shape; validate and cache async `getItem` after it settles, and observe async `setItem` / `removeItem` rejections before switching to the fallback instead of discarding the Promise.
+
+| Scenario                                    | Behavior                                                                                                                                                 |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getItem` returns a plain value             | Restoration completes before the atom creator returns; updates keep the synchronous “encode → write → memory commit → watcher” order.                    |
+| `getItem` returns a thenable                | The atom is created immediately with `initialValue`, then hydrated asynchronously; `persist.ready(atom)` waits for the current hydration.                |
+| `setItem` / `removeItem` returns a thenable | `set` and `watch` remain synchronous; writes are queued in call order, and asynchronous failures are observable through `onError` and `persist.flush()`. |
+
+With asynchronous storage, `set()` does not wait for a Promise. It encodes the new value, queues the storage write, then synchronously commits memory and notifies watchers. An encode failure, or a `setItem` throw inside the original synchronous `set()` call, fails closed synchronously: memory is not committed and watchers are not notified. If the write is placed behind existing asynchronous work, `setItem` is not invoked until the queue runs it; a throw at that point is a queued deferred failure relative to the original `set()`, so the local memory commit remains and `onError` plus `flush()` report it.
+
+## Lifecycle controller
+
+`persist` exports one plugin object with lifecycle controller methods:
+
+```ts
+await persist.ready(theme);
+await persist.flush(theme);
+await persist.rehydrate(theme);
+await persist.clear(theme);
+```
+
+- `ready(atom)` waits for the latest hydration generation. It rejects when asynchronous reading, migration, or migration write-back fails.
+- `flush(atom)` waits for hydration, controller operations, and queued writes. If failures were retained, it rejects with the first failure and then clears that batch.
+- `rehydrate(atom)` returns a lifecycle Promise and starts a new read generation. Late results from older generations cannot overwrite the newer result; even if its internal `getItem` throws synchronously, the returned Promise rejects.
+- If a local update happens during hydration, the local value wins; the latest local value is written after the read completes.
+- `clear(atom)` returns a lifecycle Promise, waits for hydration and queued writes, then calls `removeItem`. Even if the internal `removeItem` throws synchronously, the returned Promise rejects; it does not reset the atom's in-memory value.
+- Calling these methods with an atom not created by this plugin throws a `TypeError`.
+
+Asynchronous writes are serialized in logical `set()` order. One rejected write does not stop later writes; failures remain available until the next `flush()`, and each failed operation can be reported through the atom's `onError` callback.
+
+## SSR and hydration
+
+The default browser storage is `globalThis.localStorage`, and custom storage methods may return `PromiseLike` values. When SSR has no usable browser storage, pass storage explicitly owned by the request or client, or create the persisted atom only on the client.
+
+Asynchronous storage starts from `initialValue` until hydration finishes. For stable SSR output, let server and client start from the same initial state, then show restored content on the client after `persist.ready(atom)`; do not read browser-only storage during server rendering.
 
 ## Codec
 
-Values are encoded with `JSON.stringify` and decoded with `JSON.parse` by default, with fail-fast checks before encode:
+The default codec uses `JSON.stringify` and `JSON.parse`, with fail-fast checks before encode:
 
 - `NaN`, `±Infinity`, and nested non-finite numbers throw synchronously instead of being silently stored as `null`.
 - Invalid `Date` values (`getTime()` is non-finite) throw synchronously instead of being silently stored as `null`.
 - Top-level `undefined`, functions, and symbols throw during encode instead of being passed to storage.
-- `undefined` fields inside objects still follow JSON semantics (keys are omitted); use a custom codec when you need to preserve them.
+- `undefined` fields inside objects follow JSON semantics (keys are omitted); use a custom codec when you need to preserve them.
 
 Pass a custom codec when your stored representation needs different behavior.
 
@@ -230,9 +333,9 @@ const count = atom(0, {
 });
 ```
 
-## Versioned persistence
+## Versioned persistence and migration
 
-Versioned persistence is opt-in. When a positive safe integer `version` is provided, the plugin wraps the codec-produced string payload in a marked JSON record. Without `version`, existing raw storage bytes and behavior remain unchanged.
+Versioned persistence is opt-in. When a positive safe integer `version` is provided, the plugin wraps the codec-produced string payload in a marked JSON record. Legacy data without a version marker is treated as version `0`.
 
 ```ts
 import { definePersistMigration } from "@zhuangtai-js/persist";
@@ -269,28 +372,39 @@ const settings = atom<Settings>(
 );
 ```
 
-- Legacy data without a version marker is treated as version `0`.
-- `migrations[n]` migrates version `n` forward to version `n + 1`; every step runs synchronously and in order.
-- After migration, the plugin encodes the migrated result and writes back the current-version record first; only after that write succeeds does it decode the payload into the in-memory `Value` and create the atom.
-- A current-version record is restored directly without migration or rewriting.
-- Future versions, missing migration steps, and marked records without the exact envelope shape throw synchronously.
-- Migration, codec, and storage failures include the key and relevant versions; the original error is preserved as `cause`.
-- A custom codec only controls the envelope's `payload`; the envelope itself is always the exact JSON object `{"__zhuangtai_persist__":true,"version":1,"payload":"..."}`.
+- `migrations[n]` migrates version `n` forward to version `n + 1`; every step runs synchronously, deterministically, and in order.
+- Asynchronous storage only makes reads and write-back asynchronous; migration callbacks remain synchronous.
+- After migration, the plugin encodes and writes the current-version record before decoding the payload into the in-memory `Value`. During asynchronous hydration, the write-back must finish before the hydrated value is committed and `persist.ready()` resolves.
+- If a local update wins during hydration or migration, stale migration data is not applied or written back; the latest local value is retained.
+- A current-version record is restored directly without migration or rewriting. Future versions, missing steps, and marked records without the exact envelope shape fail at the restoration boundary: the synchronous creator path throws synchronously, while asynchronous hydration or `rehydrate()` rejects the corresponding Promise.
+- A custom codec controls only the envelope's `payload`; the envelope itself is always the exact JSON object `{"__zhuangtai_persist__":true,"version":1,"payload":"..."}`.
 
-`PersistMigration` receives and returns values across the storage boundary, so both sides are `unknown`. A migration must parse or narrow its input before reading the legacy shape; a narrow-input function such as `(value: string) => unknown` cannot be assigned to `migrations`. `definePersistMigration<Value>` is a runtime identity helper whose callback input is always `unknown`; the optional `Value` generic only constrains the return value. It performs no runtime validation and does not put the atom's `Value` generic into the plugin options type.
+`PersistMigration` receives data from the storage boundary as `unknown`. A migration must parse or narrow its input before reading the legacy shape; a narrow-input function such as `(value: string) => unknown` cannot be assigned to `migrations`. `definePersistMigration<Value>` is a runtime identity helper whose callback input is always `unknown`; the optional `Value` generic only constrains the return value. It performs no runtime validation and does not put the atom's `Value` generic into the plugin options type.
 
-## Semantics
+## Error handling and semantics
 
 - Omitting `persist` options leaves the atom unchanged.
-- Stored values are restored before the first `get()`. Providing `version` enables synchronous forward migration and write-back.
-- Updates persist first: the value is encoded and written to storage, and only after a successful write is the in-memory state committed and watchers notified synchronously.
-- If encode or the storage write fails, the in-memory state stays unchanged and the error is thrown.
-- The default JSON codec rejects non-finite numbers and invalid `Date` values so JSON cannot silently turn them into `null`.
-- If a watcher throws during the commit phase, the value has already been persisted and the in-memory state has already been updated (only notification failed; there is no rollback).
-- `Object.is` no-op updates do not write to storage.
-- If the codec's decode throws while restoring a stored value, the failure is wrapped in an error that includes the offending key (the original error is preserved as `cause`); it does not silently fall back to the initial value.
-- If `storage` is omitted and reading `globalThis.localStorage` throws (e.g. a SecurityError), a clear error is thrown advising you to pass an explicit storage option (the original error is preserved as `cause`).
-- Async storage is not supported.
+- `onError(error)` is configured per atom and is called once for each failed asynchronous hydration, asynchronous or queued write, migration write-back, `rehydrate`, or `clear` operation. A throw inside the original synchronous creator or local `set()` call propagates directly and does not go through `onError`.
+- Asynchronous failures are wrapped with operation and key context, with the original error preserved in `cause`; no rejection is left unhandled.
+- A synchronous `getItem`, restoration, migration, or migration write-back failure inside the atom creator fails closed synchronously: legacy storage stays unchanged and no atom is returned.
+- During a local `set()`, an encode failure or a synchronous throw from the immediately invoked `setItem` also fails closed synchronously: memory stays unchanged and watchers are not notified.
+- `rehydrate()` and `clear()` always return lifecycle Promises. Even when their internal `getItem` or `removeItem` throws synchronously, the returned Promise rejects and `onError` records the failure.
+- A `setItem` placed behind existing asynchronous work may throw synchronously when the queue invokes it or return a rejected Promise. That queued deferred write error leaves the memory value already committed by the original `set()` intact; `onError` and the next `flush()` expose it, and later writes continue.
+- An `Object.is` no-op update does not write to storage.
+- If a watcher throws during the commit phase, storage and memory have already been updated and are not rolled back.
+- If decoding a stored value throws, the failure is wrapped with the key and the original error is preserved in `cause`; the plugin does not silently fall back to the initial value.
+- If reading the default `globalThis.localStorage` throws, the error advises passing explicit storage and preserves the original error in `cause`.
+
+## Public types
+
+- `MaybePromise<Value>`
+- `PersistStorage`
+- `PersistOptions`
+- `PersistControls`
+- `PersistCodec`
+- `PersistMigration`
+
+`PersistControls` provides `ready`, `flush`, `rehydrate`, and `clear`. All storage methods use `MaybePromise`, so both synchronous implementations and implementations returning `PromiseLike` values are accepted.
 
 ## License
 

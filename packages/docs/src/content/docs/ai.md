@@ -3,50 +3,54 @@ title: AI 友好
 description: 给人类和模型都更容易读、查、接入的 ZhuàngTài 文档入口。
 ---
 
-ZhuàngTài 不只想让人读得顺，也想让 AI 更快接上手。这个页面把对 LLM、代理和自动化接入最有用的入口放在一起，方便你直接把文档喂给模型，或者让代理按步骤把库接进项目。
+ZhuàngTài 把 AI 代理需要的包选择、框架入口和异步持久化边界集中在这里。公开文档以中文为主，英文页面镜像相同语义。
 
-## llms.txt
+## llms 输出
 
-本网站提供 `https://zhuangtai.yojigen.cn/llms.txt`，它按照 [llmstxt.org](https://llmstxt.org/) 的索引格式整理，适合先让模型快速扫一遍站点结构。
+- `https://zhuangtai.yojigen.cn/llms.txt`：站点索引和关键约束。
+- `https://zhuangtai.yojigen.cn/llms-small.txt`：较小上下文。
+- `https://zhuangtai.yojigen.cn/llms-full.txt`：完整文档上下文。
 
-如果你需要更完整的上下文，可以继续用 `https://zhuangtai.yojigen.cn/llms-full.txt`。它把文档尽量合并成一个完整文件，适合做一次性的大范围理解。
+## 框架选择
 
-如果你只想给模型更小的上下文窗口，可以用 `https://zhuangtai.yojigen.cn/llms-small.txt`。它更适合快速问答、检索前置和低成本提示词。
+在 UI 或组件生命周期之外直接使用 `@zhuangtai-js/core`。在组件内选择对应的 framework adapter；React Native / Expo 使用 `@zhuangtai-js/react`，不需要原生专用 adapter。
 
-## 给模型的关键边界
+- [React](/guides/react/) / [English](/en/guides/react/)
+- [Preact](/guides/preact/) / [English](/en/guides/preact/)
+- [Vue](/guides/vue/) / [English](/en/guides/vue/)
+- [Svelte](/guides/svelte/) / [English](/en/guides/svelte/)
+- [Solid](/guides/solid/) / [English](/en/guides/solid/)
+- [React Native / Expo](/guides/react-native-expo/) / [English](/en/guides/react-native-expo/)
 
-- SSR：每个 SSR 请求创建独立的 `atom/store`，避免跨请求共享可变状态。
-- Persist：migration 输入来自 storage，始终视为 `unknown`，先解析并收窄；迁移按版本同步、逐步执行；durable write 失败时不提交新的内存状态。
-- 选择：不需要框架渲染生命周期或响应式桥接时直接使用 `@zhuangtai-js/core`；组件需要自动重渲染、订阅和生命周期清理时使用 framework adapter。
-- 四个 framework adapter 是 `@zhuangtai-js/preact`、`@zhuangtai-js/svelte`、`@zhuangtai-js/vue`、`@zhuangtai-js/solid`；四个 Agent Skills 是 `zhuangtai`、`zhuangtai-react`、`zhuangtai-plugins`、`zhuangtai-framework-adapters`。
+Core 的 `set` 立即生效，`watch` 同步执行，等价性使用 `Object.is`；对象和数组需要 immutable 更新。adapter 不添加隐藏调度、批处理或事务。
 
-### Key boundaries for LLMs
+## 异步 Persist 决策
 
-- SSR: Create an independent `atom/store` for every SSR request; never share mutable state across requests.
-- Persist: migration input comes from storage and is always `unknown`; parse and narrow it first. Run migrations synchronously, one version at a time; if the durable write fails, do not commit the new in-memory state.
-- Choice: use `@zhuangtai-js/core` directly without framework rendering lifecycle or reactive bridging; use a framework adapter in components when automatic re-rendering, subscriptions, and lifecycle cleanup are needed.
-- The four framework adapters are `@zhuangtai-js/preact`, `@zhuangtai-js/svelte`, `@zhuangtai-js/vue`, and `@zhuangtai-js/solid`. The four Agent Skills are `zhuangtai`, `zhuangtai-react`, `zhuangtai-plugins`, and `zhuangtai-framework-adapters`.
+- `PersistStorage` 是结构契约。`getItem`、`setItem`、`removeItem` 返回普通值或 `PromiseLike` 都结构兼容。
+- AsyncStorage 只由使用方传给 `@zhuangtai-js/persist`；不存在 ZhuàngTài 专用 AsyncStorage 包。
+- 如果用内存回退包装 storage，必须按每次调用保留同步值或 `PromiseLike` 返回形状；异步 `getItem` 在完成后再校验和缓存，异步 `setItem` / `removeItem` 要观察 rejection 后再切换回退，不能直接丢弃 Promise。
+- 如果首屏依赖 hydration 后的持久化状态，先 `await persist.ready(atom)`，再展示依赖该状态的 UI。
+- 在退出、提交或其他持久化边界执行 `await persist.flush(atom)`，并处理 rejection/错误；不要假设同步 `set` 已代表异步 durable write 完成。
+- `persist.rehydrate(atom)` 重新读取 storage，`persist.clear(atom)` 删除持久化值。用 `onError` 接收异步 hydration、写入、rehydrate 或 clear 失败。
+- migration 输入来自 storage，始终视为 `unknown`，先解析并收窄；migration 按版本同步执行。异步 migration write-back 完成后，hydration 才能提交。
+- SSR 为每个请求创建独立 atom。默认 storage 不可用时显式传入 storage，或仅在客户端创建持久化 atom，避免跨请求共享状态和 hydration 不一致。
+
+### English mirror
+
+Use `@zhuangtai-js/core` directly outside UI/component lifecycles and choose the matching framework adapter inside components. React Native / Expo uses `@zhuangtai-js/react`.
+
+`PersistStorage` is structural, so storage methods returning plain values or `PromiseLike` values are structurally compatible. AsyncStorage is consumer-provided to `@zhuangtai-js/persist`; there is no ZhuàngTài-specific AsyncStorage package. If first render depends on hydrated persistent state, await `persist.ready(atom)`. At a durable boundary, await `persist.flush(atom)` and handle rejection/error. Use `persist.rehydrate(atom)`, `persist.clear(atom)`, and `onError` deliberately; parse `unknown` migration input, run migrations synchronously one version at a time, and create independent atoms per SSR request.
 
 ## Agent Skills
 
-仓库里带了四份技能，放在 `skills/` 下，分别对应 ZhuàngTài 核心用法、`zhuangtai-react`、`zhuangtai-plugins` 和 `zhuangtai-framework-adapters`。你可以用下面的命令安装它们：
+仓库提供 `zhuangtai`、`zhuangtai-react`、`zhuangtai-plugins` 和 `zhuangtai-framework-adapters`：
 
 ```sh
 npx skills add zhuangtai-js/ZhuangTai
 ```
 
-如果你想只装某一个技能，也可以传 `--skill zhuangtai`。这些技能可以和 Claude Code、Codex、OpenCode、Cursor 以及 70 多种支持 Skills CLI 的代理一起用。
-
-## 用 AI 一键接入
-
-把下面这段话直接发给代理，它会先读安装文档，再按步骤把 ZhuàngTài 配到当前项目里：
+## 用 AI 接入
 
 ```txt
-请阅读 https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/guide/installation.md 并按其中的步骤在当前项目中安装并配置 ZhuàngTài。
+请阅读 https://raw.githubusercontent.com/zhuangtai-js/ZhuangTai/main/docs/guide/installation.md，并按项目所用框架选择对应 adapter；如果使用异步 storage，请同时落实 persist.ready、persist.flush、onError、migration 和 SSR 边界。
 ```
-
-## 下一步
-
-- 先看 [设计理念](/philosophy/) 了解这个库为什么长这样。
-- 再看 [快速开始](/getting-started/) 把第一个 atom 跑起来。
-- 如果你在写代理提示词，可以顺手把 [核心概念](/guides/core-concepts/) 也喂给模型。

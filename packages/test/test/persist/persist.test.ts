@@ -46,6 +46,32 @@ describe("persist", () => {
     expect(storage.getItem("count")).toBe("2");
   });
 
+  it("writes before committing state and notifying watchers", () => {
+    const events: string[] = [];
+    const storage = createStorage();
+    const createState = createAtom().use(persist);
+    let observedState: ReturnType<typeof createState<number>> | undefined;
+
+    vi.spyOn(storage, "setItem").mockImplementation((key, value) => {
+      if (observedState === undefined) {
+        throw new Error("state not initialized");
+      }
+
+      events.push(`storage:${key}:${value}:state=${observedState.get()}`);
+    });
+
+    const state = createState(1, { persist: { key: "count", storage } });
+    observedState = state;
+    state.watch((value) => {
+      events.push(`watch:${value}:state=${state.get()}`);
+    });
+    events.length = 0;
+
+    state.set(2);
+
+    expect(events).toEqual(["storage:count:2:state=1", "watch:2:state=2"]);
+  });
+
   it("writes updater results", () => {
     // Given
     const storage = createStorage();
@@ -97,7 +123,9 @@ describe("persist", () => {
     }
 
     // Then
-    expect(createPersistedState).toThrow("No persist storage was provided");
+    expect(createPersistedState).toThrow(
+      "[@zhuangtai-js/persist] No persist storage was provided, and globalThis.localStorage is unavailable.",
+    );
   });
 
   it("throws decode errors", () => {
@@ -130,12 +158,7 @@ describe("persist", () => {
       encode(value) {
         return `value:${String(value)}`;
       },
-      decode<Value>(rawValue: string, initialValue: Value) {
-        expect(initialValue).toBe(1);
-
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- PersistCodec.decode is intentionally generic so custom codecs can restore/migrate values.
-        return Number.parseInt(rawValue.replace("value:", ""), 10) as unknown as Value;
-      },
+      decode: decodeValue,
     };
     const storage = createStorage([["count", "value:2"]]);
     const createState = createAtom().use(persist);
@@ -149,6 +172,18 @@ describe("persist", () => {
     expect(storage.getItem("count")).toBe("value:3");
   });
 });
+
+function decodeValue(rawValue: string, initialValue: number): number;
+function decodeValue<Value>(rawValue: string, initialValue: Value): Value;
+function decodeValue(rawValue: string, initialValue: unknown): unknown {
+  expect(initialValue).toBe(1);
+
+  if (typeof initialValue !== "number") {
+    return initialValue;
+  }
+
+  return Number.parseInt(rawValue.replace("value:", ""), 10);
+}
 
 type StorageFixture = PersistStorage & {
   readonly values: Map<string, string>;

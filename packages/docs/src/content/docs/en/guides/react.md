@@ -1,94 +1,99 @@
 ---
-title: Using with React
-description: Connect ZhuàngTài atoms to React components, hooks, and StrictMode.
+title: React quick start
+description: Read and write synchronous atoms with @zhuangtai-js/react while keeping subscription boundaries explicit.
 ---
 
-`@zhuangtai-js/react` lets you use ZhuàngTài atoms and computeds directly in React. You do not need a provider, and you do not need to move state into React context. The state stays in the atom. Components just subscribe to it.
+`@zhuangtai-js/react` fits React components that need to read, write, and automatically clean up ZhuàngTài atom subscriptions.
 
-## Install
+## Requirements and install
+
+- `@zhuangtai-js/core` `^0.5.0`
+- React >=18 <20
 
 ```sh
 pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
-`react` is a peer dependency and supports React 18 and React 19.
+## Minimal counter
 
-## The three basic hooks
+Keep state and derived values in a plain TypeScript module, then use the React adapter at the component boundary. This example uses object spread and a new array for an immutable update:
 
-Use `useAtom()` when a component reads and writes the same writable atom, `useAtomValue()` for read-only access, and `useSetAtom()` when you only need the setter.
-
-```tsx
+```ts title="src/state/counter.ts"
 import { atom, computed } from "@zhuangtai-js/core";
-import { useAtom, useAtomValue, useSetAtom } from "@zhuangtai-js/react";
 
-const countAtom = atom(0);
-const doubleAtom = computed(() => countAtom.get() * 2);
+export type CounterState = {
+  count: number;
+  history: number[];
+};
 
-function Counter() {
-  const [count, setCount] = useAtom(countAtom);
+export const counterAtom = atom<CounterState>({ count: 0, history: [] });
+export const doubleAtom = computed(() => counterAtom.get().count * 2);
 
-  return <button onClick={() => setCount((value) => value + 1)}>{count}</button>;
-}
-
-function Double() {
-  const double = useAtomValue(doubleAtom);
-
-  return <span>{double}</span>;
-}
-
-function ResetButton() {
-  const setCount = useSetAtom(countAtom);
-
-  return <button onClick={() => setCount(0)}>reset</button>;
+export function incrementCounter(state: CounterState): CounterState {
+  const count = state.count + 1;
+  return { ...state, count, history: [...state.history, count] };
 }
 ```
 
-In this example, `Counter` reads and writes, `Double` only reads a computed value, and `ResetButton` only needs the setter. Each component re-renders only when the atom it watches changes.
+```tsx title="src/components/Counter.tsx"
+import { useAtom, useAtomValue, useSetAtom } from "@zhuangtai-js/react";
+import { counterAtom, doubleAtom, incrementCounter } from "../state/counter";
 
-## Share state across components without providers
+export function Counter() {
+  const [counter, setCounter] = useAtom(counterAtom);
+  const double = useAtomValue(doubleAtom);
+  const reset = useSetAtom(counterAtom);
 
-The trick is not a provider. The trick is one shared atom reference. If two components import the same `countAtom`, they are looking at the same state.
-
-```tsx
-function App() {
   return (
-    <>
-      <Counter />
-      <Double />
-      <ResetButton />
-    </>
+    <section>
+      <button
+        type="button"
+        onClick={() => setCounter(incrementCounter)}>
+        {counter.count} × 2 = {double}
+      </button>
+      <button
+        type="button"
+        onClick={() => reset({ count: 0, history: [] })}>
+        reset ({counter.history.length})
+      </button>
+    </section>
   );
 }
 ```
 
-You can define the atom at module scope and use it anywhere. There is no extra provider tree to wire up.
+## Place the state module
 
-## Bind a dedicated hook
+Put `atom`, `computed`, and typed updaters in `src/state/` or `src/features/<feature>/state.ts`; keep components focused on rendering and events. Module-level atoms are fine for client-shared state. For server request state, call a state factory once per request so mutable references are not shared across requests.
 
-If you do not want to pass an atom into every component, bind it into a hook when you create it.
+## Choose read and write access
 
-```tsx
-import { atom, computed } from "@zhuangtai-js/core";
-import { createAtomHook, createComputedHook } from "@zhuangtai-js/react";
+- **Read-write**: `useAtom(counterAtom)` returns `[value, setter]` for the counter above.
+- **Read-only**: `useAtomValue(doubleAtom)` subscribes to an `Atom` or `computed` for derived display values.
+- **Setter-only**: `useSetAtom(counterAtom)` returns a stable setter without subscribing, which suits reset or command buttons.
 
-const countAtom = atom(0);
-const useCount = createAtomHook(countAtom);
-const useDouble = createComputedHook(computed(() => countAtom.get() * 2));
-```
+No Provider is required; components share state by importing the same atom reference.
 
-`createAtomHook()` returns a hook that behaves like `useState()`: it gives you `[value, setter]`. `createComputedHook()` returns a hook that gives you the current value only, with no setter. Use the former for writable stores and the latter for derived values.
+## Lifecycle and SSR boundary
 
-## Re-render behavior
+The adapter uses React's `useSyncExternalStore` to bridge Core's synchronous `get()` and `watch()`, and it unsubscribes when the component unmounts. Core still owns immediate `set`, synchronous watchers, and `Object.is` equality; React may delay DOM commits, but the adapter adds no batching or hidden scheduling.
 
-This adapter is built on `useSyncExternalStore`. It reuses core's synchronous `get()` and `watch()` directly. The result is straightforward: a component re-renders only when the atom it subscribes to changes.
+SSR uses `get()` as the server snapshot, while hydration, request isolation, and the server state factory remain application responsibilities. Do not keep user or request-specific mutable atoms in server module scope; create independent state for every SSR request and keep the server and client initial values aligned.
 
-That also means `useSetAtom()` does not subscribe to the value, so a button that only calls the setter will not re-render on value changes. `useAtomValue()` works for both atoms and computeds, and React does not need to know which one it is.
+## Persistence
 
-## Works with React 18/19 StrictMode
+When state must survive a reload, see the [Persist reference](/en/reference/persist/) and compose `@zhuangtai-js/persist` into the state creator. Persistence does not change the component adapter choice; keep storage and hydration at the state-module boundary.
 
-`@zhuangtai-js/react` is designed for React 18 and React 19, including StrictMode. Because the core is synchronous, React only handles subscription management around it. It does not change when the atom updates happen.
+## API reference
+
+- [`useAtomValue`](/en/reference/react/): read-only subscription to an `Atom` or `computed`.
+- [`useSetAtom`](/en/reference/react/): a setter that does not subscribe to the value.
+- [`useAtom`](/en/reference/react/): read-write access.
+- `createAtomHook` and `createComputedHook`: use these when you want argument-free bound hooks.
+
+See the [React reference](/en/reference/react/) for complete signatures and subscription semantics.
 
 ## Next steps
 
-- Read [Core Concepts](/en/guides/core-concepts/) to understand `watch`, `computed`, and immediate updates.
-- Read [React reference](/en/reference/react/) for the full hook and bound-hook API.
+- [Core Concepts](/en/guides/core-concepts/): learn `get`, `set`, `watch`, and `computed`.
+- [Framework adapter chooser](/en/guides/framework-adapters/): compare React, Preact, Vue, Svelte, and Solid.
+- [Persist reference](/en/reference/persist/): configure storage, hydration, and lifecycle controls.

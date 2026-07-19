@@ -8,12 +8,24 @@ description: 了解 ZhuàngTài Core、官方框架 adapter、peer 范围与 SSR
 
 `@zhuangtai-js/core` 不依赖 UI 框架。普通 JavaScript、SDK、服务器模块与共享数据层可以直接使用 Core；组件需要框架原生订阅和自动清理时，再在 UI 边界添加 adapter。
 
+## 框架快速开始
+
+先按任务选择一条可复制路径，再把兼容矩阵作为版本范围证据：
+
+- [React 快速指南](/guides/react/)
+- [Preact 快速指南](/guides/preact/)
+- [Vue 快速指南](/guides/vue/)
+- [Svelte 快速指南](/guides/svelte/)
+- [Solid 快速指南](/guides/solid/)
+- [React Native / Expo 快速指南](/guides/react-native-expo/)（Expo 使用 `@zhuangtai-js/react`）
+
 ## 环境与推荐入口
 
 | 环境                      | 推荐入口               | 说明                                                      |
 | ------------------------- | ---------------------- | --------------------------------------------------------- |
 | Vanilla ESM / Node.js ESM | `@zhuangtai-js/core`   | 直接使用 `atom`、`computed`、`get`、`set`、`watch`        |
 | React                     | `@zhuangtai-js/react`  | `useAtomValue`、`useSetAtom`、`useAtom` 与绑定 hook       |
+| React Native / Expo       | `@zhuangtai-js/react`  | 使用 React adapter；storage 由应用消费者提供              |
 | Preact                    | `@zhuangtai-js/preact` | Preact hooks 与 `preact/compat` 的 `useSyncExternalStore` |
 | Svelte                    | `@zhuangtai-js/svelte` | `toReadable`、`toWritable` 标准 `svelte/store` 对象       |
 | Vue                       | `@zhuangtai-js/vue`    | 只读 `ComputedRef`、setter 与 effect-scope cleanup        |
@@ -24,13 +36,13 @@ description: 了解 ZhuàngTài Core、官方框架 adapter、peer 范围与 SSR
 
 ## 当前兼容矩阵
 
-下面的发布线与 peer 范围直接对应各 package manifest。0.x 包不会自动接受未声明的未来 Core minor 或框架 major。
+下面的发布线与 peer 范围直接对应各 package manifest，是选择 quick start 之后的版本证据。0.x 包不会自动接受未声明的未来 Core minor 或框架 major。
 
 | 包发布线                      | `@zhuangtai-js/core` | 其他 peer                    |
 | ----------------------------- | -------------------- | ---------------------------- |
 | `@zhuangtai-js/freeze@0.2.x`  | `^0.5.0`             | —                            |
 | `@zhuangtai-js/immer@0.2.x`   | `^0.5.0`             | —（Immer 是普通 dependency） |
-| `@zhuangtai-js/persist@0.4.x` | `^0.5.0`             | —                            |
+| `@zhuangtai-js/persist@0.5.x` | `^0.5.0`             | —                            |
 | `@zhuangtai-js/preact@0.1.x`  | `^0.5.0`             | Preact `>=10.9 <11`          |
 | `@zhuangtai-js/react@0.2.x`   | `^0.5.0`             | React `>=18 <20`             |
 | `@zhuangtai-js/solid@0.1.x`   | `^0.5.0`             | Solid `>=1.5 <2`             |
@@ -50,7 +62,7 @@ Core 当前发布线是 `@zhuangtai-js/core@0.5.x`。插件与 adapter 的版本
 - Svelte adapter 使用标准 store contract；状态隔离取决于底层 atom 的创建位置。
 - Vue SSR 的 `renderToString` 路径只读取 `atom.get()` snapshot，不安装 Core watcher；只有客户端活动 effect scope 中的读取 API 才订阅，并由 scope cleanup 释放。
 - Solid 标准 SSR 通过公开 `isServer` 信号只读取 snapshot，不要求 owner，也不建立 Core watcher；客户端订阅才绑定到 owner，手动客户端 root 必须显式 dispose。
-- `@zhuangtai-js/persist` 默认访问 `localStorage`。服务端应传入明确的同步 storage，或只在客户端创建持久化 atom。
+- `@zhuangtai-js/persist` 在浏览器中默认访问 `localStorage`，也接受方法返回 `PromiseLike` 的自定义 storage。服务端应传入明确的 storage，或只在客户端创建持久化 atom。
 
 订阅 cleanup 与状态隔离是两件事：自动取消 watcher 不能阻止一个 module-level atom 在请求之间共享值。
 

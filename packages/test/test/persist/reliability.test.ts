@@ -18,7 +18,7 @@ describe("persist reliability", () => {
   });
 
   it("keeps state unchanged and does not notify when setItem throws", () => {
-    const storage = createStorage();
+    const storage = createStorage([["count", "1"]]);
     vi.spyOn(storage, "setItem").mockImplementation(() => {
       throw new Error("quota");
     });
@@ -30,6 +30,7 @@ describe("persist reliability", () => {
 
     expect(() => state.set(2)).toThrow("quota");
     expect(state.get()).toBe(1);
+    expect(storage.values.get("count")).toBe("1");
     expect(watcher).not.toHaveBeenCalled();
   });
 

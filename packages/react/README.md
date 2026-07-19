@@ -16,6 +16,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 
 `react` 是 peer dependency，支持 React 18 和 React 19。
 
+下一步：[React 快速指南](https://zhuangtai.yojigen.cn/guides/react/)。
+
 ## 使用
 
 ```tsx
@@ -113,6 +115,8 @@ pnpm add @zhuangtai-js/core @zhuangtai-js/react react
 ```
 
 `react` is a peer dependency and supports React 18 and React 19.
+
+Next: [React Quick Start](https://zhuangtai.yojigen.cn/en/guides/react/).
 
 ## Usage
 

@@ -10,10 +10,10 @@
   "scripts": {
     "build": "turbo run build",
     "build:test": "node --test scripts/build-artifacts.test.mjs scripts/adapter-local-tests.test.mjs",
-    "docs:test": "node --test scripts/readme-consistency.test.mjs",
+    "docs:test": "node --test scripts/readme-consistency.test.mjs && pnpm --filter docs test",
     "browser:test": "pnpm --filter @zhuangtai-js/test browser:test",
     "pack:test": "pnpm build && node --test scripts/pack-consumer.test.mjs",
-    "api:test": "tsc -p scripts/tsconfig.api-tests.json",
+    "api:test": "tsc -p scripts/tsconfig.api-tests.json && node --test scripts/api-types-negative.test.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "lint": "turbo run lint",
