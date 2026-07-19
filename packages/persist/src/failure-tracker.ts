@@ -1,14 +1,9 @@
-import {
-  createNonErrorCause,
-  PersistOnErrorCallbackError,
-  PersistOperationError,
-  type PersistOperation,
-} from "./errors.js";
+import { PersistOperationError, type PersistOperation } from "./errors.js";
 import { isPromiseLike } from "./storage.js";
 import type { PersistOptions } from "./types.js";
 
 export class PersistFailureTracker {
-  private readonly retainedFailures: Error[] = [];
+  private retainedFailure: Error | undefined;
 
   constructor(
     private readonly key: string,
@@ -17,7 +12,7 @@ export class PersistFailureTracker {
 
   record(operation: PersistOperation, cause: unknown): Error {
     const failure = new PersistOperationError(operation, this.key, cause);
-    this.retainedFailures.push(failure);
+    if (this.retainedFailure === undefined) this.retainedFailure = failure;
 
     if (this.onError !== undefined) {
       try {
@@ -25,8 +20,8 @@ export class PersistFailureTracker {
         if (isPromiseLike(result)) {
           void Promise.resolve(result).catch(() => undefined);
         }
-      } catch (callbackCause) {
-        this.retainCallbackFailure(callbackCause);
+      } catch {
+        return failure;
       }
     }
 
@@ -34,13 +29,8 @@ export class PersistFailureTracker {
   }
 
   consumeFirst(): Error | undefined {
-    const firstFailure = this.retainedFailures[0];
-    this.retainedFailures.length = 0;
+    const firstFailure = this.retainedFailure;
+    this.retainedFailure = undefined;
     return firstFailure;
-  }
-
-  private retainCallbackFailure(cause: unknown): void {
-    const failureCause = cause instanceof Error ? cause : createNonErrorCause(cause);
-    this.retainedFailures.push(new PersistOnErrorCallbackError(this.key, failureCause));
   }
 }

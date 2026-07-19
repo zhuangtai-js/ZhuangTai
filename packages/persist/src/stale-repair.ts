@@ -6,14 +6,21 @@ export type PersistHydrationTask = {
   readonly applied: () => boolean;
 };
 
-const EMPTY_HYDRATION: PersistHydrationTask = {
+type MutableHydrationTask = PersistHydrationTask & {
+  readonly generation: number;
+  readonly markApplied: () => void;
+};
+
+const EMPTY_HYDRATION: MutableHydrationTask = {
+  generation: 0,
   promise: Promise.resolve(),
   readSequence: () => -1,
   applied: () => false,
+  markApplied: () => undefined,
 };
 
 export class PersistHydrationTracker {
-  private readonly appliedGenerations = new Set<number>();
+  private appliedBeforeTrackGeneration: number | undefined;
   private latestTask = EMPTY_HYDRATION;
   private latestSuccessfulTask = EMPTY_HYDRATION;
   private latestSuccessfulGeneration = 0;
@@ -27,7 +34,11 @@ export class PersistHydrationTracker {
   }
 
   markApplied(generation: number): void {
-    this.appliedGenerations.add(generation);
+    if (this.latestTask.generation === generation) {
+      this.latestTask.markApplied();
+      return;
+    }
+    this.appliedBeforeTrackGeneration = generation;
   }
 
   track(
@@ -36,10 +47,16 @@ export class PersistHydrationTracker {
     readSequence: () => number | undefined,
     isLatest: boolean,
   ): void {
-    const hydration = {
+    let applied = this.appliedBeforeTrackGeneration === generation;
+    if (applied) this.appliedBeforeTrackGeneration = undefined;
+    const hydration: MutableHydrationTask = {
+      generation,
       promise,
       readSequence,
-      applied: () => this.appliedGenerations.has(generation),
+      applied: () => applied,
+      markApplied: () => {
+        applied = true;
+      },
     };
     void promise.then(
       () => {
